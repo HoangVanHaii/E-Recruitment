@@ -3,6 +3,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useApplicationStore } from '../../stores/jobApplication';
 import Loading from '../Loading.vue';
+import type { IJobApplication } from '../../types/jobApplication';
 
 const useApplication = useApplicationStore();
 
@@ -13,7 +14,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'approve', 'reject', 'schedule']);
 
-const resumeData = ref<any | null>(null);
+const resumeData = ref<IJobApplication | null>(null);
 
 const fetchResumeData = async () => {
     if (props.applicationId) {
@@ -22,7 +23,7 @@ const fetchResumeData = async () => {
     }
 };
 
-onMounted(async() => {
+onMounted(async () => {
     document.body.style.overflow = 'hidden';
     await fetchResumeData();
 });
@@ -63,16 +64,6 @@ const formatDate = (dateStr: string) => {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 };
 
-const formatMonthYear = (dateInput: Date | string | undefined) => {
-    if(!dateInput) return '';
-    const d = new Date(dateInput);
-    return `T${d.getMonth() + 1}/${d.getFullYear()}`;
-};
-
-const formatYear = (dateInput: Date | string | undefined) => {
-    if(!dateInput) return '';
-    return new Date(dateInput).getFullYear().toString();
-};
 </script>
 <template>
     <loading
@@ -117,21 +108,6 @@ const formatYear = (dateInput: Date | string | undefined) => {
                     </div>
 
                     <div v-else-if="resumeData" class="p-6 sm:p-8 space-y-8 pb-8">
-                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-6 items-start">
-                            <img :src="resumeData.ResumeDetail?.AvatarUrl || 'https://i.pravatar.cc/150?img=' + applicationId" class="w-24 h-24 rounded-2xl object-cover border-4 border-slate-50 shadow-md shrink-0">
-                            <div class="flex-1 w-full">
-                                <h1 class="text-2xl font-black text-slate-900">{{ resumeData.FullName }}</h1>
-                                <h2 class="text-[15px] font-bold text-blue-600 mt-1">{{ resumeData.ResumeDetail?.title || 'Chưa cập nhật vị trí' }}</h2>
-                                
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 mt-4 text-sm font-medium text-slate-600">
-                                    <div class="flex items-center gap-2.5"><i class="fas fa-envelope text-slate-400 w-4 text-center"></i> {{ resumeData.Email }}</div>
-                                    <div class="flex items-center gap-2.5"><i class="fas fa-phone-alt text-slate-400 w-4 text-center"></i> {{ resumeData.Phone }}</div>
-                                    <div class="flex items-center gap-2.5"><i class="fas fa-briefcase text-slate-400 w-4 text-center"></i> {{ resumeData.ExperienceYears }} năm kinh nghiệm</div>
-                                    <div class="flex items-center gap-2.5"><i class="fas fa-calendar-check text-slate-400 w-4 text-center"></i> Nộp lúc: {{ formatDate(resumeData.CreatedAt) }}</div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div v-if="resumeData.AI_Summary_Review" class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-6 border border-blue-100 relative overflow-hidden">
                             <div class="absolute -right-4 -top-4 opacity-10">
                                 <i class="fas fa-robot text-8xl text-blue-600"></i>
@@ -150,66 +126,283 @@ const formatYear = (dateInput: Date | string | undefined) => {
                             </p>
                         </div>
 
-                        <div v-if="resumeData.ResumeDetail?.summary" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                            <h3 class="text-base font-black text-slate-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-user-circle text-blue-500"></i> Giới thiệu
-                            </h3>
-                            <p class="text-slate-600 text-sm leading-relaxed font-medium whitespace-pre-line">{{ resumeData.ResumeDetail.summary }}</p>
-                        </div>
+                        <div v-if="resumeData.ResumeDetail?.templateId === 1" id="cv-document" class="max-w-[210mm] mx-auto bg-white shadow-2xl flex flex-col md:flex-row print:flex-row overflow-hidden print:shadow-none print:m-0">
+                            <div class="w-full md:w-[35%] print:w-[35%] bg-[#14205c] text-white p-8 md:p-10 flex flex-col gap-10 print:bg-[#14205c]">
+                                <div class="flex flex-col items-center text-center">
+                                    <img :src="resumeData.AvatarUrl || 'https://via.placeholder.com/150'" class="w-40 h-40 rounded-full object-cover border-4 border-white/20 shadow-xl mb-6 bg-white">
+                                   
+                                    <h1 class="text-2xl font-black uppercase tracking-widest mb-2 leading-tight">
+                                        {{ resumeData.FullName }}
+                                    </h1>
+                                    <h2 class="text-blue-300 font-bold text-[15px] tracking-wider">{{ resumeData.ResumeDetail?.title || 'Vị trí công việc' }}</h2>
+                                </div>
 
-                        <div v-if="resumeData.ResumeDetail?.skills?.length" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                            <h3 class="text-base font-black text-slate-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-code text-blue-500"></i> Kỹ năng chuyên môn
-                            </h3>
-                            <div class="flex flex-wrap gap-2.5">
-                                <span v-for="(skill, index) in resumeData.ResumeDetail.skills" :key="index" class="px-4 py-2 bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-sm font-bold flex items-center gap-2">
-                                    {{ skill.skillName }}
-                                    <span v-if="skill.level" class="px-1.5 py-0.5 bg-white text-blue-600 text-[10px] uppercase rounded-md shadow-sm">{{ skill.level }}</span>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div v-if="resumeData.ResumeDetail?.experience?.length" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                            <h3 class="text-base font-black text-slate-800 mb-5 flex items-center gap-2">
-                                <i class="fas fa-building text-blue-500"></i> Kinh nghiệm làm việc
-                            </h3>
-                            <div class="space-y-6 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                                <div v-for="(exp, index) in resumeData.ResumeDetail.experience" :key="index" class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div class="flex items-center justify-center w-6 h-6 rounded-full border-4 border-white bg-blue-100 text-blue-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 relative">
-                                        <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                    </div>
-                                    <div class="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-2xl border border-slate-100 bg-slate-50 shadow-sm hover:shadow-md transition-shadow">
-                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-1">
-                                            <h4 class="font-bold text-slate-800 text-[15px]">{{ exp.position }}</h4>
-                                            <span class="text-[11px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
-                                                {{ formatMonthYear(exp.startDate) }} - {{ exp.isCurrent ? 'Hiện tại' : formatMonthYear(exp.endDate) }}
-                                            </span>
+                                <div>
+                                    <h3 class="text-lg font-bold border-b border-white/20 pb-2 mb-4 uppercase tracking-widest">Liên hệ</h3>
+                                    <div class="space-y-4 text-[13.5px] font-medium text-blue-100">
+                                        <div class="flex items-start gap-3">
+                                            <i class="fas fa-envelope mt-1 w-4"></i> <span class="break-all">{{ resumeData.Email }}</span>
                                         </div>
-                                        <div class="text-sm font-bold text-slate-500 mb-2">{{ exp.companyName }}</div>
-                                        <p v-if="exp.description" class="text-sm text-slate-600 whitespace-pre-line">{{ exp.description }}</p>
+                                        <div class="flex items-start gap-3">
+                                            <i class="fas fa-phone mt-1 w-4"></i> <span>{{ resumeData.Phone }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.skills?.length">
+                                    <h3 class="text-lg font-bold border-b border-white/20 pb-2 mb-4 uppercase tracking-widest">Kỹ năng</h3>
+                                    <div class="flex flex-col gap-4">
+                                        <div v-for="(skill, index) in resumeData.ResumeDetail.skills" :key="index">
+                                            <div class="flex justify-between items-end mb-1">
+                                                <span class="text-[14px] font-bold">{{ skill.skillName }}</span>
+                                                <span class="text-[10px] text-blue-300 uppercase">{{ skill.level }}</span>
+                                            </div>
+                                            <div class="w-full bg-white/10 rounded-full h-1.5">
+                                                <div class="bg-blue-400 h-1.5 rounded-full" style="width: 80%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full md:w-[65%] print:w-[65%] p-8 md:p-12 flex flex-col gap-10 bg-white">
+                                <div v-if="resumeData.ResumeDetail?.summary">
+                                    <h3 class="text-2xl font-black text-[#14205c] uppercase mb-4 flex items-center gap-3">
+                                        <i class="fas fa-user-tie text-xl text-blue-500"></i> Mục tiêu
+                                    </h3>
+                                    <p class="text-gray-600 leading-relaxed text-[15px] text-justify">{{ resumeData.ResumeDetail.summary }}</p>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.experience?.length">
+                                    <h3 class="text-2xl font-black text-[#14205c] uppercase mb-6 flex items-center gap-3">
+                                        <i class="fas fa-briefcase text-xl text-blue-500"></i> Kinh nghiệm
+                                    </h3>
+                                    <div class="space-y-6 border-l-2 border-gray-100 pl-6">
+                                        <div v-for="(exp, idx) in resumeData.ResumeDetail.experience" :key="idx" class="relative">
+                                            <div class="absolute -left-[31px] top-1 w-4 h-4 bg-blue-500 rounded-full border-4 border-white shadow-sm"></div>
+                                            <h4 class="font-bold text-gray-800 text-[16px]">{{ exp.position }}</h4>
+                                            <p class="text-blue-600 font-bold text-[13px] mb-1">{{ exp.companyName }} | {{ formatDate(exp.startDate.toString()) }} - {{ exp.isCurrent ? 'Hiện tại' : formatDate(exp.endDate?.toString() || "") }}</p>
+                                            <p class="text-gray-600 text-[14px] whitespace-pre-line">{{ exp.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="resumeData.ResumeDetail.projects?.length" class="print-avoid-break">
+                                    <h3 class="text-2xl font-black text-[#14205c] uppercase mb-4 flex items-center gap-3">
+                                        <i class="fas fa-code-branch text-blue-500"></i> DỰ ÁN NỔI BẬT
+                                    </h3>
+
+                                    <div class="space-y-6">
+                                        <div v-for="(prj, idx) in resumeData.ResumeDetail.projects" :key="'prj' + idx">
+                                            <h4 class="font-bold text-gray-900 text-[17px] mb-1">{{ prj.projectName }}</h4>
+                                            <p class="text-[15px] text-gray-500 mb-2">
+                                                Vai trò: <span class="text-gray-900 font-medium">{{ prj.role }}</span>
+                                            </p>
+                                            <p class="text-gray-600 text-[15px] leading-snug mb-3">
+                                                {{ prj.description }}
+                                            </p>
+                                            <div v-if="prj.technologies?.length" class="bg-[#f0f7ff] p-3 rounded-xl inline-block">
+                                                <p class="text-[14px] text-[#3b82f6] font-bold">
+                                                    Công nghệ: 
+                                                    <span>
+                                                        {{ prj.technologies.map(tech => `"${tech}"`).join(', ') }}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="resumeData.ResumeDetail?.education?.length">
+                                    <h3 class="text-2xl font-black text-[#14205c] uppercase mb-6 flex items-center gap-3">
+                                        <i class="fas fa-graduation-cap text-xl text-blue-500"></i> Học vấn
+                                    </h3>
+                                    <div class="space-y-4">
+                                        <div v-for="(edu, idx) in resumeData.ResumeDetail.education" :key="idx">
+                                            <h4 class="font-bold text-gray-800">{{ edu.institution }}</h4>
+                                            <p class="text-[14px] text-gray-600">{{ edu.degree }} in {{ edu.major }}</p>
+                                            <p class="text-[12px] text-blue-500 font-bold">{{ formatDate(edu.startDate.toString()) }} - {{ formatDate(edu.endDate?.toString() || "") }}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div v-if="resumeData.ResumeDetail?.education?.length" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                            <h3 class="text-base font-black text-slate-800 mb-5 flex items-center gap-2">
-                                <i class="fas fa-graduation-cap text-blue-500"></i> Học vấn
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div v-for="(edu, index) in resumeData.ResumeDetail.education" :key="index" class="p-4 rounded-2xl border border-slate-100 bg-slate-50 relative overflow-hidden">
-                                    <div class="absolute -right-2 -bottom-2 opacity-5 text-6xl"><i class="fas fa-university"></i></div>
-                                    <h4 class="font-bold text-slate-800 text-[15px] mb-1">{{ edu.major }} ({{ edu.degree }})</h4>
-                                    <div class="text-sm font-bold text-slate-600 mb-2">{{ edu.institution }}</div>
-                                    <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-200 border-dashed">
-                                        <span class="text-[11px] font-bold text-slate-400"><i class="fas fa-calendar-alt mr-1"></i> {{ formatYear(edu.startDate) }} - {{ edu.endDate ? formatYear(edu.endDate) : 'Hiện tại' }}</span>
-                                        <span v-if="edu.gpa" class="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">GPA: {{ edu.gpa }}</span>
+                        <div v-else-if="resumeData.ResumeDetail?.templateId === 2" id="cv-document" class="max-w-[210mm] min-h-[297mm] mx-auto bg-white shadow-2xl flex flex-col p-10 md:p-14 print:shadow-none print:m-0 relative border-t-[12px] border-emerald-600">
+                            <div class="flex flex-col items-center border-b-2 border-gray-100 pb-8 mb-8 text-center">
+                                <img :src="resumeData.AvatarUrl || 'https://via.placeholder.com/150'" class="w-40 h-40 rounded-full object-cover border-4 border-white/20 shadow-xl mb-6 bg-white">
+                                   
+                                <h1 class="text-4xl font-black uppercase text-slate-800 tracking-widest mb-2">
+                                    {{ resumeData.FullName }}
+                                </h1>
+                                <h2 class="text-lg font-bold text-emerald-600 tracking-widest uppercase">
+                                    {{ resumeData.ResumeDetail?.title || 'Vị trí công việc' }}
+                                </h2>
+                                <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-5 text-[13.5px] text-slate-600 font-medium">
+                                    <span><i class="fas fa-envelope text-emerald-600 mr-2"></i>{{ resumeData.Email }}</span>
+                                    <span><i class="fas fa-phone text-emerald-600 mr-2"></i>{{ resumeData.Phone }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-10">
+                                <div v-if="resumeData.ResumeDetail?.summary" class="print-avoid-break">
+                                    <h3 class="text-lg font-black text-slate-800 uppercase mb-3 border-l-4 border-emerald-600 pl-3 tracking-wide">Mục tiêu nghề nghiệp</h3>
+                                    <p class="text-slate-600 text-[14.5px] leading-relaxed text-justify">{{ resumeData.ResumeDetail.summary }}</p>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.skills?.length" class="print-avoid-break">
+                                    <h3 class="text-lg font-black text-slate-800 uppercase mb-4 border-l-4 border-emerald-600 pl-3 tracking-wide">Kỹ năng chuyên môn</h3>
+                                    <div class="flex flex-wrap gap-2.5">
+                                        <span v-for="(skill, index) in resumeData.ResumeDetail.skills" :key="index" class="px-3.5 py-1.5 bg-emerald-50 text-emerald-700 text-[13px] font-bold rounded-lg border border-emerald-100">
+                                            {{ skill.skillName }} <span v-if="skill.level" class="font-normal opacity-70">({{ skill.level }})</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div v-if="resumeData.ResumeDetail.experience?.length" class="print-avoid-break">
+                                    <h3 class="text-lg font-black text-slate-800 uppercase mb-5 border-l-4 border-emerald-600 pl-3 tracking-wide">Kinh nghiệm làm việc</h3>
+                                    <div class="space-y-6">
+                                        <div v-for="(exp, index) in resumeData.ResumeDetail.experience" :key="'exp-'+index">
+                                            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-1">
+                                                <h4 class="font-bold text-slate-800 text-[16px]">{{ exp.position }}</h4>
+                                                <span class="text-emerald-600 font-bold text-[13px]">{{ formatDate(exp.startDate.toString()) }} - {{ formatDate(exp.endDate?.toString() || "")|| 'Hiện tại' }}</span>
+                                            </div>
+                                            <h5 class="text-[14px] font-bold text-slate-500 mb-2">{{ exp.companyName }}</h5>
+                                            <p class="text-slate-600 text-[14px] leading-relaxed text-justify whitespace-pre-line">{{ exp.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.projects?.length" class="print-avoid-break">
+                                    <h3 class="text-lg font-black text-slate-800 uppercase mb-5 border-l-4 border-emerald-600 pl-3 tracking-wide">Dự án nổi bật</h3>
+                                    <div class="grid grid-cols-1 gap-6">
+                                        <div v-for="(prj, idx) in resumeData.ResumeDetail.projects" :key="idx" class="bg-gray-50/50 p-5 rounded-xl border border-gray-100">
+                                            <h4 class="font-bold text-slate-800 text-[16px]">{{ prj.projectName }}</h4>
+                                            <p class="text-emerald-600 text-[13px] font-bold mb-2">{{ prj.role }}</p>
+                                            <p class="text-slate-600 text-[14px] mb-3">{{ prj.description }}</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <span v-for="tech in prj.technologies" :key="tech" class="text-[11px] bg-white px-2 py-0.5 rounded border text-gray-500">{{ tech }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="resumeData.ResumeDetail.education?.length" class="print-avoid-break">
+                                    <h3 class="text-lg font-black text-slate-800 uppercase mb-4 border-l-4 border-emerald-600 pl-3 tracking-wide">Trình độ học vấn</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div v-for="(edu, index) in resumeData.ResumeDetail.education" :key="'edu-'+index" class="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                                            <h4 class="font-bold text-slate-800 text-[15px] mb-1">{{ edu.institution }}</h4>
+                                            <p class="text-[14px] text-slate-600"><span class="font-bold">{{ edu.degree }}</span> - {{ edu.major }}</p>
+                                            <p v-if="edu.gpa" class="text-[13px] text-slate-500 mt-1 font-medium italic">GPA: {{ edu.gpa }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else-if="resumeData.ResumeDetail?.templateId === 3" id="cv-document" class="max-w-[210mm] min-h-[297mm] mx-auto bg-white shadow-2xl flex flex-col md:flex-row print:flex-row overflow-hidden print:shadow-none print:m-0 text-slate-800">
+                            <div class="w-full md:w-[35%] print:w-[35%] bg-slate-50 p-8 border-r border-slate-200 flex flex-col gap-8 print:bg-slate-50">
+                                <div class="flex flex-col items-center">
+                                    <img :src="resumeData.AvatarUrl || 'https://via.placeholder.com/150'" class="w-36 h-36 rounded-[2rem] object-cover shadow-md mb-5 border-4 border-white">
+                                    <h1 class="text-2xl font-black text-purple-900 text-center uppercase leading-tight">
+                                        {{ resumeData.FullName }}
+                                    </h1>
+                                    <h2 class="text-[13px] font-bold text-purple-600 mt-2 uppercase tracking-widest text-center border-b-2 border-purple-200 pb-3 w-full">
+                                        {{ resumeData.ResumeDetail?.title || 'Lập trình viên' }}
+                                    </h2>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-widest flex items-center gap-2">
+                                        <i class="fas fa-id-card text-purple-500"></i> Liên hệ
+                                    </h3>
+                                    <div class="space-y-4 text-[13px] font-medium text-slate-600">
+                                        <div v-if="resumeData.Email" class="flex items-start gap-3">
+                                            <i class="fas fa-envelope mt-1 w-4 text-center text-purple-400"></i>
+                                            <span class="break-all">{{ resumeData.Email }}</span>
+                                        </div>
+                                        <div v-if="resumeData.Phone" class="flex items-start gap-3">
+                                            <i class="fas fa-phone mt-1 w-4 text-center text-purple-400"></i>
+                                            <span>{{ resumeData.Phone }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.skills?.length">
+                                    <h3 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-widest flex items-center gap-2">
+                                        <i class="fas fa-bolt text-purple-500"></i> Kỹ năng
+                                    </h3>
+                                    <div class="flex flex-col gap-3.5">
+                                        <div v-for="(skill, index) in resumeData.ResumeDetail.skills" :key="'sk'+index">
+                                            <div class="flex justify-between items-end mb-1.5">
+                                                <span class="text-[13px] font-bold text-slate-700">{{ skill.skillName }}</span>
+                                                <span v-if="skill.level" class="text-[10px] text-purple-500 font-bold uppercase tracking-wider">{{ skill.level }}</span>
+                                            </div>
+                                            <div class="w-full bg-slate-200 rounded-full h-1.5">
+                                                <div class="bg-gradient-to-r from-purple-400 to-purple-600 h-1.5 rounded-full shadow-sm" style="width: 85%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full md:w-[65%] print:w-[65%] p-8 md:p-10 flex flex-col gap-8 bg-white">
+                                <div v-if="resumeData.ResumeDetail?.summary" class="print-avoid-break">
+                                    <h3 class="text-xl font-black text-purple-900 uppercase mb-3 flex items-center gap-3">Mục tiêu</h3>
+                                    <p class="text-slate-600 text-[14px] leading-relaxed text-justify bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
+                                        {{ resumeData.ResumeDetail.summary }}
+                                    </p>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.experience?.length" class="print-avoid-break">
+                                    <h3 class="text-xl font-black text-purple-900 uppercase mb-5 flex items-center gap-3">Kinh nghiệm</h3>
+                                    <div class="space-y-6 border-l-2 border-purple-100 pl-5 ml-2">
+                                        <div v-for="(exp, index) in resumeData.ResumeDetail.experience" :key="'exp'+index" class="relative">
+                                            <div class="absolute w-3 h-3 bg-purple-500 rounded-full -left-[27px] top-1.5 ring-4 ring-white"></div>
+                                            <h4 class="font-bold text-slate-800 text-[15px]">{{ exp.position }}</h4>
+                                            <div class="text-[13px] font-bold text-purple-600 mb-2 mt-0.5">
+                                                {{ exp.companyName }}
+                                                <span class="text-slate-400 font-normal ml-2">
+                                                    | {{ formatDate(exp.startDate.toString()) }} - {{ exp.isCurrent ? 'Hiện tại' : formatDate(exp.endDate?.toString() || "") }}
+                                                </span>
+                                            </div>
+                                            <p class="text-slate-600 text-[14px] leading-relaxed whitespace-pre-line text-justify">{{ exp.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.projects?.length" class="print-avoid-break">
+                                    <h3 class="text-xl font-black text-purple-900 uppercase mb-5 flex items-center gap-3">Dự án nổi bật</h3>
+                                    <div class="space-y-6">
+                                        <div v-for="(prj, index) in resumeData.ResumeDetail.projects" :key="'prj'+index" class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <h4 class="font-bold text-slate-800 text-[15px]">{{ prj.projectName }}</h4>
+                                                <span class="text-[12px] font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded-md">{{ prj.role }}</span>
+                                            </div>
+                                            <p class="text-slate-600 text-[14px] leading-relaxed text-justify mb-3">{{ prj.description }}</p>
+                                            <p v-if="prj.technologies" class="text-[12.5px] text-slate-500 font-medium">
+                                                <i class="fas fa-code text-purple-400 mr-1"></i>
+                                                {{ Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="resumeData.ResumeDetail?.education?.length" class="print-avoid-break">
+                                    <h3 class="text-xl font-black text-purple-900 uppercase mb-5 flex items-center gap-3">Học vấn</h3>
+                                    <div class="space-y-4">
+                                        <div v-for="(edu, index) in resumeData.ResumeDetail.education" :key="'edu'+index" class="flex items-start gap-4">
+                                            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center shrink-0 font-bold text-xl">
+                                                <i class="fas fa-university"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-bold text-slate-800 text-[15px] mb-1">{{ edu.institution }}</h4>
+                                                <p class="text-[14px] text-slate-600"><span class="font-bold">{{ edu.degree }}</span> - {{ edu.major }}</p>
+                                                <p v-if="edu.gpa" class="text-[13px] text-slate-500 mt-1 font-medium">GPA / Xếp loại: {{ edu.gpa }}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div v-else class="h-full flex flex-col items-center justify-center text-slate-400 p-8">
                         <i class="fas fa-exclamation-circle text-4xl mb-4 text-rose-300"></i>
                         <p class="font-bold text-lg text-slate-600">Không thể tải hồ sơ</p>

@@ -67,6 +67,22 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 };
+export const getCandidateInfo = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.id;
+        const profile = await candidateService.getCandidateInfo(userId);
+        if (!profile) {
+            throw new AppError("Không tìm thấy thông tin hồ sơ ứng viên!", 404);
+        }
+        return res.status(200).json({
+            success: true,
+            message: "Lấy thông tin hồ sơ thành công",
+            data: profile
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 export const getSkills = async (req: Request, res: Response, next: NextFunction) => {
     try {

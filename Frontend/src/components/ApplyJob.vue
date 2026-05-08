@@ -10,7 +10,7 @@
   const messageNotify = ref<string>('');
   const isSuccessNotify = ref(true);
   const loading = ref(false);
-  
+  import ResumeDetail from '../components/ResumeDetail.vue';
   const router = useRouter();
   const useResume = useResumeStore();
   
@@ -127,7 +127,7 @@
           >
             <div 
               class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300"
-              :class="isOpenResume ? 'opacity-50 scale-95 md:translate-x-[-10%]' : ''" 
+              :class="isOpenResume ? 'md:translate-x-[-120px] scale-95 opacity-70' : ''" 
             >
                <div class="relative bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 md:px-6 py-4 md:py-5">
                 <button @click="handleClose"
@@ -235,146 +235,48 @@
           </Transition>
         </div>
       </Transition>
-  
-      <div 
-        v-if="isOpenResume" 
-        @click="isOpenResume = false"
-        class="fixed inset-0 z-[9999]"
-      ></div>
-  
-      <transition name="slide">
-        <div 
-          v-if="isOpenResume"
-          class="fixed top-0 right-0 h-full w-full max-w-[650px] bg-gray-50 shadow-2xl z-[10000] flex flex-col"
-        >
-          <div class="bg-white px-4 md:px-6 py-4 border-b flex justify-between items-center sticky top-0 z-20">
-            <h2 class="text-lg md:text-xl font-bold truncate pr-4">Hồ sơ ứng viên #{{ candidate?.resumeId }}</h2>
-            <button @click="isOpenResume = false" class="text-gray-400 hover:bg-red-50 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 text-xl">✕</button>
-          </div>
+      <Transition
+  enter-active-class="transition duration-300 ease-out"
+  enter-from-class="opacity-0"
+  enter-to-class="opacity-100"
+  leave-active-class="transition duration-200 ease-in"
+  leave-from-class="opacity-100"
+  leave-to-class="opacity-0"
+>
+  <div
+    v-if="isOpenResume"
+    @click="isOpenResume = false"
+    class="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-sm flex justify-end"
+  >
+  <Transition
+  enter-active-class="transition duration-300 ease-out transform"
+  enter-from-class="translate-x-full opacity-0"
+  enter-to-class="translate-x-0 opacity-100"
+  leave-active-class="transition duration-200 ease-in transform"
+  leave-from-class="translate-x-0 opacity-100"
+  leave-to-class="translate-x-full opacity-0"
+>
+  <div
+    @click.stop
+    class="relative h-screen w-full md:w-[55%] bg-white shadow-2xl overflow-y-auto"
+  >
+    <button
+      @click="isOpenResume = false"
+      class="fixed top-4 right-4 z-50 w-11 h-11 rounded-full bg-white/90 backdrop-blur shadow-lg hover:bg-gray-100 transition flex items-center justify-center"
+    >
+      <i class="fa-solid fa-xmark text-gray-700 text-lg"></i>
+    </button>
 
-          <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-            
-            <div class="bg-white border rounded-2xl p-4 md:p-5 flex gap-4 items-center">
-              <img :src="avatarSrc" class="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-4 border-slate-50 shrink-0 shadow-sm" alt="avatar" />
-              <div class="min-w-0"> 
-                <h3 class="font-bold text-lg md:text-xl text-gray-900 truncate">{{ candidate?.title }}</h3>
-                <p class="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
-                  <i class="fa-regular fa-clock"></i>
-                  Tạo lúc: {{ formatDate(candidate?.createdAt) }}
-                </p>
-              </div>
-            </div>
-
-            <div v-if="candidate?.summary" class="bg-white border rounded-2xl p-4 md:p-5">
-              <div class="flex items-center gap-2.5 mb-3">
-                <i class="fa-solid fa-circle-user text-blue-600 text-lg"></i>
-                <h4 class="font-bold text-base md:text-lg text-gray-900">Giới thiệu</h4>
-              </div>
-              <p class="text-sm md:text-base text-gray-700 leading-relaxed">
-                {{ candidate?.summary }}
-              </p>
-            </div>
-
-            <div v-if="candidate?.skills?.length" class="bg-white border rounded-2xl p-4 md:p-5">
-              <div class="flex items-center gap-2.5 mb-4">
-                <i class="fa-solid fa-code text-blue-600 text-lg"></i>
-                <h4 class="font-bold text-base md:text-lg text-gray-900">Kỹ năng chuyên môn</h4>
-              </div>
-              <div class="flex flex-wrap gap-2.5">
-                <div v-for="skill in candidate?.skills" :key="skill.skillId" 
-                     class="border border-gray-200 rounded-xl px-3 py-2 flex items-center gap-2.5 bg-white shadow-sm hover:border-blue-300 transition-colors">
-                  <span class="text-sm font-semibold text-gray-800">{{ skill.skillName }}</span>
-                  <span v-if="skill.level" class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] md:text-xs font-bold uppercase tracking-wide">
-                    {{ skill.level }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="candidate?.experience?.length" class="bg-white border rounded-2xl p-4 md:p-5">
-              <div class="flex items-center gap-2.5 mb-6">
-                <i class="fa-solid fa-building text-blue-600 text-lg"></i>
-                <h4 class="font-bold text-base md:text-lg text-gray-900">Kinh nghiệm làm việc</h4>
-              </div>
-              
-              <div class="relative border-l-2 border-gray-100 ml-2.5 md:ml-3 space-y-6 md:space-y-8">
-                <div v-for="(exp, i) in candidate?.experience" :key="i" class="relative pl-6 md:pl-8">
-                  <span class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-white border border-blue-200"></span>
-                  
-                  <div class="bg-slate-50 border border-gray-100 rounded-xl p-4 md:p-5 hover:shadow-md transition-shadow">
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                      <h5 class="font-bold text-base md:text-lg text-gray-900">{{ exp.position }}</h5>
-                      <span class="inline-flex items-center justify-center bg-blue-50 text-blue-600 text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shrink-0">
-                        {{ exp.startDate }} - {{ exp.isCurrent ? 'Hiện tại' : exp.endDate }}
-                      </span>
-                    </div>
-                    <p class="text-gray-600 font-semibold text-sm md:text-base mb-3">{{ exp.companyName }}</p>
-                    <p v-if="exp.description" class="text-sm md:text-base text-gray-700 whitespace-pre-line leading-relaxed">
-                      {{ exp.description }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="candidate?.education?.length" class="bg-white border rounded-2xl p-4 md:p-5">
-              <div class="flex items-center gap-2.5 mb-4">
-                <i class="fa-solid fa-graduation-cap text-blue-600 text-lg"></i>
-                <h4 class="font-bold text-base md:text-lg text-gray-900">Học vấn</h4>
-              </div>
-              
-              <div class="space-y-4">
-                <div v-for="(edu, i) in candidate?.education" :key="i" class="bg-slate-50 border border-gray-100 rounded-xl p-4 md:p-5 relative overflow-hidden">
-                  <i class="fa-solid fa-building-columns absolute -right-4 -bottom-4 text-[80px] text-gray-200/50 z-0"></i>
-                  
-                  <div class="relative z-10">
-                    <h5 class="font-bold text-base md:text-lg text-gray-900 mb-1">{{ edu.major }} <span v-if="edu.degree">({{ edu.degree }})</span></h5>
-                    <p class="text-gray-600 font-semibold text-sm md:text-base mb-4">{{ edu.institution }}</p>
-                    
-                    <div class="flex flex-wrap justify-between items-center border-t border-gray-200 border-dashed pt-3 gap-2">
-                      <div class="flex items-center gap-2 text-gray-500 text-xs md:text-sm font-medium">
-                        <i class="fa-regular fa-calendar"></i>
-                        <span>{{ edu.startDate }} - {{ edu.endDate || 'Hiện tại' }}</span>
-                      </div>
-                      <span v-if="edu.gpa" class="bg-green-50 text-green-600 border border-green-100 px-2.5 py-1 rounded-md text-xs md:text-sm font-bold tracking-wide">
-                        GPA: {{ edu.gpa }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="candidate?.projects?.length" class="bg-white border rounded-2xl p-4 md:p-5">
-              <div class="flex items-center gap-2.5 mb-4">
-                <i class="fa-solid fa-folder-open text-blue-600 text-lg"></i>
-                <h4 class="font-bold text-base md:text-lg text-gray-900">Dự án tham gia</h4>
-              </div>
-              
-              <div class="space-y-4">
-                <div v-for="(project, i) in candidate?.projects" :key="i" class="border border-gray-200 rounded-xl p-4 md:p-5">
-                  <div class="flex justify-between items-start mb-2">
-                    <h5 class="font-bold text-base text-gray-900">{{ project.projectName }}</h5>
-                    <a v-if="project.link" :href="project.link" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1">
-                      <i class="fa-solid fa-link"></i> Link
-                    </a>
-                  </div>
-                  <p class="text-sm font-semibold text-gray-600 mb-2">Vai trò: {{ project.role }}</p>
-                  <p v-if="project.description" class="text-sm text-gray-700 mb-3">{{ project.description }}</p>
-                  
-                  <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-100">
-                    <span v-for="(tech, j) in project.technologies" :key="j" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-medium">
-                      {{ tech }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </transition>
+    <div class="p-4">
+      <ResumeDetail :id="selectedCvId" />
+    </div>
+  </div>
+</Transition>
+  </div>
+</Transition>
+     
     </Teleport>
+    
   
     <Notify  
       v-if="showNotify" 
