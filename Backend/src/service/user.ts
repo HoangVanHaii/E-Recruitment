@@ -63,12 +63,17 @@ export const getProfileWithCache = async (userId: number) => {
 };
 export const getProfile = async (userId: number) => {
     const query = `
-            SELECT CandidateId as ProfileID, FullName as Name, AvatarUrl as ImgUrl FROM candidates WHERE CandidateID = ?
-            UNION
-            SELECT e.EmployerID as ProfileID, c.CompanyName as Name, c.LogoUrl as ImgUrl
-            FROM employers e 
-            JOIN companies c ON e.CompanyID = c.CompanyID
-            WHERE e.EmployerID = ?`;
+        SELECT c.CandidateId as ProfileID, c.FullName as Name, c.AvatarUrl as ImgUrl, u.Email 
+        FROM candidates c
+        JOIN users u ON c.CandidateID = u.UserID
+        WHERE c.CandidateID = ?
+        UNION
+        SELECT e.EmployerID as ProfileID, comp.CompanyName as Name, comp.LogoUrl as ImgUrl, u.Email
+        FROM employers e 
+        JOIN companies comp ON e.CompanyID = comp.CompanyID
+        JOIN users u ON e.EmployerID = u.UserID
+        WHERE e.EmployerID = ?
+    `;
     const [rows]: any = await pool.query(query, [userId, userId]);
     return rows[0] as IProfile;
 };

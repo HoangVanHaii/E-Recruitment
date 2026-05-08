@@ -1,4 +1,4 @@
-import { body,param,query } from "express-validator";
+import { body, param, query } from "express-validator";
 
 export const upsertProfileValidation = [
     body('FullName')
@@ -17,15 +17,21 @@ export const upsertProfileValidation = [
     
     body('Address')
         .optional()
-        .trim(),
-    
-    body('ExperienceYears')
-        .optional({ checkFalsy: true })
-        .isInt({ min: 0 }).withMessage("Số năm kinh nghiệm phải là số nguyên (lớn hơn hoặc bằng 0)"),
-    
-    body('Education')
+        .trim()
+];
+
+export const updateMasterProfileValidation = [
+    body('experience')
         .optional()
-        .trim(),
+        .isArray().withMessage("Kinh nghiệm làm việc phải là một danh sách (Array)"),
+    
+    body('education')
+        .optional()
+        .isArray().withMessage("Trình độ học vấn phải là một danh sách (Array)"),
+        
+    body('projects')
+        .optional()
+        .isArray().withMessage("Dự án tham gia phải là một danh sách (Array)")
 ];
 
 export const analyzeSkillsTextValidation = [

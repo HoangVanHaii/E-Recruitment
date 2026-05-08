@@ -17,17 +17,15 @@ export const buildResumeValidation = [
         .trim()
         .notEmpty().withMessage("Vui lòng điền title!")
         .isLength({ min: 10, max: 255 }).withMessage("Title phải từ 10 đến 255 ký tự!"),
+
+    body('templateId')
+        .optional()
+        .isInt({ min: 1 }).withMessage("Mã giao diện (TemplateID) không hợp lệ, phải là số nguyên dương!")
+        .toInt(),
         
     body('summary')
         .optional()
         .trim(),
-        
-    body('AvatarUrl').custom((value, { req }) => {
-            if (!req.file) {
-                throw new Error('Vui lòng upload ảnh đại diện cho CV!');
-            }
-            return true;
-        }),
 
     // 2. Thêm customSanitizer vào trước các field mảng
     body('skills')

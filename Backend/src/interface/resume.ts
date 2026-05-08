@@ -19,6 +19,7 @@ export interface iResumeList {
 }
 export interface iResumeDetail extends Document {
     resumeId: number;
+    templateId?: number;
     // candidateId: number;    
     title?: string;         
     summary?: string;

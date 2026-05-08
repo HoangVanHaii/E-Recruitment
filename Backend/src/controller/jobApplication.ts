@@ -71,7 +71,7 @@ export const getSubmittedApplications = async (req: Request, res: Response, next
     try {
         const CandidateID = req.user!.id;
         const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10; 
+        const limit = Number(req.query.limit) || 6; 
         const cacheKey = `application:submitted:candidate:${CandidateID}:page:${page}:limit:${limit}`;
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {

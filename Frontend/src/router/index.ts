@@ -12,6 +12,8 @@ import RegisterSectionView from '../views/RegisterSectionView.vue'
 import CreateResumeView from '../views/CreateResumeView.vue'
 import MainLayout from '../components/MainLayout.vue'
 import FooterLayout from '../components/FooterLayout.vue'
+import CandidateProfileView from '../views/CandidateProfileView.vue'
+import ResumeDetailView from '../views/ResumeDetailView.vue'
 
 import SidebarEmployer from '../components/SidebarEmployer.vue'
 
@@ -63,6 +65,10 @@ const routes: Array<RouteRecordRaw> = [
             { path: 'home', name: 'home', component: HomeView },
             { path: 'login-section', name: 'login-section', component: LoginSectionView },
             { path: 'register-section', name: 'register-section', component: RegisterSectionView },
+            { path: 'register-employer', name: 'register-employer', component: RegisterEmployer },
+            { path: 'create-resume', name: 'create-resume', component: CreateResumeView },
+            { path: 'candidate-profile', name: 'candidate-profile', component: CandidateProfileView },
+            { path: 'resume/detail/:id', name: 'resume-detail', component: ResumeDetailView }
         ]
     },
 

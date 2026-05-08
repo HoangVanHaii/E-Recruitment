@@ -1,19 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { iResumeDetail } from '../interface/resume';
+import { iCandidateDetail } from '../interface/candidate';
 
-const ResumeDetailSchema: Schema = new Schema({
-    resumeId: { type: Number, required: true, index: true, unique: true },
-    templateId: { type: Number, default: 1 },
-    // candidateId: { type: Number, required: true, index: true }, 
-    title: { type: String, required: true },
-    summary: { type: String },
-    AvatarUrl: { type: String },
-    skills: [{ 
-        skillId: { type: Number },
-        skillName: { type: String, required: true },
-        level: { type: String }
-    }], 
-    
+const CandidateDetailSchema: Schema = new Schema({
+    candidateId: { type: Number, required: true, index: true, unique: true }, 
     experience: [{
         companyName: { type: String, required: true },
         position: { type: String, required: true },
@@ -22,7 +11,6 @@ const ResumeDetailSchema: Schema = new Schema({
         isCurrent: { type: Boolean, default: false },
         description: { type: String }
     }],
-    
     education: [{
         institution: { type: String, required: true },
         degree: { type: String, required: true },
@@ -31,7 +19,6 @@ const ResumeDetailSchema: Schema = new Schema({
         endDate: { type: Date },
         gpa: { type: String }
     }],
-    
     projects: [{
         projectName: { type: String, required: true },
         role: { type: String, required: true },
@@ -43,4 +30,4 @@ const ResumeDetailSchema: Schema = new Schema({
     timestamps: true
 });
 
-export default mongoose.model<iResumeDetail>('ResumeDetail', ResumeDetailSchema);
+export default mongoose.model<iCandidateDetail>('CandidateDetail', CandidateDetailSchema);

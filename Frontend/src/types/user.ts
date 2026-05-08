@@ -10,4 +10,5 @@ export interface IProfile {
     ProfileID: number;
     Name: string;
     ImgUrl?: string;
+    Email?: string; 
 }

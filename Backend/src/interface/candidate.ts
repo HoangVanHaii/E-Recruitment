@@ -11,3 +11,13 @@ export interface Candidate {
     Email?: string;
     Status?: string;
 }
+
+export interface iCandidateDetail extends Document {
+    candidateId: number;
+    experience: [];
+    education: [];
+    projects: [];
+    CreatedAt?: string;
+    Email?: string;
+    Status?: string;
+}
