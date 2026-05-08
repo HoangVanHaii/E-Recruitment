@@ -19,6 +19,7 @@ export interface IUpdateCompany{
     LogoUrl?: string;
     ContactEmail?: string;
     City?: string;
+    Position?: string;
     BusinessLicenseUrl?: string;
 }
 export interface ICompanyResponse{
@@ -39,6 +40,7 @@ export interface ICompanyDetailResponse {
     BusinessLicenseUrl: string;
     ContactEmail?: string;
     City?: string;
+    Position?: string;  
     Status: boolean;
     CreatedAt: Date;
     UpdatedAt: Date;

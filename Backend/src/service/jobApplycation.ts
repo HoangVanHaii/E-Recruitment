@@ -314,3 +314,92 @@ export const getJobIdByApplicationId = async (ApplicationID: number): Promise<nu
   
     return rows[0].JobID;
 };
+
+export const getChartStats = async (userId: number, type: string) => {
+  
+    const [companyRows]: any = await pool.query(
+        "SELECT CompanyID FROM Companies WHERE CreatedBy = ?",
+        [userId]
+    );
+    if (companyRows.length === 0) {
+        throw new AppError("Bạn không có công ty", 404);
+    }
+  
+    const companyId = companyRows[0].CompanyID;
+  
+    let categories: string[] = [];
+    let data: number[] = [];
+  
+    if (type === 'week') {
+        const [rows]: any = await pool.query(`
+            SELECT 
+            DAYOFWEEK(ja.CreatedAt) as day,
+            COUNT(*) as total
+            FROM JobApplications ja
+            JOIN Jobs j ON ja.JobID = j.JobID
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            WHERE e.CompanyID = ?
+            AND YEARWEEK(ja.CreatedAt, 1) = YEARWEEK(CURRENT_DATE(), 1)
+            GROUP BY day
+        `, [companyId]);
+    
+        const map: any = { 2:0,3:0,4:0,5:0,6:0,7:0,1:0 };
+    
+        rows.forEach((r: any) => {
+            map[r.day] = r.total;
+        });
+    
+        categories = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+        data = [map[2], map[3], map[4], map[5], map[6], map[7], map[1]];
+    }
+  
+    if (type === 'month') {
+  
+        const [rows]: any = await pool.query(`
+            SELECT 
+            WEEK(ja.CreatedAt, 1) - WEEK(DATE_SUB(ja.CreatedAt, INTERVAL DAYOFMONTH(ja.CreatedAt)-1 DAY),1) + 1 as week,
+            COUNT(*) as total
+            FROM JobApplications ja
+            JOIN Jobs j ON ja.JobID = j.JobID
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            WHERE e.CompanyID = ?
+            AND MONTH(ja.CreatedAt) = MONTH(CURRENT_DATE())
+            AND YEAR(ja.CreatedAt) = YEAR(CURRENT_DATE())
+            GROUP BY week
+        `, [companyId]);
+    
+        const map: any = {1:0,2:0,3:0,4:0,5:0};
+    
+        rows.forEach((r: any) => {
+            map[r.week] = r.total;
+        });
+    
+        categories = ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"];
+        data = [map[1], map[2], map[3], map[4]];
+    }
+    if (type === 'year') {
+        const [rows]: any = await pool.query(`
+            SELECT 
+                MONTH(ja.CreatedAt) as month,
+                COUNT(*) as total
+            FROM JobApplications ja
+            JOIN Jobs j ON ja.JobID = j.JobID
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            WHERE e.CompanyID = ?
+                AND YEAR(ja.CreatedAt) = YEAR(CURRENT_DATE())
+            GROUP BY month
+        `, [companyId]);
+    
+        const map: any = {};
+        for (let i = 1; i <= 12; i++) map[i] = 0;
+  
+        rows.forEach((r: any) => {
+            map[r.month] = r.total;
+        });
+  
+        categories = ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"];
+        data = Object.values(map);
+    }
+  
+    return { categories, data };
+};

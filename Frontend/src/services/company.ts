@@ -16,3 +16,11 @@ export const getCompanyOfMe = async () => {
     const response = await api.get('/company/me');
     return response.data;
 }
+export const GetCompanyDetailOfMe = async () => {
+    const response = await api.get(`/company/Detail/ofme`);
+    return response.data;
+}
+export const UpdateCompany = async (companyID: number, formData: FormData) => {
+    const response = await api.put(`/company/${companyID}`, formData);
+    return response.data;
+}

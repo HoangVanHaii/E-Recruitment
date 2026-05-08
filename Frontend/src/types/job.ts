@@ -81,5 +81,6 @@ export interface IListJob {
     CompanyLogo: string;
     Description: string;
     Status: string;
+    ExpiredDate?: Date | string | null;
     ApplicationCount: number;   
 }

@@ -9,8 +9,8 @@ router.post('/', authMiddleware, jobApplycationMiddleware.applyJobValidator, val
 router.put('/:ApplicationID/status', authMiddleware, jobApplycationMiddleware.updateStatusValidator, validateRequest, jobApplycationController.UpdateApplicationStatus);
 router.get('/ofme', authMiddleware, jobApplycationController.getSubmittedApplications);
 router.get('/job/:JobID', authMiddleware, isEmployer, jobApplycationMiddleware.JobIDValidator, validateRequest, jobApplycationController.getListApplicationByJobId);
+router.get('/stats', authMiddleware, isEmployer, jobApplycationController.getChartStatsController);
 router.get('/:ApplicationID', authMiddleware, jobApplycationMiddleware.ApplicationIDValidator, jobApplycationController.getApplicationDetail);
-
 
 
 export default router;

@@ -59,11 +59,11 @@ onUnmounted(() => {
     if (scrollTimer) clearTimeout(scrollTimer);
 });
 
-const handleLogin = () => router.push({ name: 'login' });
-const handleRegister = () => router.push({ name: 'register' });
+const handleLogin = () => router.push({ name: 'login-section' });
+const handleRegister = () => router.push({ name: 'register-section' });
 const handleCreateJob = () => {
     if (!authStore.isLogin) {
-        router.push({ name: 'login' });
+        router.push({ name: 'login-section' });
         return;
     }
     router.push({ name: 'CreateJob' });

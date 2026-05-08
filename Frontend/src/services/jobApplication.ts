@@ -15,3 +15,11 @@ export const updateStatusApplication = async (applicationID: number, status: str
     const response = await api.put(`/job-application/${applicationID}/status`, { Status: status });
     return response.data;
 }
+export const getChartStats = async (type: string) => {
+    const response = await api.get('/job-application/stats', { params: { type } });
+    return response.data;
+}
+export const ApplyJob = async (JobID: number, ResumeID: number) => {
+    const response = await api.post(`/job-application/`, {JobID, ResumeID});
+    return response.data;
+}

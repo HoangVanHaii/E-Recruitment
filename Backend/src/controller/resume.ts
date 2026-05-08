@@ -189,3 +189,16 @@ export const getResumeDetailByEmployer = async (req: Request, res: Response, nex
         next(error);
     }
 };
+export const getListResumes = async (req: Request, res: Response, next: NextFunction) => {  
+    try {
+        const candidateId = req.user!.id;
+        const resumes = await resumeService.getListResume(candidateId);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy danh sách CV thành công!",
+            data: resumes
+        });
+    } catch (error) {
+        next(error);
+    }
+}

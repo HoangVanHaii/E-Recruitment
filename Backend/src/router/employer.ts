@@ -6,6 +6,9 @@ import * as employerController from '../controller/employer'
 const router = Router();
 
 router.put('/:EmployerID/status', authMiddleware, isEmployer, employerMiddleware.updateStatus, validateRequest, employerController.UpdateStatusEmployer);
+router.get('/status', authMiddleware, isEmployer, employerController.GetPendingEmployers);
+router.get('/dashboard-stats', authMiddleware, isEmployer, employerController.getDashboardStats);
+
 router.get('/pending', authMiddleware, isEmployer, employerController.GetPendingEmployers);
 router.get('/logo-top-employers', employerController.getLogoTopEmployers);
 router.get('/top-employers', authMiddleware, isAdmin, employerController.getTopEmployers);

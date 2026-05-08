@@ -148,3 +148,19 @@ export const getApplicationDetail = async (req: Request, res: Response, next: Ne
         next(error);
     }
 }
+
+export const getChartStatsController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.id;
+        const type = req.query.type as string || 'week';
+        const data = await JobApplicationService.getChartStats(userId, type);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy thống kê ứng tuyển thành công",
+            data: data
+        });
+  
+    } catch (err) {
+        next(err);
+    }
+};

@@ -152,17 +152,16 @@ export const useJobStore = defineStore('job',() => {
         }
 
     }
-    const getJobOfMeStore = async (page: number = 1, limit: number = 6) => {
+    const getJobOfMeStore = async (page: number = 1, limit: number = 6, status: string = "All") => {
         try {
             error.value = false;
             loading.value = true;
             message.value = '';
-            const data = await getJobOfMe(page, limit);
+            const data = await getJobOfMe(page, limit, status);
             const jobs = data.data || [];
             if (page > 1 && jobs.length === 0) {
                 hasNextPage.value = false;
                 message.value = 'Không còn công việc nào nữa';
-                console.error('No more jobs to fetch for getJobOfMe');
                 return false;
             }
             listJobMe.value = jobs || [];
