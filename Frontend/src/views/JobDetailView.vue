@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Header from '../components/Header.vue';
 import SearchBar from '../components/SearchBar.vue';
 import Chat from '../components/Chat.vue';
 import ChatWindow from '../components/ChatWindow.vue';

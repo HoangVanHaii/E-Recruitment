@@ -2,14 +2,11 @@
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-
 const goBack = () => {
-    // Quay lại trang trước đó
     router.back();
 };
 
 const goHome = () => {
-    // Trở về trang Dashboard chính
     router.push({ name: 'admin-dashboard' }); 
 };
 </script>

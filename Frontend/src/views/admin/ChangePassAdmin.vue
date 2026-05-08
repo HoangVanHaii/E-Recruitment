@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
 
-// ── STATE ──
 const isMobileMenuOpen = ref(false);
 const isLoading = ref(false);
 const errorMessage = ref('');
@@ -13,7 +12,6 @@ const form = ref({
     confirmPassword: ''
 });
 
-// Toggle Show/Hide Password
 const showCurrent = ref(false);
 const showNew = ref(false);
 const showConfirm = ref(false);
@@ -38,13 +36,10 @@ const changePassword = () => {
 
     isLoading.value = true;
     
-    // Giả lập API Call
     setTimeout(() => {
         isLoading.value = false;
-        // Chỗ này bạn có thể gọi component Notify báo thành công
         alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'); 
         
-        // Reset form
         form.value = { currentPassword: '', newPassword: '', confirmPassword: '' };
         showCurrent.value = false;
         showNew.value = false;

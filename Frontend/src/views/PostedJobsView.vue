@@ -1,3 +1,158 @@
+
+
+<script setup lang="ts">
+import SidebarEmployer from '../components/SidebarEmployer.vue';
+import JobDetail from '../components/JobDetail.vue';
+import EditJobDetail from '../components/EditJobDetail.vue';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useJobStore } from '../stores/job';
+import { useRouter } from 'vue-router';
+import type { IListJob } from '../types/job';
+
+
+const router = useRouter();
+const useJob = useJobStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const ITEMS_PER_PAGE = 3;
+const currentPage = ref(1);
+
+onMounted(() => { fetchJobs(); });
+
+const jobs = computed<IListJob[]>(() => useJob.listJobMe || []);
+const jobStats = ref<Record<number, number>>({}); 
+
+watch(jobs, (newJobs) => {
+    newJobs.forEach(job => {
+        if (job.JobID && !jobStats.value[job.JobID]) {
+            if(job.Status === 'Pending') {
+                jobStats.value[job.JobID] = 0;
+            } else
+            {
+                jobStats.value[job.JobID] = (job.ApplicationCount || 0) + Math.floor(Math.random() * 50);
+            }
+        }
+    });
+}, { immediate: true, deep: true });
+
+const checkIsExpired = (job: IListJob): boolean => {
+    if (!job.ExpiredDate) return false;
+    const now = new Date();
+    const expireTime = new Date(job.ExpiredDate);
+    return now > expireTime;
+};
+
+const getStatusLabel = (job: IListJob) => {
+    if (checkIsExpired(job)) return 'Hết hạn';
+    switch (job.Status) {
+        case 'Approved': return 'Đang đăng';
+        case 'Pending': return 'Chờ duyệt';
+        case 'Rejected': return 'Từ chối';
+        default: return job.Status;
+    }
+};
+
+const getStatusBadgeClass = (job: IListJob) => {
+    if (checkIsExpired(job)) return 'bg-slate-100 text-slate-500 border-slate-200';
+    if (job.Status === 'Approved') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    if (job.Status === 'Pending') return 'bg-sky-50 text-sky-600 border-sky-100';
+    if (job.Status === 'Rejected') return 'bg-red-50 text-red-600 border-red-100';
+    return 'bg-slate-50 text-slate-600 border-slate-200';
+};
+
+const getStatusLineColor = (job: IListJob) => {
+    if (checkIsExpired(job)) return 'from-slate-400 to-slate-500';
+    if (job.Status === 'Approved') return 'from-emerald-400 to-emerald-500';
+    if (job.Status === 'Pending') return 'from-sky-400 to-sky-500';
+    if (job.Status === 'Rejected') return 'from-red-400 to-red-500';
+    return 'from-blue-400 to-blue-500';
+};
+
+const tabs = [
+    { label: 'Tất cả', value: 'All' },
+    { label: 'Đang đăng', value: 'Approved' },
+    { label: 'Chờ duyệt', value: 'Pending' },
+    { label: 'Bị từ chối', value: 'Rejected' },
+    { label: 'Hết hạn', value: 'Expired' }
+];
+const currentTab = ref('All');
+const currentSort = ref<'newest' | 'oldest'>('newest');
+const currentSortLabel = ref('Mới nhất');
+const isSortOpen = ref(false);
+const sortOptions = [{ label: 'Mới nhất', value: 'newest' }, { label: 'Cũ nhất', value: 'oldest' }];
+
+const fetchJobs = async () => {
+    await useJob.getJobOfMeStore(currentPage.value, ITEMS_PER_PAGE, currentTab.value);
+};
+
+const selectSort = (option: any) => {
+    currentSort.value = option.value;
+    currentSortLabel.value = option.label;
+    isSortOpen.value = false;
+    currentPage.value = 1;
+    fetchJobs();
+};
+
+const handleTabChange = (val: string) => {
+    currentTab.value = val;
+    currentPage.value = 1; 
+    fetchJobs();
+};
+
+const paginatedJobs = computed(() => {
+    const list = [...jobs.value];
+    list.sort((a, b) => {
+        const dA = new Date(a.CreatedAt || 0).getTime();
+        const dB = new Date(b.CreatedAt || 0).getTime();
+        return currentSort.value === 'newest' ? dB - dA : dA - dB;
+    });
+    return list;
+});
+
+const nextPage = async () => { if (useJob.hasNextPage) { currentPage.value++; await fetchJobs(); scrollToTop(); } };
+const prevPage = async () => { if (currentPage.value > 1) { currentPage.value--; await fetchJobs(); scrollToTop(); } };
+const scrollToTop = () => { document.querySelector('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+const formatDate = (d?: any) => d ? new Intl.DateTimeFormat('vi-VN').format(new Date(d)) : '';
+
+const isDetailModalOpen = ref(false);
+const selectedJobId = ref<number | null>(null);
+const openJobDetail = (id: number | null) => { selectedJobId.value = id; isDetailModalOpen.value = true; };
+
+const isEditModalOpen = ref(false);
+const selectedEditJobId = ref<number | null>(null);
+const openEditModal = (id: number | null) => { selectedEditJobId.value = id; isEditModalOpen.value = true; };
+
+const isDeleteModalOpen = ref(false);
+const jobToDeleteId = ref<number | null>(null);
+const openDeleteModal = (id: number | null) => { jobToDeleteId.value = id; isDeleteModalOpen.value = true; };
+const closeDeleteModal = () => { isDeleteModalOpen.value = false; jobToDeleteId.value = null; };
+
+const handleConfirmDelete = async () => {
+    if (!jobToDeleteId.value) return;
+    await useJob.deleteJobStore(jobToDeleteId.value);
+    if (!useJob.error) {
+        showNotify.value = true;
+        isSuccessNotify.value = true;
+        messageNotify.value = "Tin tuyển dụng đã hết hạn!";
+        await fetchJobs();
+    }
+    closeDeleteModal();
+};
+
+const handleSave = async () => {
+    showNotify.value = true;
+    isSuccessNotify.value = true;
+    messageNotify.value = "Cập nhật thành công!";
+    isEditModalOpen.value = false;
+    await fetchJobs();
+};
+</script>
 <template>
     <Notify  
         v-if="showNotify" 
@@ -179,161 +334,6 @@
         </transition>
     </Teleport>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-import { useJobStore } from '../stores/job';
-import { useRouter } from 'vue-router';
-import JobDetail from '../components/JobDetail.vue';
-import EditJobDetail from '../components/EditJobDetail.vue';
-import type { IListJob } from '../types/job';
-
-
-const router = useRouter();
-const useJob = useJobStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const ITEMS_PER_PAGE = 3;
-const currentPage = ref(1);
-
-onMounted(() => { fetchJobs(); });
-
-const jobs = computed<IListJob[]>(() => useJob.listJobMe || []);
-const jobStats = ref<Record<number, number>>({}); 
-
-watch(jobs, (newJobs) => {
-    newJobs.forEach(job => {
-        if (job.JobID && !jobStats.value[job.JobID]) {
-            if(job.Status === 'Pending') {
-                jobStats.value[job.JobID] = 0;
-            } else
-            {
-                jobStats.value[job.JobID] = (job.ApplicationCount || 0) + Math.floor(Math.random() * 50);
-            }
-        }
-    });
-}, { immediate: true, deep: true });
-
-const checkIsExpired = (job: IListJob): boolean => {
-    if (!job.ExpiredDate) return false;
-    const now = new Date();
-    const expireTime = new Date(job.ExpiredDate);
-    return now > expireTime;
-};
-
-const getStatusLabel = (job: IListJob) => {
-    if (checkIsExpired(job)) return 'Hết hạn';
-    switch (job.Status) {
-        case 'Approved': return 'Đang đăng';
-        case 'Pending': return 'Chờ duyệt';
-        case 'Rejected': return 'Từ chối';
-        default: return job.Status;
-    }
-};
-
-const getStatusBadgeClass = (job: IListJob) => {
-    if (checkIsExpired(job)) return 'bg-slate-100 text-slate-500 border-slate-200';
-    if (job.Status === 'Approved') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    if (job.Status === 'Pending') return 'bg-sky-50 text-sky-600 border-sky-100';
-    if (job.Status === 'Rejected') return 'bg-red-50 text-red-600 border-red-100';
-    return 'bg-slate-50 text-slate-600 border-slate-200';
-};
-
-const getStatusLineColor = (job: IListJob) => {
-    if (checkIsExpired(job)) return 'from-slate-400 to-slate-500';
-    if (job.Status === 'Approved') return 'from-emerald-400 to-emerald-500';
-    if (job.Status === 'Pending') return 'from-sky-400 to-sky-500';
-    if (job.Status === 'Rejected') return 'from-red-400 to-red-500';
-    return 'from-blue-400 to-blue-500';
-};
-
-const tabs = [
-    { label: 'Tất cả', value: 'All' },
-    { label: 'Đang đăng', value: 'Approved' },
-    { label: 'Chờ duyệt', value: 'Pending' },
-    { label: 'Bị từ chối', value: 'Rejected' },
-    { label: 'Hết hạn', value: 'Expired' }
-];
-const currentTab = ref('All');
-const currentSort = ref<'newest' | 'oldest'>('newest');
-const currentSortLabel = ref('Mới nhất');
-const isSortOpen = ref(false);
-const sortOptions = [{ label: 'Mới nhất', value: 'newest' }, { label: 'Cũ nhất', value: 'oldest' }];
-
-const fetchJobs = async () => {
-    await useJob.getJobOfMeStore(currentPage.value, ITEMS_PER_PAGE, currentTab.value);
-};
-
-const selectSort = (option: any) => {
-    currentSort.value = option.value;
-    currentSortLabel.value = option.label;
-    isSortOpen.value = false;
-    currentPage.value = 1;
-    fetchJobs();
-};
-
-const handleTabChange = (val: string) => {
-    currentTab.value = val;
-    currentPage.value = 1; 
-    fetchJobs();
-};
-
-const paginatedJobs = computed(() => {
-    const list = [...jobs.value];
-    list.sort((a, b) => {
-        const dA = new Date(a.CreatedAt || 0).getTime();
-        const dB = new Date(b.CreatedAt || 0).getTime();
-        return currentSort.value === 'newest' ? dB - dA : dA - dB;
-    });
-    return list;
-});
-
-const nextPage = async () => { if (useJob.hasNextPage) { currentPage.value++; await fetchJobs(); scrollToTop(); } };
-const prevPage = async () => { if (currentPage.value > 1) { currentPage.value--; await fetchJobs(); scrollToTop(); } };
-const scrollToTop = () => { document.querySelector('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' }); };
-
-const formatDate = (d?: any) => d ? new Intl.DateTimeFormat('vi-VN').format(new Date(d)) : '';
-
-const isDetailModalOpen = ref(false);
-const selectedJobId = ref<number | null>(null);
-const openJobDetail = (id: number | null) => { selectedJobId.value = id; isDetailModalOpen.value = true; };
-
-const isEditModalOpen = ref(false);
-const selectedEditJobId = ref<number | null>(null);
-const openEditModal = (id: number | null) => { selectedEditJobId.value = id; isEditModalOpen.value = true; };
-
-const isDeleteModalOpen = ref(false);
-const jobToDeleteId = ref<number | null>(null);
-const openDeleteModal = (id: number | null) => { jobToDeleteId.value = id; isDeleteModalOpen.value = true; };
-const closeDeleteModal = () => { isDeleteModalOpen.value = false; jobToDeleteId.value = null; };
-
-const handleConfirmDelete = async () => {
-    if (!jobToDeleteId.value) return;
-    await useJob.deleteJobStore(jobToDeleteId.value);
-    if (!useJob.error) {
-        showNotify.value = true;
-        isSuccessNotify.value = true;
-        messageNotify.value = "Tin tuyển dụng đã hết hạn!";
-        await fetchJobs();
-    }
-    closeDeleteModal();
-};
-
-const handleSave = async () => {
-    showNotify.value = true;
-    isSuccessNotify.value = true;
-    messageNotify.value = "Cập nhật thành công!";
-    isEditModalOpen.value = false;
-    await fetchJobs();
-};
-</script>
-
 <style scoped>
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .overflow-y-auto::-webkit-scrollbar { width: 6px; }

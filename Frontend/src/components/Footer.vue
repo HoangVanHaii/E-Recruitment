@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import logo from '../assets/logo1.jpg';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 
 const openMenu = ref<number | null>(null);
 const toggleMenu = (index: number) => {

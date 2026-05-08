@@ -2,12 +2,10 @@
 import { ref } from 'vue';
 import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
 
-// ── STATE ──
 const isMobileMenuOpen = ref(false);
 const isEditing = ref(false);
 const isLoading = ref(false);
 
-// ── MOCK DATA PROFILE ──
 const originalProfile = {
     id: 'ADM-001',
     fullName: 'Super Admin',
@@ -20,16 +18,13 @@ const originalProfile = {
 
 const profileForm = ref({ ...originalProfile });
 
-// ── XỬ LÝ LƯU TRỮ ──
 const saveProfile = () => {
     isLoading.value = true;
     
-    // Giả lập API Call
     setTimeout(() => {
         Object.assign(originalProfile, profileForm.value);
         isLoading.value = false;
         isEditing.value = false;
-        // Chỗ này bạn có thể gọi component Notify báo thành công
         alert('Cập nhật thông tin thành công!'); 
     }, 800);
 };

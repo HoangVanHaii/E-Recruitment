@@ -54,7 +54,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
 </script>
 
 <template>
-    <!-- Drawer backdrop (Đã thêm khoá scroll) -->
     <transition name="fade-backdrop">
         <div
             v-if="isOpen"
@@ -67,15 +66,13 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
     
     <loading v-if="jobStore.loading" />
     
-    <!-- Drawer panel -->
     <transition name="drawer-slide">
         <div
             v-if="isOpen"
             class="fixed right-0 top-0 z-50 h-screen w-full sm:max-w-[580px] bg-white shadow-2xl flex flex-col"
             @click.stop
         >
-            <!-- Header -->
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+ư            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-xl bg-[#eef0fd] flex items-center justify-center">
                         <i class="fas fa-briefcase text-[#4c5bd4] text-sm"></i>
@@ -93,13 +90,11 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                 </button>
             </div>
 
-            <!-- Loading -->
             <div v-if="isLoading" class="flex-1 flex flex-col items-center justify-center gap-3">
                 <div class="loader"></div>
                 <p class="text-sm text-slate-400 font-medium">Đang tải dữ liệu...</p>
             </div>
 
-            <!-- Error -->
             <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center gap-3 px-8 text-center">
                 <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
                     <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
@@ -111,9 +106,7 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                 </button>
             </div>
 
-            <!-- Content -->
             <template v-else-if="detail">
-                <!-- Company hero -->
                 <div class="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
                     <div class="flex items-start gap-4">
                         <div class="w-16 h-16 rounded-2xl border border-slate-100 bg-white shadow-sm p-1.5 shrink-0 overflow-hidden">
@@ -134,7 +127,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                         </div>
                     </div>
 
-                    <!-- Quick stats (Đã chuyển sang Tailwind class) -->
                     <div class="grid grid-cols-2 gap-2 mt-4">
                         <div class="flex flex-col gap-0.5 bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-3">
                             <i class="fas fa-money-bill-wave text-emerald-500 text-[11px]"></i>
@@ -159,7 +151,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                     </div>
                 </div>
 
-                <!-- Tabs -->
                 <div class="flex border-b border-slate-100 shrink-0 px-2">
                     <button
                         v-for="tab in [
@@ -181,10 +172,8 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                     </button>
                 </div>
 
-                <!-- Tab content (Đã thêm overscroll-contain) -->
                 <div class="flex-1 overflow-y-auto custom-scrollbar overscroll-contain">
 
-                    <!-- Tab: Thông tin -->
                     <div v-if="activeTab === 'info'" class="p-6 space-y-5">
                         <section>
                             <h4 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-600 mb-2.5">
@@ -225,7 +214,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                         </section>
                     </div>
 
-                    <!-- Tab: Yêu cầu -->
                     <div v-if="activeTab === 'requirements'" class="p-6">
                         <h4 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-600 mb-2.5">
                             <i class="fas fa-list-check text-[#4c5bd4]"></i> Yêu cầu ứng viên
@@ -233,7 +221,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                         <p class="text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap">{{ detail.Requirements }}</p>
                     </div>
 
-                    <!-- Tab: Quy trình -->
                     <div v-if="activeTab === 'process'" class="p-6">
                         <div v-if="detail.InterviewProcess?.length">
                             <h4 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-600 mb-2.5">
@@ -245,7 +232,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                                     :key="round.roundOrder"
                                     class="relative flex gap-4 pb-6 last:pb-0"
                                 >
-                                    <!-- Timeline line -->
                                     <div class="flex flex-col items-center shrink-0">
                                         <div class="w-8 h-8 rounded-full bg-[#4c5bd4] flex items-center justify-center text-white text-[11px] font-black shrink-0 z-10 shadow-md">
                                             {{ round.roundOrder }}
@@ -266,7 +252,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
                     </div>
                 </div>
 
-                <!-- Footer actions -->
                 <div class="shrink-0 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
                     <div v-if="detail.Status === 'Pending'" class="flex gap-2">
                         <button
@@ -293,7 +278,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
 </template>
 
 <style scoped>
-/* ── Transitions ── */
 .fade-backdrop-enter-active, .fade-backdrop-leave-active { transition: opacity 0.25s ease; }
 .fade-backdrop-enter-from, .fade-backdrop-leave-to { opacity: 0; }
 
@@ -301,7 +285,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
 .drawer-slide-leave-active { transition: transform 0.22s cubic-bezier(0.4, 0, 1, 1); }
 .drawer-slide-enter-from, .drawer-slide-leave-to { transform: translateX(100%); }
 
-/* ── Loader ── */
 .loader {
     width: 36px; height: 36px;
     border: 3px solid #eef0fd;
@@ -311,7 +294,6 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string; ic
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Scrollbar ── */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }

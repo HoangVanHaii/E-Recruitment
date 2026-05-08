@@ -20,11 +20,11 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && originalRequest.url.includes('/login')) {
             return Promise.reject(error);
         }
-        if (error.response?.status === 403) {
-            console.error("Bạn không có quyền truy cập!");
-            window.location.href = '/403'; // Điều hướng sang trang 403
-            return Promise.reject(error);
-        }
+        // if (error.response?.status === 403) {
+        //     console.error("Bạn không có quyền truy cập!");
+        //     window.location.href = '/403'; // Điều hướng sang trang 403
+        //     return Promise.reject(error);
+        // }
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {

@@ -1,3 +1,104 @@
+
+<script setup lang="ts">
+import SidebarEmployer from '../components/SidebarEmployer.vue';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+import ApplicationsView from './ApplicationsView.vue';
+import JobDetail from '../components/JobDetail.vue';
+import { useJobStore } from '../stores/job';
+import { ref, computed, onMounted } from 'vue';
+
+const isDetailModalOpen = ref(false);
+const JobId = ref<number | null>(null);
+const openJobDetail = (id: number | null) => { JobId.value = id; isDetailModalOpen.value = true; };
+
+
+const isViewingApplications = ref(false);
+const selectedJobId = ref<number | null>(null);
+const selectedJobTitle = ref<string>('');
+
+const viewApplications = (jobId?: number, jobName?: string) => {
+    if (!jobId) return;
+    selectedJobId.value = jobId;
+    selectedJobTitle.value = jobName || '';
+    isViewingApplications.value = true;
+};
+
+const handleBackToJobs = async () => {
+    isViewingApplications.value = false;
+    selectedJobId.value = null;
+    selectedJobTitle.value = '';
+};
+
+
+const showNotify = ref<Boolean>(false);
+const messageNotify = ref<string>('');
+const isSuccessNotify = ref(true);
+const useJob = useJobStore();
+
+const ITEMS_PER_PAGE = 6;
+const currentPage = ref<number>(1);
+
+const sortOrder = ref('newest');
+
+const fetchJobs = async () => {
+    
+    const hasData = await useJob.getJobOfMeStore(currentPage.value, ITEMS_PER_PAGE);
+    
+    if (!hasData && currentPage.value > 1) {
+        currentPage.value--; 
+        showNotify.value = true;
+        isSuccessNotify.value = false;
+        messageNotify.value = useJob.message || "Đã hiển thị toàn bộ hồ sơ. Không còn trang tiếp theo.";
+    }
+};
+
+onMounted(() => {
+    fetchJobs();
+});
+
+const displayedJobs = computed(() => {
+    let result = [...(useJob.listJobMe || [])];    
+    result.sort((a, b) => {
+        const dateA = new Date(a.CreatedAt || 0).getTime();
+        const dateB = new Date(b.CreatedAt || 0).getTime();
+        return sortOrder.value === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+    
+    return result;
+});
+
+const totalItems = computed(() => {
+    return displayedJobs.value.length; 
+});
+
+
+const scrollToTop = () => {
+    document.querySelector('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const nextPage = async () => {
+    if (useJob.hasNextPage) {
+        currentPage.value++;
+        await fetchJobs();
+        scrollToTop();
+    }
+};
+
+const prevPage = async () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+        await fetchJobs();
+        scrollToTop();
+    }
+};
+
+const formatDate = (date?: Date | string) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+};
+</script>
 <template>
     <Notify  
         v-if="showNotify" 
@@ -168,106 +269,6 @@
         @close="isDetailModalOpen = false" 
     />
 </template>
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-import { useJobStore } from '../stores/job';
-import ApplicationsView from './ApplicationsView.vue';
-import JobDetail from '../components/JobDetail.vue';
-const isDetailModalOpen = ref(false);
-const JobId = ref<number | null>(null);
-const openJobDetail = (id: number | null) => { JobId.value = id; isDetailModalOpen.value = true; };
-
-
-const isViewingApplications = ref(false);
-const selectedJobId = ref<number | null>(null);
-const selectedJobTitle = ref<string>('');
-
-const viewApplications = (jobId?: number, jobName?: string) => {
-    if (!jobId) return;
-    selectedJobId.value = jobId;
-    selectedJobTitle.value = jobName || '';
-    isViewingApplications.value = true;
-};
-
-const handleBackToJobs = async () => {
-    isViewingApplications.value = false;
-    selectedJobId.value = null;
-    selectedJobTitle.value = '';
-};
-
-
-const showNotify = ref<Boolean>(false);
-const messageNotify = ref<string>('');
-const isSuccessNotify = ref(true);
-const useJob = useJobStore();
-
-const ITEMS_PER_PAGE = 6;
-const currentPage = ref<number>(1);
-
-const sortOrder = ref('newest');
-
-const fetchJobs = async () => {
-    
-    const hasData = await useJob.getJobOfMeStore(currentPage.value, ITEMS_PER_PAGE);
-    
-    if (!hasData && currentPage.value > 1) {
-        currentPage.value--; 
-        showNotify.value = true;
-        isSuccessNotify.value = false;
-        messageNotify.value = useJob.message || "Đã hiển thị toàn bộ hồ sơ. Không còn trang tiếp theo.";
-    }
-};
-
-onMounted(() => {
-    fetchJobs();
-});
-
-const displayedJobs = computed(() => {
-    let result = [...(useJob.listJobMe || [])];    
-    result.sort((a, b) => {
-        const dateA = new Date(a.CreatedAt || 0).getTime();
-        const dateB = new Date(b.CreatedAt || 0).getTime();
-        return sortOrder.value === 'newest' ? dateB - dateA : dateA - dateB;
-    });
-    
-    return result;
-});
-
-const totalItems = computed(() => {
-    return displayedJobs.value.length; 
-});
-
-
-const scrollToTop = () => {
-    document.querySelector('.overflow-y-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-const nextPage = async () => {
-    if (useJob.hasNextPage) {
-        currentPage.value++;
-        await fetchJobs();
-        scrollToTop();
-    }
-};
-
-const prevPage = async () => {
-    if (currentPage.value > 1) {
-        currentPage.value--;
-        await fetchJobs();
-        scrollToTop();
-    }
-};
-
-const formatDate = (date?: Date | string) => {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-};
-</script>
-
 <style scoped>
 .fade-content-enter-active, .fade-content-leave-active {
     transition: opacity 0.25s ease, transform 0.25s ease;

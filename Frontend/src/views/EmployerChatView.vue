@@ -1,8 +1,7 @@
-<!-- EmployerChatPage.vue -->
 <script setup lang="ts">
+import SidebarEmployer from '../components/SidebarEmployer.vue';
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { Search, Send, Image as ImageIcon, Smile, Phone, Video, MessageSquareDashed } from 'lucide-vue-next';
-import SidebarEmployer from '../components/SidebarEmployer.vue';
 import { useMessageStore } from '../stores/message';
 import { useAuthStore } from '../stores/auth';
 import { timeAgo } from '../utils/format';
@@ -15,7 +14,6 @@ const newMessage = ref('');
 const messagesContainer = ref<HTMLElement | null>(null);
 const activeChat = ref<any>(null);
 
-// ── Conversations ──
 const filteredChats = computed(() => {
     if (!searchQuery.value) return messageStore.conversations;
     const q = searchQuery.value.toLowerCase();
@@ -32,7 +30,6 @@ const selectChat = async (chat: any) => {
     scrollToBottom();
 };
 
-// ── Messages ──
 const scrollToBottom = async () => {
     await nextTick();
     if (messagesContainer.value) {

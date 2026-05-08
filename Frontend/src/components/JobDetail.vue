@@ -1,3 +1,73 @@
+
+
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { useJobStore } from '../stores/job'; 
+import type { IJobDetail } from '../types/job'; 
+import Notify from './Notify.vue';
+const useJob = useJobStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+
+const props = defineProps<{
+    isOpen: boolean;
+    jobId: number | null;
+}>();
+
+const emit = defineEmits(['close']);
+const job = ref<IJobDetail | null>(null);
+const isLoading = ref(false);
+const error = ref('');
+watch(() => props.isOpen, async (newVal) => {
+    if (newVal && props.jobId) {
+        document.body.style.overflow = 'hidden';
+        job.value = await useJob.getJobDetailStore(props.jobId);
+        console.log(job.value);
+        if(useJob.error) {
+            showNotify.value = true;
+            messageNotify.value = useJob.message || 'Vui lòng thử lại sau.';
+            isSuccessNotify.value = false;
+        }
+        else {
+            showNotify.value = true;
+            messageNotify.value = 'Lấy dữ liệu thành công!';
+            isSuccessNotify.value = true;
+        }
+
+    } else {
+        document.body.style.overflow = '';
+        job.value = null;
+        error.value = '';
+    }
+});
+
+const closeModal = () => {
+    emit('close');
+};
+const formatDate = (date: Date | string) => {
+    if (!date) return '';
+    return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
+};
+
+const formatSalary = (min: number, max: number) => {
+    if (!min && !max) return "Thỏa thuận";
+    const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+    if (min && !max) return `Từ ${formatter.format(min)}`;
+    if (!min && max) return `Lên đến ${formatter.format(max)}`;
+    return `${formatter.format(min)} - ${formatter.format(max)}`;
+};
+
+const getStatusBadgeClass = (status: string) => {
+    const base = "px-3 py-1 rounded-lg text-sm font-bold border";
+    if (status === 'Approved' || status === 'Đang đăng') return `${base} bg-emerald-50 text-emerald-600 border-emerald-100`;
+    if (status === 'Pending' || status === 'Đang chờ duyệt') return `${base} bg-sky-50 text-sky-600 border-sky-100`;
+    if (status === 'Rejected' || status === 'Từ chối') return `${base} bg-red-50 text-red-600 border-red-100`;
+    return `${base} bg-slate-100 text-slate-500 border-slate-200`;
+};
+</script>
 <template>
     <Teleport to="body">
         <transition name="modal-fade">
@@ -158,77 +228,6 @@
         @close="showNotify = false"
     />
 </template>
-
-<script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useJobStore } from '../stores/job'; 
-import type { IJobDetail } from '../types/job'; 
-import Notify from './Notify.vue';
-import { use } from 'apexcharts';
-const useJob = useJobStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-
-const props = defineProps<{
-    isOpen: boolean;
-    jobId: number | null;
-}>();
-
-const emit = defineEmits(['close']);
-const job = ref<IJobDetail | null>(null);
-const isLoading = ref(false);
-const error = ref('');
-watch(() => props.isOpen, async (newVal) => {
-    if (newVal && props.jobId) {
-        document.body.style.overflow = 'hidden';
-        job.value = await useJob.getJobDetailStore(props.jobId);
-        console.log(job.value);
-        if(useJob.error) {
-            showNotify.value = true;
-            messageNotify.value = useJob.message || 'Vui lòng thử lại sau.';
-            isSuccessNotify.value = false;
-        }
-        else {
-            showNotify.value = true;
-            messageNotify.value = 'Lấy dữ liệu thành công!';
-            isSuccessNotify.value = true;
-        }
-
-    } else {
-        document.body.style.overflow = '';
-        job.value = null;
-        error.value = '';
-    }
-});
-
-const closeModal = () => {
-    emit('close');
-};
-const formatDate = (date: Date | string) => {
-    if (!date) return '';
-    return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
-};
-
-const formatSalary = (min: number, max: number) => {
-    if (!min && !max) return "Thỏa thuận";
-    const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-    if (min && !max) return `Từ ${formatter.format(min)}`;
-    if (!min && max) return `Lên đến ${formatter.format(max)}`;
-    return `${formatter.format(min)} - ${formatter.format(max)}`;
-};
-
-const getStatusBadgeClass = (status: string) => {
-    const base = "px-3 py-1 rounded-lg text-sm font-bold border";
-    if (status === 'Approved' || status === 'Đang đăng') return `${base} bg-emerald-50 text-emerald-600 border-emerald-100`;
-    if (status === 'Pending' || status === 'Đang chờ duyệt') return `${base} bg-sky-50 text-sky-600 border-sky-100`;
-    if (status === 'Rejected' || status === 'Từ chối') return `${base} bg-red-50 text-red-600 border-red-100`;
-    return `${base} bg-slate-100 text-slate-500 border-slate-200`;
-};
-</script>
-
 <style scoped>
 .modal-fade-enter-active,
 .modal-fade-leave-active {

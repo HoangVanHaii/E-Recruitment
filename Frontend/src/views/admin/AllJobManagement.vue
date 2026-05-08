@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
+import Notify from '../../components/Notify.vue';
 import JobDetail from '../../components/admin/JobDetail.vue';
-import type { IJob } from '../../types/job';
+import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useJobStore } from '../../stores/job';
 import { formatDate, formatSalary } from '../../utils/format';
-import Notify from '../../components/Notify.vue';
 import { useRoute } from 'vue-router';
-const route = useRoute();
+import type { IJob } from '../../types/job';
 
+const route = useRoute();
 const jobStore = useJobStore();
 
 const jobs = ref<IJob[]>([]);
@@ -52,7 +52,7 @@ watch(() => route.query.status, (newStatus) => {
         statusFilter.value = 'All';
     }
 });
-// ── DRAWER ──
+
 const isDrawerOpen = ref(false);
 const selectedJobId = ref<number | null>(null);
 
@@ -65,7 +65,6 @@ const closeDrawer = () => {
     setTimeout(() => { selectedJobId.value = null; }, 300);
 };
 
-// ── ACTION MODAL ──
 const isActionModalOpen = ref(false);
 const jobToAction = ref<IJob | null>(null);
 const actionType = ref<'Approve' | 'Reject'>('Approve');
@@ -120,7 +119,6 @@ const statCounts = computed(() => ({
     rejected: jobStore.listJobForAdmin.filter(j => j.Status === 'Rejected').length,
 }));
 
-// ── TAILWIND HELPERS ──
 const getPillClasses = (key: string, isActive: boolean) => {
     const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-[1.5px] cursor-pointer transition-all ";
     if (!isActive) return base + "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50";
@@ -147,10 +145,8 @@ const getPillClasses = (key: string, isActive: boolean) => {
             :isSuccess="isSuccessNotify" 
             @close="showNotify = false"
         />
-        <!-- Main -->
         <div class="flex-1 flex flex-col w-full min-w-0 h-full overflow-hidden">
 
-            <!-- Topbar -->
             <header class="flex items-center justify-between py-3 px-5 md:py-[14px] md:px-8 bg-white/85 backdrop-blur-md border-b border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)] shrink-0 sticky top-0 z-20">
                 <div class="flex items-center gap-3">
                     <button class="p-2 -ml-2 rounded-[10px] text-slate-500 hover:bg-slate-100 transition-colors lg:hidden" @click="isMobileMenuOpen = true">
@@ -172,12 +168,9 @@ const getPillClasses = (key: string, isActive: boolean) => {
                 </div>
             </header>
 
-            <!-- Content -->
             <div class="flex-1 overflow-x-hidden p-4 flex flex-col gap-4 md:p-6 md:px-8 md:gap-5" :class="isDrawerOpen ? 'overflow-hidden' : 'overflow-y-auto'">
 
-                <!-- Summary tabs / filter -->
                 <div class="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
-                    <!-- Status quick-filter pills -->
                     <div class="flex gap-1.5 flex-wrap">
                         <button
                             v-for="pill in [
@@ -207,7 +200,6 @@ const getPillClasses = (key: string, isActive: boolean) => {
                     </div>
                 </div>
 
-                <!-- Table card -->
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-[0_1px_4px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col flex-1 fade-up">
                     <div class="overflow-x-auto flex-1 custom-scrollbar">
                         <table class="w-full min-w-[760px] border-collapse text-[13px]">
@@ -237,7 +229,6 @@ const getPillClasses = (key: string, isActive: boolean) => {
                                     class="group border-b border-slate-50 cursor-pointer transition-colors hover:bg-[#fafbff] last:border-b-0"
                                     @click="openDrawer(job)"
                                 >
-                                    <!-- Vị trí / Công ty -->
                                     <td class="p-3.5 px-4 align-middle">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-[10px] border border-slate-100 bg-white overflow-hidden shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
@@ -254,13 +245,11 @@ const getPillClasses = (key: string, isActive: boolean) => {
                                         </div>
                                     </td>
 
-                                    <!-- Chi tiết -->
                                     <td class="p-3.5 px-4 align-middle">
                                         <span class="flex items-center gap-[5px] text-[11.5px] text-slate-500 mb-[3px] last:mb-0"><i class="fas fa-map-marker-alt text-blue-400"></i> {{ job.Location }}</span>
                                         <span class="flex items-center gap-[5px] text-[11.5px] text-slate-500 mb-[3px] last:mb-0"><i class="fas fa-briefcase text-purple-400"></i> {{ job.JobType || '—' }}</span>
                                     </td>
 
-                                    <!-- Ứng viên -->
                                     <td class="p-3.5 px-4 align-middle text-center">
                                         <div class="inline-flex items-center gap-1 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg py-1 px-2.5">
                                             <i class="fas fa-user text-[9px]"></i>
@@ -268,12 +257,10 @@ const getPillClasses = (key: string, isActive: boolean) => {
                                         </div>
                                     </td>
 
-                                    <!-- Lương -->
                                     <td class="p-3.5 px-4 align-middle text-center">
                                         <span class="text-[11.5px] font-bold text-emerald-600 bg-emerald-50 rounded-lg py-1 px-2.5 whitespace-nowrap">{{ formatSalary(job.SalaryMin, job.SalaryMax) }}</span>
                                     </td>
 
-                                    <!-- Trạng thái -->
                                     <td class="p-3.5 px-4 align-middle text-center" @click.stop>
                                         <span class="inline-flex items-center text-[10.5px] font-bold py-1 px-2.5 rounded-full border-[1.5px] border-transparent whitespace-nowrap" :class="statusConfig[job.Status]?.cls">
                                             <i :class="[statusConfig[job.Status]?.icon, 'mr-1 text-[9px]']"></i>
@@ -281,7 +268,6 @@ const getPillClasses = (key: string, isActive: boolean) => {
                                         </span>
                                     </td>
 
-                                    <!-- Thao tác -->
                                     <td class="p-3.5 px-4 align-middle text-right" @click.stop>
                                         <div class="flex items-center justify-end gap-1">
                                             <button
@@ -324,7 +310,6 @@ const getPillClasses = (key: string, isActive: boolean) => {
                         </table>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="flex items-center justify-between flex-wrap py-3 px-4 border-t border-slate-100 bg-[#fafafa] gap-2">
                         <div class="flex items-center gap-2 text-xs text-slate-500">
                             Hiển thị
@@ -351,7 +336,6 @@ const getPillClasses = (key: string, isActive: boolean) => {
             </div>
         </div>
 
-        <!-- ── Job Detail Drawer ── -->
         <JobDetail
             :job-id="selectedJobId"
             :is-open="isDrawerOpen"
@@ -359,7 +343,6 @@ const getPillClasses = (key: string, isActive: boolean) => {
             @action="handleDrawerAction"
         />
 
-        <!-- ── Confirm Action Modal ── -->
         <transition name="scale-up">
             <div v-if="isActionModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-[4px]" @click.self="closeActionModal">
                 <div class="bg-white rounded-[20px] p-7 px-6 w-full max-w-[360px] text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
@@ -392,18 +375,15 @@ const getPillClasses = (key: string, isActive: boolean) => {
 </template>
 
 <style scoped>
-/* ─── Scrollbar ─── */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
 
-/* ─── Animations ─── */
-.fade-up { animation: fadeUp 0.4s ease both; }
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.scale-up-enter-active { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+
 .scale-up-leave-active { transition: all 0.15s ease; }
+from { opacity: 0; transform: translateY(12px); }
+
+.scale-up-enter-active { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .scale-up-enter-from, .scale-up-leave-to { opacity: 0; transform: scale(0.95); }
+to   { opacity: 1; transform: translateY(0); }
 </style>

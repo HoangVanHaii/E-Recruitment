@@ -1,3 +1,157 @@
+<script setup lang="ts">
+import Notify from '../components/Notify.vue';
+import SidebarEmployer from '../components/SidebarEmployer.vue';
+import Loading from '../components/Loading.vue';
+import { useJobStore } from '../stores/job';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import type { IInterviewRound } from '../types/job';
+
+const showNotify = ref<Boolean>(false);
+const messageNotify = ref<string>('');
+const isSuccessNotify = ref(true);
+const useJob = useJobStore();
+const categories = ref<{ CategoryID: number; CategoryName: string }[]>([]);
+const isOpen = ref<Boolean>(false);
+
+const selectedCategoryName = computed(() => {
+    if (!jobForm.value.CategoryID) return null;
+    const selected = categories.value.find(c => c.CategoryID === jobForm.value.CategoryID);
+    return selected ? selected.CategoryName : null;
+});
+
+const dropdownRef = ref<HTMLDivElement | null>(null);
+
+const selectCategory = (id: number) => {
+    jobForm.value.CategoryID = id;
+    isOpen.value = false;
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+        isOpen.value = false;
+    }
+};
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
+
+onMounted(async () => {
+    document.addEventListener('click', handleClickOutside);
+    await useJob.fetchCategories();
+    if (useJob.error) {
+        showNotify.value = true;
+        messageNotify.value = useJob.message || 'Không thể tải danh mục!';
+        isSuccessNotify.value = false;
+    } else {
+        categories.value = useJob.listCategoryJobs;
+    }
+});
+
+const jobForm = ref({
+    CategoryID: null as number | null,
+    Title: '',
+    Quantity: 1,
+    SalaryMin: null as number | null,
+    SalaryMax: null as number | null,
+    Location: '',
+    JobType: 'Full-time',
+    ExperienceRequired: 0,
+    ExpiredDate: '',
+    Description: '',
+    Requirements: '',
+    WorkingSchedule: '',
+    Benefits: [''],
+    Tags: [''],
+    InterviewProcess: [
+        { roundOrder: 1, roundTitle: 'Phỏng vấn Nhân sự', details: 'Trao đổi về văn hóa công ty và định hướng.' }
+    ] as IInterviewRound[]
+});
+
+
+const addBenefit = () => jobForm.value.Benefits.push('');
+const removeBenefit = (index: number) => jobForm.value.Benefits.splice(index, 1);
+const addTag = () => jobForm.value.Tags.push('');
+const removeTag = (index: number) => jobForm.value.Tags.splice(index, 1);
+const addRound = () => {
+    jobForm.value.InterviewProcess.push({ 
+        roundOrder: jobForm.value.InterviewProcess.length + 1, 
+        roundTitle: '', 
+        details: '' 
+    });
+};
+const removeRound = (index: number) => jobForm.value.InterviewProcess.splice(index, 1);
+const handleSubmit = async () => {
+    const cleanedBenefits = jobForm.value.Benefits.filter(b => b.trim() !== '');
+    const cleanedTags = jobForm.value.Tags.filter(t => t.trim() !== '');
+    const cleanedProcess = jobForm.value.InterviewProcess
+        .filter(p => p.roundTitle.trim() !== '')
+        .map((p, index) => ({
+            roundOrder: index + 1,
+            roundTitle: p.roundTitle,
+            details: p.details
+        }));
+
+    const rawText = `${jobForm.value.Title} - ${jobForm.value.Description} - ${jobForm.value.Requirements}`;
+    const finalSubmitData = {
+        employerId: 1,
+        categoryId: Number(jobForm.value.CategoryID),
+        title: jobForm.value.Title,
+        quantity: Number(jobForm.value.Quantity),
+        salaryMin: jobForm.value.SalaryMin ? Number(jobForm.value.SalaryMin) : 0,
+        salaryMax: jobForm.value.SalaryMax ? Number(jobForm.value.SalaryMax) : 0,
+        location: jobForm.value.Location,
+        jobType: jobForm.value.JobType,
+        experienceRequired: Number(jobForm.value.ExperienceRequired),
+        expiredDate: new Date(jobForm.value.ExpiredDate).toISOString(), 
+        description: jobForm.value.Description,
+        requirements: jobForm.value.Requirements,
+        workingSchedule: jobForm.value.WorkingSchedule,
+        benefits: cleanedBenefits,
+        tags: cleanedTags,
+        interviewProcess: cleanedProcess,
+        rawTextForAi: rawText
+    };
+    await useJob.createJobStore(finalSubmitData);
+    if (useJob.error) {
+        showNotify.value = true;
+        messageNotify.value = useJob.message || 'Đăng tin thất bại! Vui lòng kiểm tra lại thông tin.';
+        isSuccessNotify.value = false;
+    } else {
+        showNotify.value = true;
+        messageNotify.value = useJob.message || 'Đăng tin thành công!';
+        isSuccessNotify.value = true;
+        
+        // Có thể reset lại form ở đây nếu muốn:
+        // jobForm.value.Title = '';
+        // jobForm.value.Description = ''; 
+    }
+};
+
+
+</script>
+
+<style scoped>
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+</style>
+
 <template>
     <Notify  
         v-if="showNotify" 
@@ -174,7 +328,7 @@
                                         </button>
                                     </div>
                                     <div class="space-y-3">
-                                        <div v-for="(benefit, index) in jobForm.Benefits" :key="'ben-'+index" class="flex gap-2">
+                                        <div v-for="(_, index) in jobForm.Benefits" :key="'ben-'+index" class="flex gap-2">
                                             <input v-model="jobForm.Benefits[index]" type="text" class="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-sm focus:border-blue-500" placeholder="VD: Thưởng tháng 13...">
                                             <button v-if="jobForm.Benefits.length > 1" type="button" @click="removeBenefit(index)" class="px-3 text-slate-400 hover:text-red-500 transition-colors">
                                                 <i class="fas fa-trash-alt"></i>
@@ -191,7 +345,7 @@
                                         </button>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <div v-for="(tag, index) in jobForm.Tags" :key="'tag-'+index" class="flex items-center bg-slate-100 border border-slate-200 rounded-full pl-3 pr-1 py-1">
+                                        <div v-for="(_, index) in jobForm.Tags" :key="'tag-'+index" class="flex items-center bg-slate-100 border border-slate-200 rounded-full pl-3 pr-1 py-1">
                                             <input v-model="jobForm.Tags[index]" type="text" class="bg-transparent border-none outline-none text-sm w-24 text-slate-700" placeholder="Tag...">
                                             <button type="button" @click="removeTag(index)" class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                                                 <i class="fas fa-times text-xs"></i>
@@ -241,156 +395,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import { useJobStore } from '../stores/job';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-import  type{ IInterviewRound } from '../types/job';
-const showNotify = ref<Boolean>(false);
-const messageNotify = ref<string>('');
-const isSuccessNotify = ref(true);
-const useJob = useJobStore();
-const categories = ref<{ CategoryID: number; CategoryName: string }[]>([]);
-const isOpen = ref<Boolean>(false);
-
-const selectedCategoryName = computed(() => {
-    if (!jobForm.value.CategoryID) return null;
-    const selected = categories.value.find(c => c.CategoryID === jobForm.value.CategoryID);
-    return selected ? selected.CategoryName : null;
-});
-
-const dropdownRef = ref<HTMLDivElement | null>(null);
-
-const selectCategory = (id: number) => {
-    jobForm.value.CategoryID = id;
-    isOpen.value = false;
-};
-
-const handleClickOutside = (event: MouseEvent) => {
-    if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-        isOpen.value = false;
-    }
-};
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-});
-
-
-onMounted(async () => {
-    document.addEventListener('click', handleClickOutside);
-    await useJob.fetchCategories();
-    if (useJob.error) {
-        showNotify.value = true;
-        messageNotify.value = useJob.message || 'Không thể tải danh mục!';
-        isSuccessNotify.value = false;
-    } else {
-        categories.value = useJob.listCategoryJobs;
-    }
-});
-
-const jobForm = ref({
-    CategoryID: null as number | null,
-    Title: '',
-    Quantity: 1,
-    SalaryMin: null as number | null,
-    SalaryMax: null as number | null,
-    Location: '',
-    JobType: 'Full-time',
-    ExperienceRequired: 0,
-    ExpiredDate: '',
-    Description: '',
-    Requirements: '',
-    WorkingSchedule: '',
-    Benefits: [''],
-    Tags: [''],
-    InterviewProcess: [
-        { roundOrder: 1, roundTitle: 'Phỏng vấn Nhân sự', details: 'Trao đổi về văn hóa công ty và định hướng.' }
-    ] as IInterviewRound[]
-});
-
-
-const addBenefit = () => jobForm.value.Benefits.push('');
-const removeBenefit = (index: number) => jobForm.value.Benefits.splice(index, 1);
-const addTag = () => jobForm.value.Tags.push('');
-const removeTag = (index: number) => jobForm.value.Tags.splice(index, 1);
-const addRound = () => {
-    jobForm.value.InterviewProcess.push({ 
-        roundOrder: jobForm.value.InterviewProcess.length + 1, 
-        roundTitle: '', 
-        details: '' 
-    });
-};
-const removeRound = (index: number) => jobForm.value.InterviewProcess.splice(index, 1);
-const handleSubmit = async () => {
-    const cleanedBenefits = jobForm.value.Benefits.filter(b => b.trim() !== '');
-    const cleanedTags = jobForm.value.Tags.filter(t => t.trim() !== '');
-    const cleanedProcess = jobForm.value.InterviewProcess
-        .filter(p => p.roundTitle.trim() !== '')
-        .map((p, index) => ({
-            roundOrder: index + 1,
-            roundTitle: p.roundTitle,
-            details: p.details
-        }));
-
-    const rawText = `${jobForm.value.Title} - ${jobForm.value.Description} - ${jobForm.value.Requirements}`;
-    const finalSubmitData = {
-        employerId: 1,
-        categoryId: Number(jobForm.value.CategoryID),
-        title: jobForm.value.Title,
-        quantity: Number(jobForm.value.Quantity),
-        salaryMin: jobForm.value.SalaryMin ? Number(jobForm.value.SalaryMin) : 0,
-        salaryMax: jobForm.value.SalaryMax ? Number(jobForm.value.SalaryMax) : 0,
-        location: jobForm.value.Location,
-        jobType: jobForm.value.JobType,
-        experienceRequired: Number(jobForm.value.ExperienceRequired),
-        expiredDate: new Date(jobForm.value.ExpiredDate).toISOString(), 
-        description: jobForm.value.Description,
-        requirements: jobForm.value.Requirements,
-        workingSchedule: jobForm.value.WorkingSchedule,
-        benefits: cleanedBenefits,
-        tags: cleanedTags,
-        interviewProcess: cleanedProcess,
-        rawTextForAi: rawText
-    };
-    await useJob.createJobStore(finalSubmitData);
-    if (useJob.error) {
-        showNotify.value = true;
-        messageNotify.value = useJob.message || 'Đăng tin thất bại! Vui lòng kiểm tra lại thông tin.';
-        isSuccessNotify.value = false;
-    } else {
-        showNotify.value = true;
-        messageNotify.value = useJob.message || 'Đăng tin thành công!';
-        isSuccessNotify.value = true;
-        
-        // Có thể reset lại form ở đây nếu muốn:
-        // jobForm.value.Title = '';
-        // jobForm.value.Description = ''; 
-    }
-};
-
-
-</script>
-
-<style scoped>
-input[type="date"]::-webkit-inner-spin-button,
-input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.6;
-}
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-}
-.overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-}
-.overflow-y-auto::-webkit-scrollbar-track {
-    background: transparent;
-}
-.overflow-y-auto::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 10px;
-}
-</style>

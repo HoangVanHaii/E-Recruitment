@@ -73,7 +73,7 @@ const routes: Array<RouteRecordRaw> = [
             { path: 'applications', name: 'applications', component: ApplicationsView },
             { path: 'employer-dashboard', name: 'employer-dashboard', component: EmployerDashboard },
             { path: 'employer-profile', name: 'employer-profile', component: EmployerProfile },
-            { path: 'employer-requests', name: 'employer-requests', component: EmployeeRequestsView}
+            { path: 'employer-requests', name: 'employer-requests', component: EmployeeRequestsView},
             { path: 'employer-chat', name: 'employer-chat', component: EmployerChatView },
         ]
     },

@@ -87,7 +87,7 @@ const totalpages = ref<number>(0);
     const fetchAllEmployers = async (page: number, limit: number) => { 
         try {
             loading.value = true;
-            error.value = '';
+            error.value = false;
             const response = await getAllEmployers(page, limit);
             allEmployers.value = response.data.items;
             if(response.data.totalPages != undefined) {
@@ -96,7 +96,7 @@ const totalpages = ref<number>(0);
             }
         } catch (e) {
             console.error("Lỗi khi load tất cả nhà tuyển dụng:", e);
-            error.value = "Không thể tải danh sách nhà tuyển dụng";
+            error.value = true;
             throw e;
         } finally {
             loading.value = false;
@@ -106,9 +106,10 @@ const totalpages = ref<number>(0);
         try {
             const response = await getLogoTopEmployers();
             return response.data;
-        } catch (error) {
-            console.error("Lỗi khi load logo top nhà tuyển dụng:", error);
-            throw error;
+        } catch (er) {
+            console.error("Lỗi khi load logo top nhà tuyển dụng:", er);
+            error.value = true;
+            throw er;
         }
     }
     return {

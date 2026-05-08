@@ -1,4 +1,113 @@
-<template>
+
+  <script setup lang="ts">
+  import { onMounted, ref, computed, watch } from 'vue';
+  import { useRouter } from 'vue-router';
+  import { useResumeStore } from '../stores/resume';
+  import type { iResumeList, iResumeDetail } from '../types/resume';
+  import Notify from '../components/Notify.vue';
+  import Loading from '../components/Loading.vue';
+  
+  const showNotify = ref<boolean>(false);
+  const messageNotify = ref<string>('');
+  const isSuccessNotify = ref(true);
+  const loading = ref(false);
+  
+  const router = useRouter();
+  const useResume = useResumeStore();
+  
+  const props = defineProps({
+    isOpen: {
+      type: Boolean,
+      required: true
+      },
+    companyName: {
+      type: String,
+      required: true,
+      default: 'Tên công ty'
+    },
+    jobTitle: {
+      type: String,
+      required: true,
+      default: 'Tiêu đề công việc'
+      }
+  });
+  
+  const emit = defineEmits(['close', 'submit']);
+  
+  const cvList = ref<iResumeList[]>([]);
+  const selectedCvId = ref<number | null>(1);
+  
+  const isOpenResume = ref(false);
+  const candidate = ref<iResumeDetail | null>(null);
+  
+  onMounted(async () => {
+      loading.value = true;
+      
+      cvList.value = await useResume.getListResumeOfMeStore();
+      if (useResume.error) {
+            showNotify.value = true;
+            isSuccessNotify.value = false;
+            messageNotify.value = 'Lỗi tải danh sách CV'; 
+      }
+
+      loading.value = false;
+  });
+  
+  const selectCv = (id: number) => {
+    selectedCvId.value = id;
+  };
+  
+  const handleClose = () => {
+    emit('close');
+  };
+  
+  const handleSubmit = () => {
+    emit('submit', selectedCvId.value);
+  };
+  
+  const handleCreateResume = () => {
+    emit('close'); 
+    router.push('/create-resume'); 
+  };
+  
+  const fetchResumeDetail = async (id: number) => {
+    loading.value = true;
+      candidate.value = await useResume.getResumeDetailByIdStore(id);
+    console.log(candidate.value)
+    
+    if (useResume.error) {
+      showNotify.value = true;
+      isSuccessNotify.value = false;
+      messageNotify.value = useResume.message || 'Có lỗi xảy ra khi tải hồ sơ';
+    }
+    loading.value = false;
+  };
+  
+  const handleViewCv = (id: number) => {
+    selectedCvId.value = id;
+    isOpenResume.value = true;
+  };
+  
+  watch([() => selectedCvId.value, () => isOpenResume.value], ([newId, isOpen]) => {
+    if (newId && isOpen) {
+      fetchResumeDetail(newId);
+    }
+  });
+  
+  const avatarSrc = computed(() => {
+    return typeof candidate.value?.avatarUrl === 'string' ? candidate.value.avatarUrl : '/default-avatar.png';
+  });
+  
+  const formatDate = (date?: Date | string) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+  </script>
+  <template>
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-300 ease-out"
@@ -279,115 +388,6 @@
       v-if="loading" 
     />
   </template>
-  
-  <script setup lang="ts">
-  import { onMounted, ref, computed, watch } from 'vue';
-  import { useRouter } from 'vue-router';
-  import { useResumeStore } from '../stores/resume';
-  import type { iResumeList, iResumeDetail } from '../types/resume';
-  import Notify from '../components/Notify.vue';
-  import Loading from '../components/Loading.vue';
-  
-  const showNotify = ref<boolean>(false);
-  const messageNotify = ref<string>('');
-  const isSuccessNotify = ref(true);
-  const loading = ref(false);
-  
-  const router = useRouter();
-  const useResume = useResumeStore();
-  
-  const props = defineProps({
-    isOpen: {
-      type: Boolean,
-      required: true
-      },
-    companyName: {
-      type: String,
-      required: true,
-      default: 'Tên công ty'
-    },
-    jobTitle: {
-      type: String,
-      required: true,
-      default: 'Tiêu đề công việc'
-      }
-  });
-  
-  const emit = defineEmits(['close', 'submit']);
-  
-  const cvList = ref<iResumeList[]>([]);
-  const selectedCvId = ref<number | null>(1);
-  
-  const isOpenResume = ref(false);
-  const candidate = ref<iResumeDetail | null>(null);
-  
-  onMounted(async () => {
-      loading.value = true;
-      
-      cvList.value = await useResume.getListResumeOfMeStore();
-      if (useResume.error) {
-            showNotify.value = true;
-            isSuccessNotify.value = false;
-            messageNotify.value = 'Lỗi tải danh sách CV'; 
-      }
-
-      loading.value = false;
-  });
-  
-  const selectCv = (id: number) => {
-    selectedCvId.value = id;
-  };
-  
-  const handleClose = () => {
-    emit('close');
-  };
-  
-  const handleSubmit = () => {
-    emit('submit', selectedCvId.value);
-  };
-  
-  const handleCreateResume = () => {
-    emit('close'); 
-    router.push('/create-resume'); 
-  };
-  
-  const fetchResumeDetail = async (id: number) => {
-    loading.value = true;
-      candidate.value = await useResume.getResumeDetailByIdStore(id);
-    console.log(candidate.value)
-    
-    if (useResume.error) {
-      showNotify.value = true;
-      isSuccessNotify.value = false;
-      messageNotify.value = useResume.message || 'Có lỗi xảy ra khi tải hồ sơ';
-    }
-    loading.value = false;
-  };
-  
-  const handleViewCv = (id: number) => {
-    selectedCvId.value = id;
-    isOpenResume.value = true;
-  };
-  
-  watch([() => selectedCvId.value, () => isOpenResume.value], ([newId, isOpen]) => {
-    if (newId && isOpen) {
-      fetchResumeDetail(newId);
-    }
-  });
-  
-  const avatarSrc = computed(() => {
-    return typeof candidate.value?.avatarUrl === 'string' ? candidate.value.avatarUrl : '/default-avatar.png';
-  });
-  
-  const formatDate = (date?: Date | string) => {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-  </script>
   
   <style scoped>
   .slide-enter-active, .slide-leave-active { 

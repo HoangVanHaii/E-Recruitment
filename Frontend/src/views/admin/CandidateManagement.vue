@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
-import type { ICandidate } from '../../types/candidate';
-import { useCandidateStore } from '../../stores/candidate';
 import Notify from '../../components/Notify.vue';
+import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
+import { ref, onMounted, watch } from 'vue';
+import { useCandidateStore } from '../../stores/candidate';
 import { useAuthStore } from '../../stores/auth';
+import type { ICandidate } from '../../types/candidate';
 
 const authStore = useAuthStore();
 const candidateStore = useCandidateStore();

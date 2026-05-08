@@ -1,3 +1,123 @@
+
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { useJobStore } from '../stores/job';
+import type { IJobDetail } from '../types/job';
+
+const props = defineProps<{
+    isOpen: boolean;
+    jobId: number | null;
+}>();
+
+const emit = defineEmits(['close', 'save']);
+const useJob = useJobStore();
+
+const isLoading = ref<boolean>(false);
+const error = ref<string>('');
+
+const formData = ref<IJobDetail>({
+    JobID: 0,
+    EmployerID: 0, 
+    Title: '',
+    Location: '',
+    CreatedAt: new Date(),
+    CompanyName: '',
+    CompanyLogo: '',
+    Status: 'Pending',
+    SalaryMin: 0,
+    SalaryMax: 0,
+    JobType: '',
+    Quantity: 1,
+    Description: '',
+    Requirements: '',
+    Benefits: [],
+    Tags: [],
+    RawTextForAi: '',
+    InterviewProcess: []
+});
+
+// Status Helpers
+const getStatusLabel = (status: string) => {
+    switch (status) {
+        case 'Approved': return 'Đang đăng';
+        case 'Pending': return 'Đang chờ duyệt';
+        case 'Rejected': return 'Bị từ chối';
+        default: return status;
+    }
+};
+const getStatusIcon = (status: string) => {
+    if (status === 'Approved') return 'fas fa-check-circle';
+    if (status === 'Pending') return 'fas fa-clock';
+    if (status === 'Rejected') return 'fas fa-times-circle';
+    return 'fas fa-info-circle';
+};
+const getStatusBadgeClass = (status: string) => {
+    if (status === 'Approved') return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+    if (status === 'Pending') return 'bg-sky-50 text-sky-600 border-sky-200';
+    if (status === 'Rejected') return 'bg-red-50 text-red-600 border-red-200';
+    return 'bg-slate-50 text-slate-600 border-slate-200';
+};
+
+// Logo Logic
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const fileToUpload = ref<File | null>(null);
+const triggerFileInput = () => fileInputRef.value?.click();
+const handleFileUpload = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+        fileToUpload.value = file;
+        const reader = new FileReader();
+        reader.onload = (e) => { formData.value.CompanyLogo = e.target?.result as string; };
+        reader.readAsDataURL(file);
+    }
+};
+
+// Interview Process Logic
+const addInterviewRound = () => {
+    const nextOrder = (formData.value.InterviewProcess?.length || 0) + 1;
+    if (!formData.value.InterviewProcess) formData.value.InterviewProcess = [];
+    formData.value.InterviewProcess.push({
+        roundOrder: nextOrder,
+        roundTitle: '',
+        details: ''
+    });
+};
+const removeInterviewRound = (index: number) => {
+    formData.value.InterviewProcess?.splice(index, 1);
+};
+
+// Watcher tải dữ liệu
+watch(() => props.isOpen, async (newVal) => {
+    if (newVal && props.jobId) {
+        isLoading.value = true;
+        error.value = '';
+        fileToUpload.value = null;
+        try {
+            const jobDetail = await useJob.getJobDetailStore(props.jobId);
+            if (jobDetail) {
+                formData.value = { 
+                    ...JSON.parse(JSON.stringify(jobDetail)),
+                    InterviewProcess: jobDetail.InterviewProcess || []
+                };
+            }
+        } catch (err) {
+            error.value = "Không thể tải dữ liệu chi tiết!";
+        } finally {
+            isLoading.value = false;
+        }
+    }
+});
+
+const closeModal = () => emit('close');
+
+const handleSave = () => {
+    emit('save', {
+        jobData: JSON.parse(JSON.stringify(formData.value)),
+        logoFile: fileToUpload.value 
+    });
+};
+</script>
 <template>
     <Teleport to="body">
         <transition name="modal-fade">
@@ -176,126 +296,6 @@
         </transition>
     </Teleport>
 </template>
-
-<script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useJobStore } from '../stores/job';
-import type { IJobDetail } from '../types/job';
-
-const props = defineProps<{
-    isOpen: boolean;
-    jobId: number | null;
-}>();
-
-const emit = defineEmits(['close', 'save']);
-const useJob = useJobStore();
-
-const isLoading = ref<boolean>(false);
-const error = ref<string>('');
-
-const formData = ref<IJobDetail>({
-    JobID: 0,
-    EmployerID: 0, 
-    Title: '',
-    Location: '',
-    CreatedAt: new Date(),
-    CompanyName: '',
-    CompanyLogo: '',
-    Status: 'Pending',
-    SalaryMin: 0,
-    SalaryMax: 0,
-    JobType: '',
-    Quantity: 1,
-    Description: '',
-    Requirements: '',
-    Benefits: [],
-    Tags: [],
-    RawTextForAi: '',
-    InterviewProcess: []
-});
-
-// Status Helpers
-const getStatusLabel = (status: string) => {
-    switch (status) {
-        case 'Approved': return 'Đang đăng';
-        case 'Pending': return 'Đang chờ duyệt';
-        case 'Rejected': return 'Bị từ chối';
-        default: return status;
-    }
-};
-const getStatusIcon = (status: string) => {
-    if (status === 'Approved') return 'fas fa-check-circle';
-    if (status === 'Pending') return 'fas fa-clock';
-    if (status === 'Rejected') return 'fas fa-times-circle';
-    return 'fas fa-info-circle';
-};
-const getStatusBadgeClass = (status: string) => {
-    if (status === 'Approved') return 'bg-emerald-50 text-emerald-600 border-emerald-200';
-    if (status === 'Pending') return 'bg-sky-50 text-sky-600 border-sky-200';
-    if (status === 'Rejected') return 'bg-red-50 text-red-600 border-red-200';
-    return 'bg-slate-50 text-slate-600 border-slate-200';
-};
-
-// Logo Logic
-const fileInputRef = ref<HTMLInputElement | null>(null);
-const fileToUpload = ref<File | null>(null);
-const triggerFileInput = () => fileInputRef.value?.click();
-const handleFileUpload = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (file) {
-        fileToUpload.value = file;
-        const reader = new FileReader();
-        reader.onload = (e) => { formData.value.CompanyLogo = e.target?.result as string; };
-        reader.readAsDataURL(file);
-    }
-};
-
-// Interview Process Logic
-const addInterviewRound = () => {
-    const nextOrder = (formData.value.InterviewProcess?.length || 0) + 1;
-    if (!formData.value.InterviewProcess) formData.value.InterviewProcess = [];
-    formData.value.InterviewProcess.push({
-        roundOrder: nextOrder,
-        roundTitle: '',
-        details: ''
-    });
-};
-const removeInterviewRound = (index: number) => {
-    formData.value.InterviewProcess?.splice(index, 1);
-};
-
-// Watcher tải dữ liệu
-watch(() => props.isOpen, async (newVal) => {
-    if (newVal && props.jobId) {
-        isLoading.value = true;
-        error.value = '';
-        fileToUpload.value = null;
-        try {
-            const jobDetail = await useJob.getJobDetailStore(props.jobId);
-            if (jobDetail) {
-                formData.value = { 
-                    ...JSON.parse(JSON.stringify(jobDetail)),
-                    InterviewProcess: jobDetail.InterviewProcess || []
-                };
-            }
-        } catch (err) {
-            error.value = "Không thể tải dữ liệu chi tiết!";
-        } finally {
-            isLoading.value = false;
-        }
-    }
-});
-
-const closeModal = () => emit('close');
-
-const handleSave = () => {
-    emit('save', {
-        jobData: JSON.parse(JSON.stringify(formData.value)),
-        logoFile: fileToUpload.value 
-    });
-};
-</script>
 
 <style scoped>
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }

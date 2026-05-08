@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onUnmounted } from 'vue';  
+import { useAuthStore } from '../stores/auth';
 const inputOtp = reactive<string[]>(['', '', '', '', '', '']);
 const inputRef = ref<HTMLInputElement[]>([]);
-import { useAuthStore } from '../stores/auth';
 const useAuth = useAuthStore();
 const message = ref<string>('');
 const isError = ref<boolean>(false);

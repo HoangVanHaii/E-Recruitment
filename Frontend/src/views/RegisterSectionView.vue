@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
 import candidate_illus_url from '../assets/section-left.jpg'
 import recruiter_illus_url from '../assets/section-rìght.jpg'
 import bg_section from '../assets/bg-section.jpg'
+const router = useRouter();
 
 const selectionCards = [
     {

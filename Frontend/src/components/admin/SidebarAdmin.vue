@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
+
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
@@ -16,7 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['close-mobile-menu']);
 
 const isCollapsed = ref(false);
-const isLogoutModalOpen = ref(false); // <-- STATE CHO MODAL ĐĂNG XUẤT
+const isLogoutModalOpen = ref(false); 
 
 interface SubMenuItem { id: string; label: string; routeName?: string; icon: string;status?: string; }
 interface MenuItem { id: string; label: string; icon: string; isOpen?: boolean; routeName?: string; subItems?: SubMenuItem[]; section?: string;  }
@@ -266,12 +267,10 @@ watch(() => route.name, () => {
 </template>
 
 <style scoped>
-/* ─── Background ─── */
 .sidebar-bg {
     background: linear-gradient(160deg, #3a49c2 0%, #4c5bd4 40%, #3d4ec8 100%);
 }
 
-/* ─── Orbs ─── */
 .orb {
     position: absolute;
     border-radius: 50%;
@@ -317,13 +316,11 @@ watch(() => route.name, () => {
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* ─── Scrollbar ─── */
 .custom-scrollbar::-webkit-scrollbar { width: 3px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 99px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
 
-/* ─── Transitions ─── */
 .submenu-enter-active { transition: all 0.22s cubic-bezier(0.4,0,0.2,1); }
 .submenu-leave-active { transition: all 0.15s cubic-bezier(0.4,0,0.2,1); }
 .submenu-enter-from, .submenu-leave-to { opacity: 0; transform: translateY(-8px); }
@@ -335,7 +332,6 @@ watch(() => route.name, () => {
 .fade-text-leave-active { transition: all 0.15s ease; }
 .fade-text-enter-from, .fade-text-leave-to { opacity: 0; transform: translateX(-8px); }
 
-/* Thêm class animation scaleUp cho modal */
 .scale-up {
     animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -344,6 +340,5 @@ watch(() => route.name, () => {
     to   { opacity: 1; transform: scale(1); }
 }
 
-/* ─── Utility ─── */
 .hover\:bg-white\/8:hover { background-color: rgba(255,255,255,0.08); }
 </style>

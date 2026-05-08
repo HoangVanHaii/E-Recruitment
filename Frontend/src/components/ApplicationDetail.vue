@@ -1,3 +1,79 @@
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useApplicationStore } from '../stores/jobApplication';
+import Loading from './Loading.vue';
+
+const useApplication = useApplicationStore();
+
+const props = defineProps({
+    applicationId: { type: [Number, null], required: true },
+    applicantName: { type: String, default: 'Ứng viên' }
+});
+
+const emit = defineEmits(['close', 'approve', 'reject', 'schedule']);
+
+const resumeData = ref<any | null>(null);
+
+const fetchResumeData = async () => {
+    if (props.applicationId) {
+        resumeData.value = await useApplication.getApplicationDetailStore(props.applicationId)
+        console.log(resumeData.value)
+    }
+};
+
+onMounted(async() => {
+    document.body.style.overflow = 'hidden';
+    await fetchResumeData();
+});
+
+onUnmounted(() => {
+    document.body.style.overflow = '';
+});
+
+const handleClose = () => {
+    emit('close');
+};
+const handleApprove = async () => {
+    if (resumeData.value) {
+        resumeData.value.Status = "Accepted"; 
+    }
+    emit('approve', props.applicationId);
+    
+};
+
+const handleReject = () => {
+    if (resumeData.value) {
+        resumeData.value.Status = 'Rejected'; 
+    }
+    emit('reject', props.applicationId);
+};
+
+const handleSchedule = () => {
+    if (resumeData.value) {
+        resumeData.value.Status = 'Interviewing'; 
+    }
+    emit('schedule', props.applicationId);
+
+};
+
+const formatDate = (dateStr: string) => {
+    if(!dateStr) return '';
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+};
+
+const formatMonthYear = (dateInput: Date | string | undefined) => {
+    if(!dateInput) return '';
+    const d = new Date(dateInput);
+    return `T${d.getMonth() + 1}/${d.getFullYear()}`;
+};
+
+const formatYear = (dateInput: Date | string | undefined) => {
+    if(!dateInput) return '';
+    return new Date(dateInput).getFullYear().toString();
+};
+</script>
 <template>
     <loading
         v-if="useApplication.loading"
@@ -174,82 +250,6 @@
         </transition>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useApplicationStore } from '../stores/jobApplication';
-import Loading from './Loading.vue';
-
-const useApplication = useApplicationStore();
-
-const props = defineProps({
-    applicationId: { type: [Number, null], required: true },
-    applicantName: { type: String, default: 'Ứng viên' }
-});
-
-const emit = defineEmits(['close', 'approve', 'reject', 'schedule']);
-
-const resumeData = ref<any | null>(null);
-
-const fetchResumeData = async () => {
-    if (props.applicationId) {
-        resumeData.value = await useApplication.getApplicationDetailStore(props.applicationId)
-        console.log(resumeData.value)
-    }
-};
-
-onMounted(async() => {
-    document.body.style.overflow = 'hidden';
-    await fetchResumeData();
-});
-
-onUnmounted(() => {
-    document.body.style.overflow = '';
-});
-
-const handleClose = () => {
-    emit('close');
-};
-const handleApprove = async () => {
-    if (resumeData.value) {
-        resumeData.value.Status = "Accepted"; 
-    }
-    emit('approve', props.applicationId);
-    
-};
-
-const handleReject = () => {
-    if (resumeData.value) {
-        resumeData.value.Status = 'Rejected'; 
-    }
-    emit('reject', props.applicationId);
-};
-
-const handleSchedule = () => {
-    if (resumeData.value) {
-        resumeData.value.Status = 'Interviewing'; 
-    }
-    emit('schedule', props.applicationId);
-
-};
-
-const formatDate = (dateStr: string) => {
-    if(!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-};
-
-const formatMonthYear = (dateInput: Date | string | undefined) => {
-    if(!dateInput) return '';
-    const d = new Date(dateInput);
-    return `T${d.getMonth() + 1}/${d.getFullYear()}`;
-};
-
-const formatYear = (dateInput: Date | string | undefined) => {
-    if(!dateInput) return '';
-    return new Date(dateInput).getFullYear().toString();
-};
-</script>
 
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }

@@ -4,7 +4,6 @@ import { useAuthStore } from '../stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 import bgLogin from '../assets/bg-login.jpg';
 import Notify from '../components/Notify.vue';
-import { use } from 'apexcharts';
 
 const router = useRouter();
 const route = useRoute();
