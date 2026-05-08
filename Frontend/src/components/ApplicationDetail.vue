@@ -5,7 +5,8 @@
     <div class="relative z-50">
         
         <transition name="fade" appear>
-            <div class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[55]" @click="handleClose"></div>
+            <div   class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[55]" 
+            @click="handleClose"></div>
         </transition>
 
         <transition name="drawer" appear>
@@ -161,7 +162,7 @@
 
                     <button 
                         @click="handleApprove" 
-                        :disabled="resumeData.Status === 'Approved'"
+                        :disabled="resumeData.Status === 'Accepted'"
                         class="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 disabled:shadow-none"
                     >
                         <i class="fas fa-check-circle"></i> Duyệt hồ sơ
@@ -181,13 +182,11 @@ import Loading from './Loading.vue';
 
 const useApplication = useApplicationStore();
 
-// NHẬN PROP TỪ TRANG CHA
 const props = defineProps({
     applicationId: { type: [Number, null], required: true },
     applicantName: { type: String, default: 'Ứng viên' }
 });
 
-// THÊM EMITS CHO CÁC ACTION MỚI
 const emit = defineEmits(['close', 'approve', 'reject', 'schedule']);
 
 const resumeData = ref<any | null>(null);
@@ -195,27 +194,25 @@ const resumeData = ref<any | null>(null);
 const fetchResumeData = async () => {
     if (props.applicationId) {
         resumeData.value = await useApplication.getApplicationDetailStore(props.applicationId)
+        console.log(resumeData.value)
     }
 };
 
-// Khóa thanh cuộn của body khi Drawer mở
 onMounted(async() => {
     document.body.style.overflow = 'hidden';
     await fetchResumeData();
 });
 
-// Mở lại thanh cuộn của body khi Drawer đóng
 onUnmounted(() => {
     document.body.style.overflow = '';
 });
 
-// CÁC HÀM XỬ LÝ SỰ KIỆN CLICK
 const handleClose = () => {
     emit('close');
 };
 const handleApprove = async () => {
     if (resumeData.value) {
-        resumeData.value.Status = 'Approved'; 
+        resumeData.value.Status = "Accepted"; 
     }
     emit('approve', props.applicationId);
     
@@ -236,7 +233,6 @@ const handleSchedule = () => {
 
 };
 
-// FORMATTERS
 const formatDate = (dateStr: string) => {
     if(!dateStr) return '';
     const d = new Date(dateStr);
@@ -256,7 +252,6 @@ const formatYear = (dateInput: Date | string | undefined) => {
 </script>
 
 <style scoped>
-/* Thanh cuộn siêu đẹp cho Drawer */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }

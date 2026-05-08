@@ -6,8 +6,8 @@ import * as employerController from '../controller/employer'
 const router = Router();
 
 router.put('/:EmployerID/status', authMiddleware, isEmployer, employerMiddleware.updateStatus, validateRequest, employerController.UpdateStatusEmployer);
-router.get('/pending', authMiddleware, isEmployer, employerController.GetPendingEmployers);
-
+router.get('/status', authMiddleware, isEmployer, employerController.GetPendingEmployers);
+router.get('/dashboard-stats', authMiddleware, isEmployer, employerController.getDashboardStats);
 
 
 export default router;

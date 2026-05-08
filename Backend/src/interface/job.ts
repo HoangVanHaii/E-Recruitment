@@ -20,6 +20,7 @@ export interface IListJob {
     CompanyLogo: string;
     Description: string;
     Status: string;
+    ExpiredDate?: Date;
     ApplicationCount: number;   
 }
 export interface IJobDetail {

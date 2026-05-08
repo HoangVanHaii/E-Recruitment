@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { CreateCompany, GetAllCompany, getCompanyOfMe, requestCompany } from '../services/company';
+import { CreateCompany, GetAllCompany, GetCompanyDetailOfMe, getCompanyOfMe, requestCompany, UpdateCompany } from '../services/company';
 import type { ICompanyResponse } from '../types/company';
 
 export const useCompanyStore = defineStore('company',() => {
@@ -8,6 +8,8 @@ export const useCompanyStore = defineStore('company',() => {
     const message = ref<string>('');
     const error = ref<boolean>(false);
     const listCompany = ref<ICompanyResponse[]>([]);
+    const errors = ref<Record<string, string>>({});
+
     
 
     const createCompanyStore = async (formData: FormData) => {
@@ -19,12 +21,22 @@ export const useCompanyStore = defineStore('company',() => {
             message.value = data.message || 'Tạo công ty thành công';
         } catch (err: any) {
             error.value = true;
-            console.error("Lỗi khi tạo công ty:", err.response?.data);
-            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi tạo công ty';
+            const res = err.response?.data;
+            console.error('Error createCompany', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => {
+                    map[e.path] = e.msg;
+                });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            }
+            else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
         } finally {
             loading.value = false;
         }
-
     }
     const getAllCompanyStore = async () => {
         try {
@@ -37,7 +49,7 @@ export const useCompanyStore = defineStore('company',() => {
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi lấy danh sách công ty:", err.response?.data);
-            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy danh sách công ty';
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy ds công ty';
         } finally {
             loading.value = false;
         }
@@ -68,7 +80,49 @@ export const useCompanyStore = defineStore('company',() => {
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi lấy danh sách công ty của tôi:", err.response?.data);
+            message.value = err.response?.data?.message || 'Lấy thông tin công ty thất bại';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const getCompanyDetailOfMeStore = async () => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await GetCompanyDetailOfMe();
+            message.value = data.message || 'Lấy thông tin công ty thành công';
+            return data.data || null;
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi lấy công ty của tôi:", err.response?.data);
             message.value = err.response?.data?.message || ':ỗi khi lấy thông tin công ty của tôi';
+        } finally {
+            loading.value = false;
+        }    
+    }
+    const UpdateCompanyStore = async (companyID: number, formData: FormData) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await UpdateCompany(companyID, formData);
+            message.value = data.message || 'Cập nhật công ty thành công';
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error updateCompany', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => {
+                    map[e.path] = e.msg;
+                });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            }
+            else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
         } finally {
             loading.value = false;
         }
@@ -81,7 +135,9 @@ export const useCompanyStore = defineStore('company',() => {
         createCompanyStore,
         getAllCompanyStore,
         requestCompanyStore,
-        getCompanyOfMeStore
+        getCompanyOfMeStore,
+        getCompanyDetailOfMeStore,
+        UpdateCompanyStore
     }
 
 })

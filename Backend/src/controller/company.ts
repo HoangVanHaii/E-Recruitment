@@ -52,6 +52,7 @@ export const CreateCompany = async (req: Request, res: Response, next: NextFunct
 }
 export const getCompanyOfMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        // await CompanyService.checkEmployer(req.user!.id);
         const data = await CompanyService.getCompanyOfMe(req.user!.id);
         return res.status(200).json({
             success: true,
@@ -67,6 +68,7 @@ export const UpdateCompany = async (req: Request, res: Response, next: NextFunct
     try {
         const companyData: IUpdateCompany = req.body;
         const CompanyId: number = Number(req.params.CompanyID);
+        await CompanyService.checkEmployer(req.user!.id);
         if (req.files) {
             const uploaded = await CompanyService.handleCompanyUploads(req.files as Express.Multer.File[]);
             Object.assign(companyData, uploaded.data)
@@ -95,6 +97,7 @@ export const UpdateCompanyStatus = async (req: Request, res: Response, next: Nex
     try {
         const CompanyId: number = Number(req.params.CompanyID);
         const { status } = req.body;
+        await CompanyService.checkEmployer(req.user!.id);
 
         await CompanyService.UpdateCompanyStatus(CompanyId, status.toString());
 
@@ -144,6 +147,9 @@ export const GetCompanyDetail = async (req: Request, res: Response, next: NextFu
         const CompanyId: number = Number(req.params.CompanyID);
         const role = req.user?.role || "Candidate";
         const cacheKey = `company:role:${role}:${CompanyId}`;
+        if (role === "Employer") {
+            await CompanyService.checkEmployer(req.user!.id);
+        }
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
             return res.status(200).json({
@@ -167,9 +173,10 @@ export const GetCompanyDetail = async (req: Request, res: Response, next: NextFu
 }
 export const GetCompanyDetailOfMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        await CompanyService.checkEmployer(req.user!.id);
         const CompanyId = await CompanyService.getCompanyIdOfMe(req.user!.id);
         if (CompanyId === null) {
-            throw new AppError("Bạn không thuộc công ty nào", 401);
+            throw new AppError("Bạn không thuộc công ty nào", 403);
         }
         const cacheKey = `company-ofme:role:${req.user?.role || "Candidate"}:${CompanyId}`;
         const cachedData = await redisClient.get(cacheKey);
@@ -197,6 +204,9 @@ export const GetCompanyDetailOfMe = async (req: Request, res: Response, next: Ne
 export const GetAllCompany = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const role = req.user?.role || "Candidate";
+        // if (role === "Employer") {
+        //     await CompanyService.checkEmployer(req.user!.id);
+        // }
         const cacheKey = `company:role:${role}:all`;
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {

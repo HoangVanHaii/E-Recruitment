@@ -53,4 +53,10 @@ export interface iResumeDetail{
     experience: NonNullable<iResumeDetail['experience']>;
     education: NonNullable<iResumeDetail['education']>;
     projects: FormProject[];
-  }
+}
+export interface iResumeList {
+    ResumeID: number;
+    Title: string;
+    CreatedAt: Date;
+    AvatarUrl?: string; 
+}

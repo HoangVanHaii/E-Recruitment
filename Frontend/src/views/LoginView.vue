@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 import bgLogin from '../assets/bg-login.jpg';
 import Notify from '../components/Notify.vue';
+import { use } from 'apexcharts';
 
 const router = useRouter();
 const route = useRoute();
@@ -53,13 +54,12 @@ const handleSubmit = async () => {
         message.value = useAuth.message || 'Có lỗi xảy ra!';
     } else {
         if(useAuth.role === 'Employer') {
-            router.push({ 
-            path: '/create-job', 
-            state: { 
-                loginSuccess: true
-            } 
-        });
-        } else {
+            router.push({  path: '/employer-dashboard'});
+        }
+        else if (useAuth.role === 'Admin') {
+            router.push({path: '/admin-dashboard'})
+        }
+        else {
             router.push({ 
                 path: '/home', 
                 state: { 

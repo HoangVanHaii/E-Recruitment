@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import pool from "../config/database"; 
 import { AppError } from '../utils/appError';
-import { iResumeDetail,iResume } from '../interface/resume';
+import { iResumeDetail,iResume, iResumeList } from '../interface/resume';
 import { updateCandidateSkills, upsertCandidateProfile } from './candidate';
 import ResumeDetail from '../model/resumeDetail';
 import { generateAndStoreVector } from '../utils/ai';
@@ -134,7 +134,9 @@ export const getCandidateResumes = async (candidateId: number) => {
 
 export const getResumeDetail = async (resumeId: number, candidateId: number) => {
     const [rows]: any = await pool.query(`SELECT ResumeID FROM Resumes WHERE ResumeID = ? AND CandidateID = ?`, [resumeId, candidateId]);
-    if (rows.length === 0) return null;
+    if (rows.length === 0) {
+        throw new AppError("Cv không tồn tại", 404);
+    }
 
     return await ResumeDetail.findOne({ resumeId });
 };
@@ -197,3 +199,13 @@ export const getResumeForEmployer = async (resumeId: number) => {
     return await ResumeDetail.findOne({ resumeId });
 };
 
+export const getListResume = async (candidateId: number): Promise<iResumeList> => {
+    
+    const query = `SELECT r.ResumeID, r.Title, r.CreatedAt, c.AvatarUrl
+        FROM Candidates c
+        JOIN Resumes r ON c.CandidateID = r.CandidateID
+        WHERE c.CandidateID = ?    
+    `
+    const [rows]: any = await pool.query(query, [candidateId]);
+    return rows;
+}

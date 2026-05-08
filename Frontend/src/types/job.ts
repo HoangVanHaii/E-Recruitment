@@ -46,9 +46,9 @@ export interface IJobPayload {
     VectorID?: string;
 }
 export interface IInterviewRound {
-    RoundOrder: number;
-    RoundTitle: string;
-    Details: string;
+    roundOrder: number;
+    roundTitle: string;
+    details: string;
 }
 
 export interface IJobDetailPayload {
@@ -80,5 +80,6 @@ export interface IListJob {
     CompanyLogo: string;
     Description: string;
     Status: string;
+    ExpiredDate?: Date | string | null;
     ApplicationCount: number;   
 }

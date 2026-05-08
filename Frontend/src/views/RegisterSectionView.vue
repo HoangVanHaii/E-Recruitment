@@ -3,8 +3,9 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
-const candidate_illus_url = 'https://img.freepik.com/free-vector/job-interview-conversation_74855-6677.jpg';
-const recruiter_illus_url = 'https://img.freepik.com/free-vector/human-resources-concept-with-recruitment_23-2148154146.jpg';
+import candidate_illus_url from '../assets/section-left.jpg'
+import recruiter_illus_url from '../assets/section-rìght.jpg'
+import bg_section from '../assets/bg-section.jpg'
 
 const selectionCards = [
     {
@@ -32,13 +33,11 @@ const selectionCards = [
         ],
         buttonClass: 'bg-[#e8b420] hover:bg-yellow-600',
         dotColor: 'bg-yellow-500',
-        // Cấu hình router với query
         path: '/request-otp',
         role: 'Employer'
     }
 ];
 
-// Hàm điều hướng sử dụng query
 const handleNavigate = (path: string, role: string) => {
     localStorage.setItem('role', role);
     router.push({
@@ -49,9 +48,9 @@ const handleNavigate = (path: string, role: string) => {
 </script>
 
 <template>
-  <main 
-    class="relative bg-cover bg-center min-h-[600px] flex items-center py-10" 
-    style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');"
+<main 
+    class="relative bg-cover bg-center flex-1 min-h-[calc(100vh-70px)] flex items-center justify-center py-20" 
+    :style="{ backgroundImage: `url(${bg_section})` }"
   >
     <div class="absolute inset-0 bg-black/10"></div>
 

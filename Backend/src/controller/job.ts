@@ -19,7 +19,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const cacheKey = `jobs_list:p${filters.Page}:l${filters.Limit}:c${filters.CategoryId || 'all'}:loc_${filters.Location || 'all'}:min${filters.MinSalary || 'all'}:max${filters.MaxSalary || 'all'}`;
         const cachedJobs = await redisClient.get(cacheKey);
         if (cachedJobs) {
-            console.log("Lấy dữ liệu từ Redis cache");
+            console.log("Lấy dữ liệu từ Redis cache   ");
             // return res.status(200).json({
             //     success: true,
             //     message: "Lấy tất cả job thành công",
@@ -66,12 +66,12 @@ export const getJobDetail = async (req: Request, res: Response, next: NextFuncti
         const cacheKey = `job_detail:${jobId}`;
         const cachedJobDetail = await redisClient.get(cacheKey);
         if (cachedJobDetail) {
-            console.log("Lấy dữ liệu chi tiết công việc từ Redis cache");
-            return res.status(200).json({
-                success: true,
-                message: "Lấy chi tiết công việc thành công",
-                data: JSON.parse(cachedJobDetail)
-            });
+            // console.log("Lấy dữ liệu chi tiết công việc từ Redis cache");
+            // return res.status(200).json({
+            //     success: true,
+            //     message: "Lấy chi tiết công việc thành công",
+            //     data: JSON.parse(cachedJobDetail)
+            // });
         }
         const jobDetail = await jobService.getJobDetail(jobId);
         if (!jobDetail) {
@@ -106,6 +106,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
 
         const employerID = Number(req.user!.id);
         const employerProfile = await employerService.checkEmployerProfile(employerID);
+        await employerService.CheckCompanyStatus(employerID);
 
         if (!employerProfile) {
             throw new AppError('Vui lòng tạo hồ sơ nhà tuyển dụng trước khi đăng tuyển', 400)
@@ -113,6 +114,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
         if (employerProfile.ApprovalStatus !== "Approved") {
             throw new AppError('Hồ sơ nhà tuyển dụng của bạn đang chờ duyệt hoặc đã bị từ chối', 403);
         }
+
         const jobPayload: IJobPayload = {
             EmployerID: employerID,
             CategoryID: categoryId,
@@ -234,20 +236,21 @@ export const getJobOfMe = async (req: Request, res: Response, next: NextFunction
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
+        const status = req.query.status as string || "All";
         
         const employerID = req.user!.id;
-        const cacheKey = `employer_jobs_list:u${employerID}:p${page}:l${limit}`;
+        const cacheKey = `employer_jobs_list:u${employerID}:p${page}:l${limit}:s${status}`;
 
         const cachedJobs = await redisClient.get(cacheKey);
         if (cachedJobs) {
-            console.log("Lấy dữ liệu từ Redis cache");
-            return res.status(200).json({
-                success: true,
-                message: "Lấy công việc của bạn thành công",
-                data: JSON.parse(cachedJobs)
-            });
+            // console.log("Lấy dữ liệu từ Redis cache");
+            // return res.status(200).json({
+            //     success: true,
+            //     message: "Lấy công việc của bạn thành công",
+            //     data: JSON.parse(cachedJobs)
+            // });
         }
-        const jobs = await jobService.getJobOfMe(page, limit);
+        const jobs = await jobService.getJobOfMe(req.user!.id, page, limit, status);
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobs));
         res.status(200).json({
             success: true,

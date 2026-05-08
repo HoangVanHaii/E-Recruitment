@@ -26,7 +26,8 @@ export const UpdateStatusEmployer = async (req: Request, res: Response, next: Ne
 }
 export const GetPendingEmployers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await employerService.getPendingEmployers(req.user!.id);
+        const status = req.query.status as string || "all";
+        const data = await employerService.getPendingEmployers(req.user!.id, status);
         res.json({
             success: true,
             message: "Lấy danh sách yêu cầu nhân viên thành công",
@@ -36,3 +37,16 @@ export const GetPendingEmployers = async (req: Request, res: Response, next: Nex
         next(error);
     }
 };
+
+export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const stats = await employerService.getDashboardStats(req.user!.id);
+        res.json({
+            success: true,
+            message: "Lấy thống kê dashboard thành công",
+            data: stats
+        });
+    } catch (error) {
+        next(error);
+    }
+}

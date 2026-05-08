@@ -180,14 +180,11 @@ export const getJobDetail = async (jobId: number) => {
         JOIN Employers e ON j.EmployerID = e.EmployerID
         JOIN Companies c ON e.CompanyID = c.CompanyID
         WHERE j.JobID = ?`;
-
     const [mysqlResult, jobDetailDoc] = await Promise.all([
         pool.query(query, [jobId]),
         JobDetailModel.findOne({ mysqlJobID: jobId }).lean()
     ]);
-
     const [rows]: any = mysqlResult;
-
     if (rows.length === 0 || !jobDetailDoc) {
         return null;
     }
@@ -291,10 +288,9 @@ export const updateJob = async (payload: any) => {
 
     return true;
 }
-
-export const getJobOfMe = async (page: number, limit: number) => {
+export const getJobOfMe = async (userId: number, page: number, limit: number, status: string) => {
     const offset = (page - 1) * limit;
-    const queryParams: any[] = [];
+    const queryParams: any[] = [userId];
 
     let query = `
         SELECT 
@@ -305,11 +301,25 @@ export const getJobOfMe = async (page: number, limit: number) => {
             c.CompanyName, 
             c.LogoUrl AS CompanyLogo, 
             j.Status,
+            j.ExpiredDate,
             COUNT(ja.ApplicationID) AS ApplicationCount
         FROM jobs j
         JOIN employers e ON j.EmployerID = e.EmployerID
         JOIN companies c ON e.CompanyID = c.CompanyID
         LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+        WHERE e.EmployerID = ?
+    `;
+
+    if (status !== 'All') {
+        if (status === 'Expired') {
+            query += ` AND j.ExpiredDate < NOW() `;
+        } else {
+            query += ` AND j.Status = ? AND j.ExpiredDate >= NOW() `;
+            queryParams.push(status);
+        }
+    }
+
+    query += `
         GROUP BY 
             j.JobID, 
             j.Title, 
@@ -317,18 +327,21 @@ export const getJobOfMe = async (page: number, limit: number) => {
             j.CreatedAt, 
             c.CompanyName, 
             c.LogoUrl, 
-            j.Status
+            j.Status,
+            j.ExpiredDate
         ORDER BY j.CreatedAt DESC 
-        LIMIT ? OFFSET ?`;
+        LIMIT ? OFFSET ?
+    `;
 
     queryParams.push(limit, offset);
+
     const [rows]: any = await pool.query(query, queryParams);
 
     const jobIds = rows.map((job: any) => job.JobID);
-    const finalJobList = await mergeJob(jobIds, rows)
+    const finalJobList = await mergeJob(jobIds, rows);
 
     return finalJobList as IListJob[];
-}
+};
 export const isJobOwner = async (employerId: number, jobId: number) => {
     const query = `SELECT EmployerID FROM jobs WHERE JobID = ? AND EmployerID = ?`;
     const value = [jobId, employerId]
