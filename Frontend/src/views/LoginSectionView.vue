@@ -13,17 +13,16 @@ const selectionCards = [
         image: candidate_illus_url, 
         benefits: [
             { text: '100.000+', highlight: true, label: 'Công việc mơ ước' },
-            { text: '365+', highlight: true, label: 'Mẫu CV chuyên nghiệp' },
+            { text: '305+', highlight: true, label: 'Mẫu CV chuyên nghiệp' },
             { text: '22+', highlight: true, label: 'Bộ đề câu hỏi tuyển dụng' }
         ],
         buttonClass: 'bg-[#001489] hover:bg-blue-800',
         dotColor: 'bg-blue-900',
-        path: '/login',
         role: 'Candidate'
     },
     {
         id: 'recruiter',
-        title: 'Đăng nhập nhà tuyển dụng',
+        title: 'Đăng nhập trang quản trị',
         image: recruiter_illus_url, 
         benefits: [
             { text: '', highlight: false, label: 'Đăng tin tuyển dụng miễn phí' },
@@ -32,14 +31,13 @@ const selectionCards = [
         ],
         buttonClass: 'bg-[#e8b420] hover:bg-yellow-600',
         dotColor: 'bg-yellow-500',
-        path: '/login',
         role: 'Employer'
     }
 ];
 
-const handleNavigate = (path: string, role: string) => {
+const handleNavigate = (role: string) => {
     router.push({
-        path: path,
+        path: '/login',
         query: { role: role }
     });
 };
@@ -81,7 +79,7 @@ const handleNavigate = (path: string, role: string) => {
                         </ul>
 
                         <button 
-                            @click="handleNavigate(card.path, card.role)"
+                            @click="handleNavigate(card.role)"
                             :class="[
                                 'w-full text-white font-bold py-3.5 rounded-lg text-sm md:text-base uppercase shadow transition-all active:scale-95',
                                 card.buttonClass

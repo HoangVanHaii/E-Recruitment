@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import logo from '../assets/logo1.jpg';
+import logo from '../assets/logoWebsite.png';
 import { ref } from 'vue';
 
 const openMenu = ref<number | null>(null);
@@ -8,7 +8,7 @@ const toggleMenu = (index: number) => {
 }
 const menuItems = [
     {
-        title: 'Về Timviec365',
+        title: 'Về TimviecFinder',
         links: ['Giới thiệu', 'Thông tin hỏi đáp', 'Quy chế hoạt động', 'Bảo mật', 'Thỏa thuận']
     },
     {
@@ -21,7 +21,7 @@ const menuItems = [
     },
     {
         title: 'Tiện ích',
-        links: ['Tra cứu lương', 'Email 365', 'Tải app']
+        links: ['Tra cứu lương', 'Email Finder', 'Tải app']
     }
     
 ];
@@ -29,7 +29,7 @@ const companyInfo = [
     'Nơi cấp: Sở Kế hoạch và Đầu tư tỉnh Hưng Yên',
     'Địa chỉ: Thị Trung - Như Quỳnh - Hưng Yên',
     'Hotline: 0979.524.615',
-    'Email: timviec365.vn@gmail.com'
+    'Email: timviecfinder.vn@gmail.com'
 ];
 
 </script>
@@ -74,7 +74,7 @@ const companyInfo = [
                 </div>
   
                 <div class="text-[14px] leading-relaxed text-gray-100">
-                    <h4 class="font-bold text-[15px] mb-1">Công ty TNHH MTV JOB365</h4>
+                    <h4 class="font-bold text-[15px] mb-1">Công ty TNHH MTV JOBFinder</h4>
                     <ul class="space-y-1">
                         <li v-for="(info, index) in companyInfo" :key="index">
                             {{ info }}

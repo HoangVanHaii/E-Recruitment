@@ -293,7 +293,7 @@ export const getAllEmployers = async (page: number, limit: number) => {
         `;
         const [countResult]: any = await pool.query(countQuery);
         total = countResult[0].total;
-        totalpage = Math.ceil(total || 0 / limit);
+        totalpage = Math.ceil((total || 0) / limit);
     }
     const query = `
         SELECT 

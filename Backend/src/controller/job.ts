@@ -368,3 +368,29 @@ export const get7DayStatsForAdmin = async (req: Request, res: Response, next: Ne
         next(error);
     }
 }
+export const searchJobByCategory = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const categoryId = parseInt(req.params.categoryId as string);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const cacheKey = `jobs_category_${categoryId}:p${page}:l${limit}`;
+        const cachedJobs = await redisClient.get(cacheKey);
+        if (cachedJobs) {
+            console.log("Lấy dữ liệu tìm kiếm theo category từ Redis cache");
+            return res.status(200).json({
+                success: true,
+                message: "Lấy công việc theo category thành công",
+                data: JSON.parse(cachedJobs)
+            });
+        }
+        const jobs = await jobService.searchJobByCategory(categoryId, page, limit);
+        await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobs));
+        res.status(200).json({
+            success: true,
+            message: "Lấy công việc theo category thành công",
+            data: jobs
+        });
+    } catch (error) {
+        next(error);
+    }
+}

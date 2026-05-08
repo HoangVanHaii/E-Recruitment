@@ -105,7 +105,7 @@ const handleRegisterSucsess = () => {
                 </div>
                 <div class="flex justify-center items-center gap-2 text-sm text-gray-700 ">
                     <input type="checkbox" v-model="checked" class="w-5 h-5 accent-blue-500 cursor-pointer">
-                    <span class="text-gray-700 text-lg">Tôi đã đọc và đồng ý <a href="" class="text-blue-700">Điều khoản dịch vụ</a> và <a href="" class="text-blue-700">Chính sách bảo mật</a> của Timviec365.vn</span>
+                    <span class="text-gray-700 text-lg">Tôi đã đọc và đồng ý <a href="" class="text-blue-700">Điều khoản dịch vụ</a> và <a href="" class="text-blue-700">Chính sách bảo mật</a> của TimviecFinder.vn</span>
                 </div>
                 <div class="flex justify-center p-[3px]">
                     <button class="bg-blue-900 text-white bold px-7 py-1 rounded-[5px] text-xl" :disabled="useAuth.loading" :class="{ 'opacity-70 cursor-not-allowed': useAuth.loading }"  >

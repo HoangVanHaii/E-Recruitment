@@ -20,7 +20,7 @@ const durationNotify = ref<number>(2000);
 const role = computed(() => route.query.role as string || 'Candidate');
 
 const roleName = computed(() => {
-    return role.value === 'Employer' ? 'Nhà tuyển dụng' : 'Ứng viên';  
+    return role.value === 'Employer' ? 'Vào Hệ thống quản trị' : 'Để tìm việc Nhanh chóng trên';  
 })
 const validateForm = () => {
     if (!email.value || !password.value) {
@@ -53,10 +53,10 @@ const handleSubmit = async () => {
         message.value = useAuth.message || 'Có lỗi xảy ra!';
     } else {
         if(useAuth.role === 'Employer') {
-            router.push({  path: '/employer-dashboard'});
+            router.push({ path: '/employer-dashboard'});
         }
         else if (useAuth.role === 'Admin') {
-            router.push({path: '/admin-dashboard'})
+            router.push({ name: 'admin-dashboard'})
         }
         else {
             router.push({ 
@@ -106,7 +106,7 @@ onMounted(() => {
     <div class="flex flex-col justify-center items-center min-h-screen bg-gray-100 bg-cover bg-center p-4" :style="{ backgroundImage: `url(${bgLogin})` }">
         <div class="flex flex-col md:flex-row justify-between items-center w-full max-w-5xl p-10 rounded-xl gap-10">
             <div class="w-full md:w-1/2 text-blue-700">
-                <h1 class="text-3xl font-semibold leading-tight uppercase">ĐĂNG NHẬP TÀI KHOẢN {{ roleName }} 365</h1>
+                <h1 class="text-3xl font-semibold leading-tight uppercase">ĐĂNG NHẬP {{ roleName }} <br> tìm việc - Finder</h1>
             </div>
             <div class="w-full md:w-[400px] bg-white p-8 rounded-lg shadow-lg border border-gray-100">
                 <h2 class="text-center text-blue-700 text-xl border-b font-semibold">Tài khoản</h2>

@@ -14,19 +14,21 @@ const authStore = useAuthStore();
 const isFolderOpen = ref(true); 
 </script>
 <template>
-    <div class="w-[260px] min-h-screen bg-[#24348b] text-white flex flex-col shrink-0">
+    <div class="w-[260px] min-h-screen bg-[#4c5bd4] text-white flex flex-col shrink-0">
         <div class="p-5 border-b border-white/10">
             <div class="bg-white/10 rounded-xl p-4 flex flex-col items-center text-center">
                 <img :src="authStore?.user?.ImgUrl || 'https://i.pravatar.cc/150?u=dang'" 
                      class="w-[70px] h-[70px] rounded-full object-cover border-2 border-white/20 mb-3 bg-gray-200">
                 <span class="font-bold text-[15px] mb-3">{{ authStore?.user?.Name || 'Nguyễn Hải Đăng' }}</span>
-                <button class="bg-[#d9534f] hover:bg-red-600 text-white font-semibold text-[13px] py-1.5 px-6 rounded-md transition-colors w-full">
-                    Xóa tài khoản
+                <button @click="authStore.handleLogout" class="bg-[#d9534f] hover:bg-red-600 text-white font-semibold text-[12px] py-1.5 px-6 rounded-md transition-colors w-full">
+                    <i class="fas fa-sign-out-alt text-xs"></i>
+                    Đăng xuất
+
                 </button>
             </div>
         </div>
 
-        <div class="flex-1 py-4 flex flex-col font-medium text-[14.5px]">
+        <div class="flex-1 py-4 flex flex-col fxont-medium text-[14.5px]">
             
             <button @click="$emit('changeTab', 'account_management')" 
                     :class="activeMainTab === 'account_management' ? 'bg-white/10 border-l-4 border-white' : ''"
@@ -43,14 +45,14 @@ const isFolderOpen = ref(true);
                     <ChevronDown class="w-4 h-4 transition-transform" :class="{'rotate-180': !isFolderOpen}" />
                 </button>
                 
-                <div v-show="isFolderOpen" class="flex flex-col bg-[#1c286b]"> 
+                <div v-show="isFolderOpen" class="flex flex-col bg-[#3f4fc9]"> 
                     <button @click="$emit('changeTab', 'online_profile')" 
-                            :class="activeMainTab === 'online_profile' ? 'bg-[#14205c] border-l-4 border-white font-bold' : 'hover:bg-white/5'"
+                            :class="activeMainTab === 'online_profile' ? 'bg-white/10 border-l-4 border-white font-bold' : 'hover:bg-white/5'"
                             class="py-3 pl-[52px] pr-6 text-left transition-all">
                         Hồ sơ Online
                     </button>
                     <button @click="$emit('changeTab', 'resumes_list')" 
-                            :class="activeMainTab === 'resumes_list' ? 'bg-[#14205c] border-l-4 border-white font-bold' : 'hover:bg-white/5'"
+                            :class="activeMainTab === 'resumes_list' ? 'bg-white/10 border-l-4 border-white font-bold' : 'hover:bg-white/5'"
                             class="py-3 pl-[52px] pr-6 text-left transition-all">
                         CV xin việc
                     </button>

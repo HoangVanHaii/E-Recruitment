@@ -21,7 +21,6 @@ export const getJobDetail = async (id: number) => {
 };
 export const searchJobs = async (query: string) => {
     const response = await api.get("/jobs/search-ai", { params: { q: query } });
-    console.log("SearchJobs response:", response.data);
     return response.data;
 }
 export const savedJob = async (jobId: number) => {
@@ -74,5 +73,11 @@ export const getJobForAdminByStatus = async (status: string, page: number = 1, l
 }
 export const changeStatusJob = async (jobId: number, status: string) => {
     const response = await api.put(`/jobs/admin/change-status-job/${jobId}`, { status });
+    return response.data;
+}
+export const searchJobByCategory = async (categoryId: number, page: number = 1, limit: number = 10) => {
+    const response = await api.get(`/jobs/search-by-category/${categoryId}`, {
+        params: { page, limit }
+    });
     return response.data;
 }

@@ -15,7 +15,6 @@ export const searchJobsAI = async (req: Request, res: Response, next: NextFuncti
             ...aiMatches.map(m => m.jobId),
             ...keywordResults.map(j => j.JobID)
         ]);
-
         if (allJobIds.size === 0) return res.status(200).json({ success: true, data: [] });
 
         const jobIdsArray = Array.from(allJobIds);

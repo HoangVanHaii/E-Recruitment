@@ -123,14 +123,14 @@ const handleCancelApplication = async (app: any) => {
 
         <div class="mb-6">
             <h2 class="text-[17px] font-black text-[#14205c] tracking-wide uppercase">
-                // Danh sách công việc đã ứng tuyển
+                Danh sách công việc đã ứng tuyển
             </h2>
         </div>
 
         <div v-if="!loading && applications.length === 0 && currentPage === 1" 
              class="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
-            <p class="text-gray-500 font-medium">Sếp Đăng chưa ứng tuyển công việc nào cả!</p>
+            <p class="text-gray-500 font-medium">Bạn chưa ứng tuyển công việc nào cả!</p>
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

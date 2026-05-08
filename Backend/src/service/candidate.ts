@@ -294,7 +294,7 @@ export const getAllCandidates = async (page: number, limit: number) => {
         const countQuery = `SELECT COUNT(*) AS total FROM Candidates`;
         const [countResult]: any = await pool.query(countQuery);
         total = countResult[0].total;
-        totalpage = Math.ceil(total || 0 / limit);
+        totalpage = Math.ceil((total || 0) / limit);
     }
     const query = `
         SELECT 

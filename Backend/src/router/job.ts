@@ -11,6 +11,7 @@ router.get('/job-of-me', authMiddleware, isEmployer, jobController.getJobOfMe);
 router.get('/recommended', authMiddleware, jobController.getRecommendedJobs);
 router.get('/search-ai', searchAiController.searchJobsAI);  
 router.get('/job-categories', jobController.getAllCategories);
+router.get('/search-by-category/:categoryId', jobController.searchJobByCategory);
 router.get('/:id', jobController.getJobDetail)
 router.post("/create-job", authMiddleware, isEmployer, jobMiddleware.createJobValidation, validateRequest, jobController.createJob);
 

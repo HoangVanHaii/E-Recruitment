@@ -1,28 +1,43 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { Search, Plus, ChevronRight } from 'lucide-vue-next';
 import SearchJob from './SearchJob.vue';
+import bannerVideo from '../assets/banner1.mp4';
 import { useJobStore } from '../stores/job';
+import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { Search, Plus, ChevronRight, ChevronLeft } from 'lucide-vue-next';
 import type { IJob } from '../types/job';
 
-// Import file video từ thư mục assets
-import bannerVideo from '../assets/banner1.mp4';
-
 const jobStore = useJobStore();
-
-const categories = [
-    { name: 'Kế toán' },
-    { name: 'Việc làm thời gian' },
-    { name: 'Hành chính - Văn...' },
-    { name: 'IT phần mềm' },
-    { name: 'Xây dựng' },
-];
-
+const router = useRouter();
 const searchQuery = ref('');
 const searchResults = ref<IJob[]>([]);
 const showSidebar = ref(false);
 const isSearching = ref(false);
 const currentKeyword = ref('');
+
+const currentPage = ref(1);
+const itemsPerPage = 5
+
+const totalPages = computed(() => {
+    return Math.ceil((jobStore.listCategoryJobs?.length || 0) / itemsPerPage);
+});
+
+const displayedCategories = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    return (jobStore.listCategoryJobs || []).slice(start, start + itemsPerPage);
+});
+
+const prevPage = () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+    }
+};
+
+const nextPage = () => {
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+    }
+};
 
 const handleSearch = async (keywordToSearch?: string) => {
     const query = typeof keywordToSearch === 'string' ? keywordToSearch : searchQuery.value;
@@ -31,17 +46,17 @@ const handleSearch = async (keywordToSearch?: string) => {
     showSidebar.value = true;
     isSearching.value = true;
     currentKeyword.value = query;
-
-    try {
-        await jobStore.fetchJobSearch(query);
-        searchResults.value = jobStore.listJobSearch;
-    } catch (error) {
-        console.error('Lỗi tìm kiếm:', error);
-    } finally {
-        isSearching.value = false;
-    }
+    await jobStore.fetchJobSearch(query);
+    searchResults.value = jobStore.listJobSearch;
+    isSearching.value = false;
 };
-
+const goToCategory = (category: any) => {
+    router.push({
+        name: 'search-by-category',
+        params: { id: category.CategoryID }, 
+        query: { name: category.CategoryName }
+    });
+};
 interface Snowflake {
     x: number;
     y: number;
@@ -143,6 +158,7 @@ const initSnow = () => {
 onMounted(async () => {
     await nextTick();
     initSnow();
+    await jobStore.fetchCategories();
 });
 
 onUnmounted(() => {
@@ -192,26 +208,49 @@ onUnmounted(() => {
 
             <div class="flex flex-col md:flex-row gap-4">
 
-                <div class="w-full md:w-64 bg-white rounded-lg shadow-lg overflow-hidden">
-                    <ul class="py-2">
+                <div class="w-full md:w-64 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col justify-between">
+                    <ul class="py-2 flex-1 min-h-[264px]">
                         <li
-                            v-for="cat in categories"
-                            :key="cat.name"
-                            class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 group"
+                            v-for="cat in displayedCategories"
+                            @click="goToCategory(cat)"
+                            :key="cat.CategoryName"
+                            class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 group transition-colors"
                         >
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-600">{{ cat.name }}</span>
-                            <ChevronRight class="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-600 truncate max-w-[180px]" :title="cat.CategoryName">
+                                {{ cat.CategoryName }}
+                            </span>
+                            <ChevronRight class="w-4 h-4 text-gray-400 group-hover:text-blue-600 shrink-0" />
                         </li>
                     </ul>
+                    
+                    <div class="flex items-center justify-between px-4 py-2 border-t border-gray-100 bg-gray-50/80 mt-auto">
+                        <button 
+                            @click="prevPage" 
+                            :disabled="currentPage === 1"
+                            class="p-1 rounded bg-white border border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronLeft class="w-4 h-4" />
+                        </button>
+                        <span class="text-xs font-semibold text-gray-500">
+                            {{ currentPage }} / {{ totalPages || 1 }}
+                        </span>
+                        <button 
+                            @click="nextPage" 
+                            :disabled="currentPage === totalPages || totalPages === 0"
+                            class="p-1 rounded bg-white border border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronRight class="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
-                <div class="flex-1 bg-black rounded-lg min-h-[250px] flex items-center justify-center overflow-hidden relative shadow-lg group">
+                <div class="flex-1 bg-black rounded-lg min-h-[280px] flex items-center justify-center overflow-hidden relative shadow-lg group">
                     <video 
                         autoplay 
                         loop 
                         muted 
                         playsinline 
-                        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 scale-105 group-hover:scale-110"
                     >
                         <source :src="bannerVideo" type="video/mp4" />
                         Trình duyệt của bạn không hỗ trợ thẻ video.

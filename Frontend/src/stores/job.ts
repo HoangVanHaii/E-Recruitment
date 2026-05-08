@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { changeStatusJob, createJob, deleteJob, get7DayStartsForAdmin, getJobForAdminByStatus, getJobOfMe, getJobStatsForAdmin, getTopJobsForAdmin } from '../services/job';
+import { changeStatusJob, createJob, deleteJob, get7DayStartsForAdmin, getJobForAdminByStatus, getJobOfMe, getJobStatsForAdmin, getTopJobsForAdmin, searchJobByCategory } from '../services/job';
 import type{ IListJob, IJob, IJobDetail } from '../types/job';
 import { getAllCategories, getAllJobs, getJobDetail, getMySavedJobs, isSavedJob, savedJob, searchJobs, unsaveJob } from '../services/job';
 
@@ -317,6 +317,25 @@ export const useJobStore = defineStore('job',() => {
             loading.value = false;
         }
     }
+    const fetchJobSearchByCategory = async (categoryId: number, page: number = 1, limit: number = 10) => {
+        try {
+            loading.value = true;
+            errorLog.value = '';
+            const data = await searchJobByCategory(categoryId, page, limit);
+            listJobSearch.value = data.data.items || [];
+            if (data.data.totalPages !== undefined) {
+                totalPages.value = data.data.totalPages;
+            }
+             if (listJobSearch.value.length === 0) {
+                totalPages.value = 1;
+            }
+        } catch (err: any) {
+            console.error("Lỗi khi tìm kiếm job theo category:", err.response?.data);
+            error.value = err.response?.data?.message || 'Đã xảy ra lỗi khi tìm kiếm job theo category';
+        } finally {
+            loading.value = false;
+        }
+    }
     return {
         loading,
         message,
@@ -349,7 +368,8 @@ export const useJobStore = defineStore('job',() => {
         fetch7DayStatsForAdminStore,
         fetchTopJobsForAdminStore,
         fetchJobForAdminByStatusStore,
-        changeStatusJobStore
+        changeStatusJobStore,
+        fetchJobSearchByCategory
     }
 
 })

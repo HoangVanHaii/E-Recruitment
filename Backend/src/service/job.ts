@@ -116,11 +116,12 @@ export const getAllJobs = async (filters: IJobFilters) => {
             FROM jobs j
             JOIN employers e ON j.EmployerID = e.EmployerID
             JOIN companies c ON e.CompanyID = c.CompanyID
+            lEFT JOIN JobRecommendations r ON j.JobID = r.JobID
             ${whereClause}
         `;
         const [countResult]: any = await pool.query(countQuery, baseParams);
         total = countResult[0].totalItems;
-        totalPages = Math.ceil( (total || 0 ) / Limit);
+        totalPages = Math.ceil((total || 0 ) / Limit);
     }
 
     const dataQuery = `
@@ -136,6 +137,40 @@ export const getAllJobs = async (filters: IJobFilters) => {
     const dataParams = [...baseParams, Limit, offset];
     const [rows]: any = await pool.query(dataQuery, dataParams);
 
+    const jobIds = rows.map((job: any) => job.JobID);
+    const finalJobList = await mergeJob(jobIds, rows);
+
+    return {
+        items: finalJobList as IJob[],
+        ...(total !== undefined && { total, totalPages })
+    };
+}
+export const searchJobByCategory = async (categoryId: number, page: number, limit: number) => {
+    const offset = (page - 1) * limit;
+    let total: number | undefined = undefined;
+    let totalPages: number | undefined = undefined;
+    if (page === 1) {
+        const countQuery = `
+            SELECT COUNT(*) as totalItems
+            FROM jobs j
+            JOIN employers e ON j.EmployerID = e.EmployerID
+            JOIN companies c ON e.CompanyID = c.CompanyID
+            WHERE j.CategoryID = ? AND j.ExpiredDate > NOW() AND j.Status = 'Approved'
+        `;
+        const [countResult]: any = await pool.query(countQuery, [categoryId]);
+        total = countResult[0].totalItems;
+        totalPages = Math.ceil((total || 0) / limit);
+    }
+    const dataQuery = `
+        SELECT j.JobID, j.Title, j.Location, j.CreatedAt, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status
+        FROM jobs j
+        JOIN employers e ON j.EmployerID = e.EmployerID
+        JOIN companies c ON e.CompanyID = c.CompanyID
+        WHERE j.CategoryID = ? AND j.ExpiredDate > NOW() AND j.Status = 'Approved'
+        ORDER BY j.CreatedAt DESC
+        LIMIT ? OFFSET ?
+    `;
+    const [rows]: any = await pool.query(dataQuery, [categoryId, limit, offset]);
     const jobIds = rows.map((job: any) => job.JobID);
     const finalJobList = await mergeJob(jobIds, rows);
 
@@ -425,7 +460,6 @@ export const searchJobsByKeyword = async (q: string) => {
            OR Location LIKE ?
         LIMIT 20
     `;
-
     const [rows] = await pool.query(sql, [`%${q}%`, `%${q}%`]);
     return rows as any[];
 };
@@ -453,7 +487,6 @@ export const getJobForAdmin = async () => {
 }
 
 export const getJobForAdminByStatus = async (page: number, limit: number, status: string) => {
-    console.log(page, " ", limit, " ", status);
     const offset = (page - 1) * limit;
     let total: number | undefined = undefined;
     let totalPages: number | undefined = undefined;
@@ -469,6 +502,7 @@ export const getJobForAdminByStatus = async (page: number, limit: number, status
             FROM jobs j
             JOIN employers e ON j.EmployerID = e.EmployerID
             JOIN companies c ON e.CompanyID = c.CompanyID
+            LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
             ${whereClause}
         `;
         const [countResult]: any = await pool.query(countQuery, baseParams);

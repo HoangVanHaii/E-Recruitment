@@ -15,6 +15,7 @@ import FooterLayout from '../components/FooterLayout.vue'
 import CandidateProfileView from '../views/CandidateProfileView.vue'
 import ResumeDetailView from '../views/ResumeDetailView.vue'
 import { useAuthStore } from '../stores/auth'
+import SearchByCategory from '../views/SearchByCategory.vue'
 
 //Employer
 import CreateJobView from '../views/Employer/CreateJobView.vue'
@@ -54,17 +55,16 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         component: MainLayout,
-        meta: { roles: ['Employer', 'Admin', "Candidate"] },
         children: [
             { path: 'request-otp', name: 'request-otp', component: RegisterView },
             { path: 'verify-otp', name: 'verify-otp', component: VerifyOtp },
             { path: 'register', name: 'register', component: PasswordForm },
             { path: 'login', name: 'login', component: LoginView },
-            { path: 'home', name: 'home', component: HomeView },
             { path: 'login-section', name: 'login-section', component: LoginSectionView },
             { path: 'register-section', name: 'register-section', component: RegisterSectionView },
+            { path: 'home', name: 'home', component: HomeView },
             { path: 'job-detail/:id', name: 'job-detail', component: JobDetailView },
-            
+            { path: 'search-by-category/:id', name: 'search-by-category', component: SearchByCategory }
         ]
     },
 
@@ -124,7 +124,11 @@ router.beforeEach(async (to, _, next) => {
         await authStore.getCurrentRoleStore()
     }
     const role = authStore.role;
+    // 
     if (to.meta.roles) {
+        if (!role) {
+            return next('/login-section')
+        }
         const allowedRoles = to.meta.roles as string[]
         if (!allowedRoles.includes(role!)) {
             return next('/403')

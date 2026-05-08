@@ -12,7 +12,7 @@ const selectionCards = [
         image: candidate_illus_url, 
         benefits: [
         { text: '100.000+', highlight: true, label: 'Công việc mơ ước' },
-        { text: '365+', highlight: true, label: 'Mẫu CV chuyên nghiệp' },
+        { text: '305+', highlight: true, label: 'Mẫu CV chuyên nghiệp' },
         { text: '22+', highlight: true, label: 'Bộ đề câu hỏi tuyển dụng' }
         ],
         buttonClass: 'bg-[#001489] hover:bg-blue-800',

@@ -3,6 +3,7 @@ import SearchBar from '../components/SearchBar.vue';
 import Chat from '../components/Chat.vue';
 import Notify from '../components/Notify.vue';
 import Loading from '../components/Loading.vue';
+import SearchJob from '../components/SearchJob.vue';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { formatSalary, formatDate } from '../utils/format';
 import { storeToRefs } from 'pinia';
@@ -15,10 +16,11 @@ import {
     Briefcase, ChevronLeft, ChevronRight, 
     LayoutGrid, Megaphone, Headset, Monitor, Home, Calculator, Building2 
 } from 'lucide-vue-next';
-
+import type { IJob } from '../types/job';
 const router = useRouter();
 const jobStore = useJobStore();
 const employerStore = useEmployerStore();
+
 const topEmployersLogos = ref<string[]>([]);
 const provinces = ref<{ name: string; code: number }[]>([]);
 const filterType = ref<'location' | 'category' | 'salary'>('location');
@@ -26,6 +28,11 @@ const { jobs, totalPages, loading } = storeToRefs(jobStore);
 const showNotify = ref(false);
 const messageNotify = ref('');
 const isSuccessNotify = ref(true);
+
+const searchResults = ref<IJob[]>([]);
+const showSidebar = ref(false);
+const isSearching = ref(false);
+const currentKeyword = ref('');
 
 const filterState = reactive({
     page: 1,
@@ -136,7 +143,17 @@ const popularCategories = [
     { name: 'Việc làm KD bất động sản', icon: Home },
     { name: 'Việc làm Kế toán - Kiểm toán', icon: Calculator },
 ];
+const handleSearch = async (keywordToSearch?: string) => {
+    const query = typeof keywordToSearch === 'string' ? keywordToSearch : currentKeyword.value;
+    if (!query.trim()) return;
 
+    showSidebar.value = true;
+    isSearching.value = true;
+    currentKeyword.value = query;
+    await jobStore.fetchJobSearch(query);
+    searchResults.value = jobStore.listJobSearch;
+    isSearching.value = false;
+};
 </script>
 
 <template>
@@ -148,7 +165,15 @@ const popularCategories = [
     />
     <Loading v-if="jobStore.loading"/>
     <SearchBar />
-    
+    <SearchJob
+        v-if="showSidebar"
+        :jobs="searchResults"
+        :loading="isSearching"
+        :keyword="currentKeyword"
+        @close="showSidebar = false"
+        @search="handleSearch"
+        @view-job=""
+    />
     <div class="max-w-6xl mx-auto mt-4 px-4">
         <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-center gap-6 flex-wrap">   
             <div class="relative group border rounded-md px-3 py-1.5 flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-white transition-all">
@@ -309,6 +334,7 @@ const popularCategories = [
                 <div 
                     v-for="(cat, index) in popularCategories" 
                     :key="index"
+                    @click="handleSearch(cat.name)"
                     class="bg-[#f8f9fa] border border-transparent hover:border-blue-200 hover:shadow-md transition-all cursor-pointer rounded-xl py-8 px-4 flex flex-col items-center justify-center gap-4 group"
                 >
                     <div class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
