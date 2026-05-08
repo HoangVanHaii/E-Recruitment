@@ -1,5 +1,5 @@
-export interface Candidate {
-    CandidateID: number; 
+export interface ICandidate {
+    CandidateID: number;
     FullName: string;
     Phone?: string;
     DateOfBirth?: string;

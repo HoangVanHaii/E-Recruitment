@@ -10,6 +10,7 @@ export interface IJob {
     SalaryMin?: number;
     SalaryMax?: number;
     JobType?: string;
+    ApplicationCount?: number;
 }
 export interface IJobDetail {
     JobID: number;
@@ -46,9 +47,9 @@ export interface IJobPayload {
     VectorID?: string;
 }
 export interface IInterviewRound {
-    RoundOrder: number;
-    RoundTitle: string;
-    Details: string;
+    roundOrder: number;
+    roundTitle: string;
+    details: string;
 }
 
 export interface IJobDetailPayload {

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { createJob, deleteJob, getJobOfMe } from '../services/job';
+import { changeStatusJob, createJob, deleteJob, get7DayStartsForAdmin, getJobForAdminByStatus, getJobOfMe, getJobStatsForAdmin, getTopJobsForAdmin } from '../services/job';
 import type{ IListJob, IJob, IJobDetail } from '../types/job';
 import { getAllCategories, getAllJobs, getJobDetail, getMySavedJobs, isSavedJob, savedJob, searchJobs, unsaveJob } from '../services/job';
 
@@ -14,12 +14,14 @@ export const useJobStore = defineStore('job',() => {
 
     const jobs = ref<IJob[]>([]);
     const totalPages = ref<number>(1);
+    const totalItems = ref<number>(0);
     const errorLog = ref<string>('');
     const listCategoryJobs = ref<{ CategoryID: number; CategoryName: string }[]>([]);
     const listSavedJobs = ref<IJob[]>([]);
     const savedJobsTotalPages = ref<number>(1);
     const jobDetail = ref<IJobDetail | null>(null);
     const listJobSearch = ref<IJob[]>([]);
+    const listJobForAdmin = ref<IJob[]>([]);
 
     const fetchJobs = async (filters: any) => {
         if (filters.minSalary) filters.minSalary *= 1000000;
@@ -240,12 +242,88 @@ export const useJobStore = defineStore('job',() => {
             loading.value = false;
         }
     }
+    const fetchJobStatsForAdminStore = async () => {
+        try {
+            loading.value = true;
+            errorLog.value = '';
+            const data = await getJobStatsForAdmin();
+            return data.data || null;
+        } catch (err: any) {
+            console.error("Lỗi khi lấy thống kê job cho admin:", err.response?.data);
+            error.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy thống kê job cho admin';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const fetch7DayStatsForAdminStore = async () => {
+        try {
+            loading.value = true;
+            errorLog.value = '';
+            const data = await get7DayStartsForAdmin();
+            return data.data || null;
+        } catch (err: any) {
+            console.error("Lỗi khi lấy thống kê job cho admin:", err.response?.data);
+            error.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy thống kê job cho admin';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const fetchTopJobsForAdminStore = async () => {
+        try {
+            loading.value = true;
+            errorLog.value = '';
+            const data = await getTopJobsForAdmin();
+            return data.data.items || null;
+        } catch (err: any) {
+            console.error("Lỗi khi lấy thống kê job cho admin:", err.response?.data);
+            error.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy thống kê job cho admin';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const fetchJobForAdminByStatusStore = async (status: any, page: number = 1, limit: number = 10) => {
+        try {
+            loading.value = true;
+            errorLog.value = '';
+            if (!status) {
+                status = 'All'
+            }
+            const data = await getJobForAdminByStatus(status, page, limit);
+            if (data.data.totalPages !== undefined) {
+                totalPages.value = data.data.totalPages;
+                totalItems.value = data.data.total || 0;
+            }
+            listJobForAdmin.value = data.data.items || [];
+             if (listJobForAdmin.value.length === 0) {
+                totalPages.value = 1;
+            }
 
+        } catch (err: any) {
+            console.error("Lỗi khi lấy thống kê job cho admin:", err.response?.data);
+            error.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy thống kê job cho admin';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const changeStatusJobStore = async (jobId: number, status: string) => {
+        try {
+            loading.value = true;
+            errorLog.value = '';
+            const data = await changeStatusJob(jobId, status);
+            return data.data || null;
+        } catch (err: any) {
+            console.error("Lỗi khi thay đổi trạng thái job:", err.response?.data);
+            error.value = err.response?.data?.message || 'Đã xảy ra lỗi khi thay đổi trạng thái job';
+        } finally {
+            loading.value = false;
+        }
+    }
     return {
         loading,
         message,
         error,
         listJobMe,
+        listJobForAdmin,
         hasNextPage,
         createJobStore,
         getJobOfMeStore,
@@ -259,6 +337,7 @@ export const useJobStore = defineStore('job',() => {
         savedJobsTotalPages,
         jobDetail,
         listJobSearch,
+        totalItems,
         fetchJobs,
         fetchCategories,
         fetchJobDetail,
@@ -266,7 +345,12 @@ export const useJobStore = defineStore('job',() => {
         handleUnsaveJob,
         fetchMySavedJobs,
         checkIsSavedJob,
-        fetchJobSearch
+        fetchJobSearch,
+        fetchJobStatsForAdminStore,
+        fetch7DayStatsForAdminStore,
+        fetchTopJobsForAdminStore,
+        fetchJobForAdminByStatusStore,
+        changeStatusJobStore
     }
 
 })

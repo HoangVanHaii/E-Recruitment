@@ -13,4 +13,6 @@ router.post('/skills/analyze-text', authMiddleware,candidateMiddleware.analyzeSk
 router.post('/skills', authMiddleware,candidateMiddleware.saveAnalyzedSkillsValidation,validateRequest, candidateController.saveAnalyzedSkills);
 router.get('/employer/list', authMiddleware, isEmployer, candidateMiddleware.getCandidatesListValidation, validateRequest, candidateController.getCandidatesForEmployer);
 router.get('/employer/detail/:id', authMiddleware, isEmployer, candidateMiddleware.getCandidateDetailValidation, validateRequest, candidateController.getCandidateDetailForEmployer);
+
+router.get('/admin/all-candidates', authMiddleware, isAdmin, candidateController.getAllCandidates);
 export default router;
