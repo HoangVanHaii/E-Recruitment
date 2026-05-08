@@ -2,10 +2,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import ApplicationDetail from '../components/ApplicationDetail.vue';
-import { useApplicationStore } from '../stores/jobApplication';
-import type { IJobApplicationList } from '../types/jobApplication';
-import Notify from '../components/Notify.vue';
+import ApplicationDetail from '../../components/Employer/ApplicationDetail.vue';
+import { useApplicationStore } from '../../stores/jobApplication';
+import type { IJobApplicationList } from '../../types/jobApplication';
+import Notify from '../../components/Notify.vue';
 
 const showNotify = ref(false);
 const messageNotify = ref('');

@@ -1,6 +1,6 @@
 import express from 'express';
 import * as candidateController from '../controller/candidate';
-import { authMiddleware, isEmployer } from "../middleware/auth";
+import { authMiddleware, isEmployer, isAdmin } from "../middleware/auth";
 import { upload } from "../utils/upload";
 import * as candidateMiddleware from '../middleware/candidate';
 import { validateRequest } from '../middleware/validateRequest';

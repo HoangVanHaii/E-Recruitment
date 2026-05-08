@@ -1,15 +1,15 @@
 
 
 <script setup lang="ts">
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import JobDetail from '../components/JobDetail.vue';
-import EditJobDetail from '../components/EditJobDetail.vue';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
+import JobDetail from '../../components/Employer/JobDetail.vue';
+import EditJobDetail from '../../components/Employer/EditJobDetail.vue';
+import Notify from '../../components/Notify.vue';
+import Loading from '../../components/Loading.vue';
 import { ref, computed, watch, onMounted } from 'vue';
-import { useJobStore } from '../stores/job';
+import { useJobStore } from '../../stores/job';
 import { useRouter } from 'vue-router';
-import type { IListJob } from '../types/job';
+import type { IListJob } from '../../types/job';
 
 
 const router = useRouter();

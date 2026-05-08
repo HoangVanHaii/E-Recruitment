@@ -25,6 +25,8 @@ export const getSubmittedApplications = async (page: number = 1, limit: number =
     const response = await api.get('/job-application/ofme', {
         params: { page, limit }
     });
+    return response.data;
+}
 export const getChartStats = async (type: string) => {
     const response = await api.get('/job-application/stats', { params: { type } });
     return response.data;

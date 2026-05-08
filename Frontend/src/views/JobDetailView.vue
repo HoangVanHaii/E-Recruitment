@@ -78,7 +78,7 @@ const toggleSave = async () => {
 const handleApply = async (ResumeID: number) => {
     isModalOpen.value = true;
     if (!job.value) return;
-    await useApplication.ApplyJobStore(job.value.JobID, ResumeID);
+    await useApplication.applyJobStore(job.value.JobID, ResumeID);
     if (useApplication.error) {
         showNotify.value = true;
         messageNotify.value = useApplication.message || 'Ứng tuyển thất bại!';

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import Notify from '../components/Notify.vue';
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import Loading from '../components/Loading.vue';
-import { useJobStore } from '../stores/job';
+import Notify from '../../components/Notify.vue';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
+import Loading from '../../components/Loading.vue';
+import { useJobStore } from '../../stores/job';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import type { IInterviewRound } from '../types/job';
+import type { IInterviewRound } from '../../types/job';
 
 const showNotify = ref<Boolean>(false);
 const messageNotify = ref<string>('');

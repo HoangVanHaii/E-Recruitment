@@ -5,6 +5,9 @@ import SearchJob from './SearchJob.vue';
 import { useJobStore } from '../stores/job';
 import type { IJob } from '../types/job';
 
+// Import file video từ thư mục assets
+import bannerVideo from '../assets/banner1.mp4';
+
 const jobStore = useJobStore();
 
 const categories = [
@@ -202,8 +205,18 @@ onUnmounted(() => {
                     </ul>
                 </div>
 
-                <div class="flex-1 bg-[#d9d9d9] rounded-lg min-h-[250px] flex items-center justify-center">
-                    <p class="text-gray-500 italic">Banner Slide Placeholder</p>
+                <div class="flex-1 bg-black rounded-lg min-h-[250px] flex items-center justify-center overflow-hidden relative shadow-lg group">
+                    <video 
+                        autoplay 
+                        loop 
+                        muted 
+                        playsinline 
+                        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    >
+                        <source :src="bannerVideo" type="video/mp4" />
+                        Trình duyệt của bạn không hỗ trợ thẻ video.
+                    </video>
+                    <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
                 </div>
 
             </div>

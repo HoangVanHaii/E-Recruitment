@@ -242,7 +242,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useResumeStore } from '../stores/resume';
 import Loading from '../components/Loading.vue';
 
-// Import các Mẫu CV
 import Template1 from '../components/cv-templates/Template1.vue';
 import Template2 from '../components/cv-templates/Template2.vue';
 import Template3 from '../components/cv-templates/Template3.vue';

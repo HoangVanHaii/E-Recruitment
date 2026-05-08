@@ -1,11 +1,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import Loading from '../components/Loading.vue';
-import Notify from '../components/Notify.vue';
-import type { ICompanyDetailResponse, IUpdateCompany } from '../types/company';
-import { useCompanyStore } from '../stores/company';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
+import Loading from '../../components/Loading.vue';
+import Notify from '../../components/Notify.vue';
+import type { ICompanyDetailResponse, IUpdateCompany } from '../../types/company';
+import { useCompanyStore } from '../../stores/company';
 
 const useCompany = useCompanyStore();
 

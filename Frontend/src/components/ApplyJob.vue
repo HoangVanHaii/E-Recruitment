@@ -95,7 +95,7 @@
   });
   
   const avatarSrc = computed(() => {
-    return typeof candidate.value?.avatarUrl === 'string' ? candidate.value.avatarUrl : '/default-avatar.png';
+    return typeof candidate.value?.AvatarUrl === 'string' ? candidate.value.AvatarUrl : '/default-avatar.png';
   });
   
   const formatDate = (date?: Date | string) => {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useCompanyStore } from '../stores/company';
-import type { ICompanyOfMe } from '../types/company';
+import { useCompanyStore } from '../../stores/company';
+import type { ICompanyOfMe } from '../../types/company';
 
-import Notify from './Notify.vue';
+import Notify from '../Notify.vue';
 
 const router = useRouter();
 const route = useRoute();

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-import { useEmployerStore } from '../stores/employer';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
+import Notify from '../../components/Notify.vue';
+import Loading from '../../components/Loading.vue';
+import { useEmployerStore } from '../../stores/employer';
 import { ref, onMounted } from 'vue';
 
 const useEmployer = useEmployerStore();

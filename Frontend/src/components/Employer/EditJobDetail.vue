@@ -1,8 +1,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useJobStore } from '../stores/job';
-import type { IJobDetail } from '../types/job';
+import { useJobStore } from '../../stores/job';
+import type { IJobDetail } from '../../types/job';
 
 const props = defineProps<{
     isOpen: boolean;

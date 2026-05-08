@@ -1,13 +1,13 @@
 
 <script setup lang="ts">
-import SidebarEmployer from '../components/SidebarEmployer.vue';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
 import VueApexCharts from "vue3-apexcharts";
-import JobDetail from '../components/JobDetail.vue';
-import Loading from '../components/Loading.vue';
-import router from '../router';
-import { useEmployerStore } from '../stores/employer';
-import { useJobStore } from '../stores/job';
-import { useApplicationStore } from '../stores/jobApplication';
+import JobDetail from '../../components/Employer/JobDetail.vue';
+import Loading from '../../components/Loading.vue';
+import router from '../../router';
+import { useEmployerStore } from '../../stores/employer';
+import { useJobStore } from '../../stores/job';
+import { useApplicationStore } from '../../stores/jobApplication';
 import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import type { ApexOptions } from 'apexcharts';

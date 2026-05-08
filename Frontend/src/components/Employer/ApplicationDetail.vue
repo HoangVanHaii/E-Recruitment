@@ -1,8 +1,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useApplicationStore } from '../stores/jobApplication';
-import Loading from './Loading.vue';
+import { useApplicationStore } from '../../stores/jobApplication';
+import Loading from '../Loading.vue';
 
 const useApplication = useApplicationStore();
 

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications} from '../services/jobApplication';
+import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications, getChartStats, ApplyJob} from '../services/jobApplication';
 import type { IAppliedJob, IJobApplicationList } from '../types/jobApplication';
 
 export const useApplicationStore = defineStore('application',() => {
@@ -136,38 +136,6 @@ export const useApplicationStore = defineStore('application',() => {
             loading.value = false;
         }
     }
-    const ApplyJobStore = async (JobID: number, ResumeID: number) => {
-        try {
-            error.value = false;
-            loading.value = true;
-            message.value = '';
-            errors.value = {};
-            const data = await ApplyJob(JobID, ResumeID);
-    
-            const result = data.data || null;
-            message.value = data.message || 'Ứng tuyển thành công';
-    
-            return result;
-        } catch (err: any) {
-            error.value = true;
-            const res = err.response?.data;
-            console.error('Error ApplyJob', res);
-            if (res?.errors && Array.isArray(res.errors)) {
-                const map: Record<string, string> = {};
-                res.errors.forEach((e: any) => {
-                    map[e.path] = e.msg;
-                });
-                errors.value = map;
-                message.value = res.errors[0]?.msg;
-            } else {
-                message.value = res?.message || 'Ứng tuyển thất bại';
-            }
-            return null;
-        } finally {
-            loading.value = false;
-        }
-    };
-
     const getSubmittedApplicationsStore = async (page: number = 1, limit: number = 10) => {
         try {
             error.value = false;
@@ -234,9 +202,8 @@ export const useApplicationStore = defineStore('application',() => {
         getApplicationDetailStore,
         updateApplicationStatusStore,
         getSubmittedApplicationsStore, 
-        applyJobStore 
+        applyJobStore ,
         getChartStatsStore,
-        ApplyJobStore
     }
 
 })

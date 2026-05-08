@@ -1,11 +1,11 @@
 
 <script setup lang="ts">
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
+import Notify from '../../components/Notify.vue';
+import Loading from '../../components/Loading.vue';
 import ApplicationsView from './ApplicationsView.vue';
-import JobDetail from '../components/JobDetail.vue';
-import { useJobStore } from '../stores/job';
+import JobDetail from '../../components/Employer/JobDetail.vue';
+import { useJobStore } from '../../stores/job';
 import { ref, computed, onMounted } from 'vue';
 
 const isDetailModalOpen = ref(false);

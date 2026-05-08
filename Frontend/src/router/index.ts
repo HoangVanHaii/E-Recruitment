@@ -14,19 +14,16 @@ import MainLayout from '../components/MainLayout.vue'
 import FooterLayout from '../components/FooterLayout.vue'
 import CandidateProfileView from '../views/CandidateProfileView.vue'
 import ResumeDetailView from '../views/ResumeDetailView.vue'
-
-import SidebarEmployer from '../components/SidebarEmployer.vue'
+import { useAuthStore } from '../stores/auth'
 
 //Employer
-import CreateJobView from '../views/CreateJobView.vue'
-import PostedJobsView from '../views/PostedJobsView.vue'
-import JobApplicationView from '../views/JobApplicationView.vue'
-import ApplicationsView from '../views/ApplicationsView.vue'
-import EmployerDashboard from '../views/EmployerDashboard.vue'
-import EmployerProfile from '../views/EmployerProfile.vue'
-import EmployeeRequestsView from '../views/EmployeeRequestsView..vue'
-import { useAuthStore } from '../stores/auth'
-import EmployerChatView from '../views/EmployerChatView.vue'
+import CreateJobView from '../views/Employer/CreateJobView.vue'
+import PostedJobsView from '../views/Employer/PostedJobsView.vue'
+import JobApplicationView from '../views/Employer/JobApplicationView.vue'
+import EmployerDashboard from '../views/Employer/EmployerDashboard.vue'
+import EmployerProfile from '../views/Employer/EmployerProfile.vue'
+import EmployeeRequestsView from '../views/Employer/EmployeeRequestsView..vue'
+import EmployerChatView from '../views/Employer/EmployerChatView.vue'
 
 //Admin
 import DashBoardAdmin from '../views/admin/DashBoardAdmin.vue'
@@ -49,8 +46,9 @@ const routes: Array<RouteRecordRaw> = [
         component: MainLayout,
         meta: { roles: [ "Candidate"] },
         children: [
-            { path: 'job-detail/:id', name: 'job-detail', component: JobDetailView },
             { path: 'create-resume', name: 'create-resume', component: CreateResumeView },
+            { path: 'candidate-profile', name: 'candidate-profile', component: CandidateProfileView },
+            { path: 'resume/detail/:id', name: 'resume-detail', component: ResumeDetailView }
         ]
     },
     {
@@ -65,10 +63,8 @@ const routes: Array<RouteRecordRaw> = [
             { path: 'home', name: 'home', component: HomeView },
             { path: 'login-section', name: 'login-section', component: LoginSectionView },
             { path: 'register-section', name: 'register-section', component: RegisterSectionView },
-            { path: 'register-employer', name: 'register-employer', component: RegisterEmployer },
-            { path: 'create-resume', name: 'create-resume', component: CreateResumeView },
-            { path: 'candidate-profile', name: 'candidate-profile', component: CandidateProfileView },
-            { path: 'resume/detail/:id', name: 'resume-detail', component: ResumeDetailView }
+            { path: 'job-detail/:id', name: 'job-detail', component: JobDetailView },
+            
         ]
     },
 
@@ -78,11 +74,9 @@ const routes: Array<RouteRecordRaw> = [
         component: FooterLayout,
         meta: { roles: ['Employer'] },
         children: [
-            { path: 'sidebar-employer', name: 'sidebar-employer', component: SidebarEmployer },
             { path: 'create-job', name: 'create-job', component: CreateJobView },
             { path: 'posted-jobs', name: 'posted-jobs', component: PostedJobsView },
             { path: 'job-applications', name: 'job-applications', component: JobApplicationView },
-            { path: 'applications', name: 'applications', component: ApplicationsView },
             { path: 'employer-dashboard', name: 'employer-dashboard', component: EmployerDashboard },
             { path: 'employer-profile', name: 'employer-profile', component: EmployerProfile },
             { path: 'employer-requests', name: 'employer-requests', component: EmployeeRequestsView},

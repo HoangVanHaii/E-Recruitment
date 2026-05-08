@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import SidebarEmployer from '../components/SidebarEmployer.vue';
+import SidebarEmployer from '../../components/Employer/SidebarEmployer.vue';
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { Search, Send, Image as ImageIcon, Smile, Phone, Video, MessageSquareDashed } from 'lucide-vue-next';
-import { useMessageStore } from '../stores/message';
-import { useAuthStore } from '../stores/auth';
-import { timeAgo } from '../utils/format';
+import { useMessageStore } from '../../stores/message';
+import { useAuthStore } from '../../stores/auth';
+import { timeAgo } from '../../utils/format';
 
 const messageStore = useMessageStore();
 const authStore = useAuthStore();

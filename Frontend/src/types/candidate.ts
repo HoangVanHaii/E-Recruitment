@@ -38,6 +38,7 @@ export interface ICandidateProfile extends Partial<ICandidateDetail> {
     Address: string;
     Email?: string;
     AvatarUrl?: string;
+}
 export interface ICandidate {
     CandidateID: number;
     FullName: string;

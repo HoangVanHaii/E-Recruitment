@@ -6,7 +6,7 @@ export const generateSummaryWithAI = async (payload: any) => {
     return response.data;
 };
 
-export const createManualResume = async (formData: FormData) => {
+export const createResume = async (formData: FormData) => {
     const response = await api.post('/resumes/build', formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
