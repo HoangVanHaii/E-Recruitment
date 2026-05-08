@@ -21,3 +21,28 @@ export const getProfile = async () => {
     console.log("Profile data:", response.data);
     return response.data;
 }
+
+export const changePassword = async (oldPassword: string, newPassword: string) => {
+    const response = await api.put('/users/change-password', { oldPassword, newPassword });
+    return response.data;
+}
+
+export const requestOtpAuth = async () => {
+    const response = await api.post('/users/request-otp-auth');
+    return response.data;
+}
+
+export const deleteAccount = async (password: string, otp: string) => {
+    const response = await api.delete('/users/delete', { data: { password, otp } });
+    return response.data;
+}
+
+export const requestOtpForgotPassword = async (email: string) => {
+    const response = await api.post('/users/request-otp-forgot', { email });
+    return response.data;
+}
+
+export const forgotPassword = async (verifyToken: string, newPassword: string) => {
+    const response = await api.post('/users/forgot-password', { verifyToken, newPassword });
+    return response.data;
+}

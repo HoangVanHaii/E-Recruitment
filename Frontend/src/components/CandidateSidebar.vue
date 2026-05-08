@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { Settings, ClipboardList, ChevronDown, Briefcase, Mail } from 'lucide-vue-next';
+import { useAuthStore } from '../stores/auth';
+
+defineProps<{
+    activeMainTab: string
+}>();
+
+defineEmits(['changeTab']);
+
+const authStore = useAuthStore();
+const isFolderOpen = ref(true); 
+</script>
 <template>
     <div class="w-[260px] min-h-screen bg-[#24348b] text-white flex flex-col shrink-0">
         <div class="p-5 border-b border-white/10">
@@ -63,17 +77,3 @@
     </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
-import { Settings, ClipboardList, ChevronDown, Contact, Briefcase, Mail } from 'lucide-vue-next';
-import { useAuthStore } from '../stores/auth';
-
-defineProps<{
-    activeMainTab: string
-}>();
-
-defineEmits(['changeTab']);
-
-const authStore = useAuthStore();
-const isFolderOpen = ref(true); 
-</script>

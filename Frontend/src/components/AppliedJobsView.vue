@@ -1,3 +1,125 @@
+<script setup lang="ts">
+import { onMounted, computed, ref } from 'vue';
+import { useApplicationStore } from '../stores/jobApplication';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+import Template1 from './cv-templates/Template1.vue';
+import Template2 from './cv-templates/Template2.vue';
+import Template3 from './cv-templates/Template3.vue';
+
+const appStore = useApplicationStore();
+const applications = computed(() => appStore.submittedApplications);
+const loading = computed(() => appStore.loading);
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+const currentPage = ref(1);
+const limit = 6;
+
+const showDetailModal = ref(false);
+const showCVModal = ref(false);
+const selectedApp = ref<any>(null);
+
+const fetchApplications = async () => {
+    await appStore.getSubmittedApplicationsStore(currentPage.value, limit);
+};
+
+const handleViewDetail = async (applicationID: number | undefined) => {
+    if (!applicationID) return;
+    const data = await appStore.getApplicationDetailStore(applicationID);
+    if (data) {
+        selectedApp.value = data;
+        showDetailModal.value = true;
+    } else {
+        showNotify.value = true;
+        isSuccessNotify.value = false;
+        messageNotify.value = "Lỗi: Không tìm thấy dữ liệu chi tiết đơn này.";
+    }
+};
+
+const openSubmittedCV = () => {
+    if (selectedApp.value?.ResumeDetail) {
+        showCVModal.value = true;
+    } else {
+        showNotify.value = true;
+        isSuccessNotify.value = false;
+        messageNotify.value = "Hồ sơ CV sếp đã nộp không tồn tại hoặc bị lỗi data!";
+    }
+};
+
+const prevPage = async () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+        await fetchApplications();
+    }
+};
+
+const nextPage = async () => {
+    if (applications.value.length === limit) {
+        currentPage.value++;
+        await fetchApplications();
+    }
+};
+
+onMounted(async () => {
+    await fetchApplications();
+});
+
+const formatDate = (dateStr: string) => {
+    if (!dateStr) return '---';
+    const d = new Date(dateStr);
+    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+};
+
+const getStatusColor = (status: string) => {
+    switch(status) {
+        case 'Pending': return '#5664d2';
+        case 'Rejected': return '#d9534f';
+        case 'Reviewed': 
+        case 'Accepted': return '#5cb85c';
+        case 'Cancelled': return '#6c757d';
+        default: return '#5664d2';
+    }
+};
+
+const getStatusText = (status: string) => {
+    switch(status) {
+        case 'Pending': return 'Đang đợi duyệt';
+        case 'Rejected': return 'Đã từ chối';
+        case 'Reviewed': return 'Đã xem hồ sơ';
+        case 'Accepted': return 'Đã liên lạc phỏng vấn';
+        case 'Cancelled': return 'Đã hủy đơn';
+        default: return status;
+    }
+};
+
+const getStatusIcon = (status: string) => {
+    switch(status) {
+        case 'Pending': return 'fas fa-clock';
+        case 'Rejected': return 'fas fa-ban';
+        case 'Reviewed': 
+        case 'Accepted': return 'fas fa-phone-alt';
+        case 'Cancelled': return 'fas fa-times';
+        default: return 'fas fa-info-circle';
+    }
+};
+
+const handleCancelApplication = async (app: any) => {
+    if(confirm(`Sếp có chắc muốn hủy đơn ứng tuyển vào ${app.CompanyName} không?`)) {
+        const isSuccess = await appStore.updateApplicationStatusStore(app.ApplicationID, 'Cancelled');
+        showNotify.value = true;
+        if (isSuccess) {
+            isSuccessNotify.value = true;
+            messageNotify.value = 'Hủy đơn thành công!';
+            await fetchApplications(); 
+        } else {
+            isSuccessNotify.value = false;
+            messageNotify.value = appStore.message || 'Lỗi khi hủy đơn!';
+        }
+    }
+};
+</script>
 <template>
     <div class="w-full pb-10 font-sans relative">
         
@@ -83,6 +205,7 @@
 
         <div v-if="showDetailModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all scale-100">
+                
                 <div class="bg-[#5664d2] p-5 text-white flex justify-between items-center">
                     <div>
                         <h3 class="font-bold text-lg">Chi tiết đơn ứng tuyển</h3>
@@ -109,19 +232,25 @@
                                     {{ getStatusText(selectedApp?.Status) }}
                                 </span>
                             </div>
-                            <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                <p class="text-[12px] text-gray-500 mb-2">CV sếp đã dùng:</p>
-                                <a :href="selectedApp?.ResumeFileUrl" target="_blank" class="text-[#5664d2] font-bold text-[13px] hover:underline flex items-center gap-2">
-                                    <i class="far fa-file-pdf text-red-500"></i> Xem CV đã nộp
-                                </a>
+                            
+                            <div class="mt-2 flex items-center gap-2 border p-2 rounded-lg bg-indigo-50/50">
+                                <span class="text-[12px] font-bold text-gray-600">Độ phù hợp (AI):</span>
+                                <span class="font-black text-lg" :class="selectedApp?.MatchScore >= 50 ? 'text-green-600' : 'text-red-500'">{{ selectedApp?.MatchScore || 0 }}%</span>
+                            </div>
+
+                            <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <p class="text-[12px] text-gray-500 mb-2">Hồ sơ đã dùng:</p>
+                                <button @click="openSubmittedCV" class="text-[#5664d2] font-bold text-[13px] hover:underline flex items-center gap-2 group transition-all">
+                                    <i class="far fa-file-pdf text-red-500 group-hover:scale-110 transition-transform"></i> Xem CV đã nộp
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <h4 class="text-[13px] font-bold text-gray-700 mb-2">Mô tả công việc:</h4>
-                        <p class="text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
-                            {{ selectedApp?.Description || 'Công ty chưa cung cấp mô tả chi tiết.' }}
+                        <h4 class="text-[13px] font-bold text-gray-700 mb-2">Đánh giá từ AI:</h4>
+                        <p class="text-[13px] text-gray-600 leading-relaxed whitespace-pre-line italic">
+                            {{ selectedApp?.AI_Summary_Review || 'Chưa có đánh giá chi tiết.' }}
                         </p>
                     </div>
                 </div>
@@ -134,135 +263,44 @@
             </div>
         </div>
 
+        <transition name="fade">
+            <div v-if="showCVModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" @click.self="showCVModal = false">
+                <div class="bg-gray-300 rounded-2xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col overflow-hidden relative">
+                    
+                    <div class="p-4 bg-white flex justify-between items-center shadow-sm z-10 border-b">
+                        <div>
+                            <h3 class="font-bold text-[#14205c] uppercase">Hồ sơ sếp Đăng đã nộp</h3>
+                            <p class="text-xs text-gray-500">Đang dùng giao diện Mẫu {{ selectedApp?.ResumeDetail?.templateId || 1 }}</p>
+                        </div>
+                        <button @click="showCVModal = false" class="text-gray-500 hover:text-red-500 hover:bg-red-50 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-200/80">
+                        <component 
+                            v-if="selectedApp?.ResumeDetail"
+                            :is="selectedApp.ResumeDetail.templateId === 2 ? Template2 : (selectedApp.ResumeDetail.templateId === 3 ? Template3 : Template1)" 
+                            :resume="{ 
+                                ...selectedApp.ResumeDetail, 
+                                FullName: selectedApp.FullName, 
+                                Email: selectedApp.Email, 
+                                Phone: selectedApp.Phone 
+                            }" 
+                        />
+                    </div>
+                </div>
+            </div>
+        </transition>
+
     </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
-import { useApplicationStore } from '../stores/jobApplication';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const appStore = useApplicationStore();
-const applications = computed(() => appStore.submittedApplications);
-const loading = computed(() => appStore.loading);
-
-// ==========================================
-// STATE QUẢN LÝ
-// ==========================================
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const currentPage = ref(1);
-const limit = 6;
-
-// Biến cho Modal chi tiết
-const showDetailModal = ref(false);
-const selectedApp = ref<any>(null);
-
-// ==========================================
-// HÀM XỬ LÝ CHÍNH
-// ==========================================
-const fetchApplications = async () => {
-    await appStore.getSubmittedApplicationsStore(currentPage.value, limit);
-};
-
-const handleViewDetail = async (applicationID: number | undefined) => {
-    // Nếu không có ID thì báo lỗi và dừng luôn
-    if (!applicationID) {
-        showNotify.value = true;
-        isSuccessNotify.value = false;
-        messageNotify.value = "Mã đơn không hợp lệ (Undefined)!";
-        return;
-    }
-
-    // Nếu có ID thì mới chạy tiếp
-    const data = await appStore.getApplicationDetailStore(applicationID);
-    if (data) {
-        selectedApp.value = data;
-        showDetailModal.value = true;
-    } else {
-        showNotify.value = true;
-        isSuccessNotify.value = false;
-        messageNotify.value = "Lỗi: Không tìm thấy dữ liệu chi tiết đơn này.";
-    }
-};
-
-const prevPage = async () => {
-    if (currentPage.value > 1) {
-        currentPage.value--;
-        await fetchApplications();
-    }
-};
-
-const nextPage = async () => {
-    if (applications.value.length === limit) {
-        currentPage.value++;
-        await fetchApplications();
-    }
-};
-
-onMounted(async () => {
-    await fetchApplications();
-});
-
-// ==========================================
-// TIỆN ÍCH HIỂN THỊ
-// ==========================================
-const formatDate = (dateStr: string) => {
-    if (!dateStr) return '---';
-    const d = new Date(dateStr);
-    return new Intl.DateTimeFormat('vi-VN', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-    }).format(d);
-};
-
-const getStatusColor = (status: string) => {
-    switch(status) {
-        case 'Pending': return '#5664d2';
-        case 'Rejected': return '#d9534f';
-        case 'Reviewed': 
-        case 'Accepted': return '#5cb85c';
-        case 'Cancelled': return '#6c757d';
-        default: return '#5664d2';
-    }
-};
-
-const getStatusText = (status: string) => {
-    switch(status) {
-        case 'Pending': return 'Đang đợi duyệt';
-        case 'Rejected': return 'Đã từ chối';
-        case 'Reviewed': return 'Đã xem hồ sơ';
-        case 'Accepted': return 'Đã liên lạc phỏng vấn';
-        case 'Cancelled': return 'Đã hủy đơn';
-        default: return status;
-    }
-};
-
-const getStatusIcon = (status: string) => {
-    switch(status) {
-        case 'Pending': return 'fas fa-clock';
-        case 'Rejected': return 'fas fa-ban';
-        case 'Reviewed': 
-        case 'Accepted': return 'fas fa-phone-alt';
-        case 'Cancelled': return 'fas fa-times';
-        default: return 'fas fa-info-circle';
-    }
-};
-
-const handleCancelApplication = async (app: any) => {
-    if(confirm(`Sếp có chắc muốn hủy đơn ứng tuyển vào ${app.CompanyName} không?`)) {
-        const isSuccess = await appStore.updateApplicationStatusStore(app.ApplicationID, 'Cancelled');
-        showNotify.value = true;
-        if (isSuccess) {
-            isSuccessNotify.value = true;
-            messageNotify.value = 'Hủy đơn thành công!';
-            await fetchApplications(); 
-        } else {
-            isSuccessNotify.value = false;
-            messageNotify.value = appStore.message || 'Lỗi khi hủy đơn!';
-        }
-    }
-};
-</script>
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>

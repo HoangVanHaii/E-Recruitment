@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { IProfile } from '../types/user';
-import { getProfile, login, register, registerSendOtp, verifyOtp } from '../services/auth';
+import { getProfile, login, register, registerSendOtp, verifyOtp, changePassword, deleteAccount, requestOtpAuth,requestOtpForgotPassword, forgotPassword } from '../services/auth';
 import { useMessageStore } from './message';
 import { connectSocket, disconnectSocket } from '../services/socket';
 import type { IUser } from '../types/user';
@@ -28,10 +28,12 @@ export const useAuthStore = defineStore('auth',() => {
             const data = await registerSendOtp(email);
             emailUser.value = email;
             message.value = data.message || 'Gửi OTP thành công';
+            return true;
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi gửi OTP:", err.response?.data);
             message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi gửi OTP';
+            return false;
         } finally {
             loading.value = false;
         }
@@ -46,11 +48,12 @@ export const useAuthStore = defineStore('auth',() => {
             const data = await verifyOtp(email, otp);
             message.value = data.message || 'Xác thực OTP thành công';
             verifyToken.value = data.data.verifyToken;
-
+            return true;
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi xác thực OTP:", err.ressponse?.data);
             message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi xác thực OTP';
+            return false;
         } finally {
             loading.value = false;
         }
@@ -127,9 +130,84 @@ export const useAuthStore = defineStore('auth',() => {
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        // window.location.href = '/login';
         disconnectSocket();
     };
+
+    const changePasswordStore = async (old: string, newP: string) => {
+        try {
+            loading.value = true; error.value = false;
+            const data = await changePassword(old, newP);
+            message.value = data.message;
+            return true;
+        } catch (err: any) {
+            error.value = true;
+            message.value = err.response?.data?.message || 'Lỗi đổi mật khẩu';
+            return false;
+        } finally { loading.value = false; }
+    }
+
+    const requestOtpAuthStore = async () => {
+        try {
+            loading.value = true;
+            const data = await requestOtpAuth();
+            message.value = data.message;
+            return true;
+        } catch (err: any) {
+            error.value = true;
+            message.value = err.response?.data?.message || 'Lỗi gửi OTP';
+            return false;
+        } finally { loading.value = false; }
+    }
+
+    const deleteAccountStore = async (password: string, otp: string) => {
+        try {
+            loading.value = true;
+            const data = await deleteAccount(password, otp);
+            message.value = data.message;
+            handleLogout(); 
+            return true;
+        } catch (err: any) {
+            error.value = true;
+            message.value = err.response?.data?.message || 'Lỗi khi xóa tài khoản';
+            return false;
+        } finally { loading.value = false; }
+    }
+
+    const forgotPasswordSendOtpStore = async (email: string) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            await requestOtpForgotPassword(email); 
+            return true; 
+        } catch (err: any) {
+            error.value = true;
+            message.value = err.response?.data?.message || 'Lỗi gửi OTP quên mật khẩu';
+            return false;
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    const forgotPasswordStore = async (newPassword: string): Promise<boolean> => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            
+            const data = await forgotPassword(verifyToken.value, newPassword); 
+            
+            message.value = data.message || 'Đổi mật khẩu thành công!';
+            return true;
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi đặt lại mật khẩu:", err.response?.data);
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi đặt lại mật khẩu';
+            return false;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     return {
         loading,
         message,
@@ -146,7 +224,12 @@ export const useAuthStore = defineStore('auth',() => {
         registerStore,
         loginStore,
         fetchProfile,
-        handleLogout
+        handleLogout,
+        changePasswordStore,
+        requestOtpAuthStore,
+        deleteAccountStore,
+        forgotPasswordSendOtpStore,
+        forgotPasswordStore
     }
 
 })

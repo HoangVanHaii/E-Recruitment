@@ -11,4 +11,9 @@ router.post('/register', userMiddleware.registerValidation, validateRequest, use
 router.post('/login', userMiddleware.loginValidation, validateRequest, userController.login);
 router.post('/refresh-token', userMiddleware.refreshTokenValidation, validateRequest, userController.refreshToken);
 router.get('/profile', authMiddleware, userController.getProfile);
+router.post('/request-otp-forgot', userController.requestOtpForgotPassword);
+router.post('/forgot-password', userController.forgotPassword);
+router.put('/change-password', authMiddleware, userController.changePassword);
+router.post('/request-otp-auth', authMiddleware, userController.requestOtpAuth);
+router.delete('/delete', authMiddleware, userController.deleteAccount);
 export default router;
