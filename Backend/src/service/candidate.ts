@@ -3,17 +3,15 @@ import { Candidate } from "../interface/candidate";
 import { GoogleGenAI } from "@google/genai"; 
 import * as skillService from "./skill";
 import { PoolConnection } from "mysql2/promise";
+import CandidateDetail from '../model/candidateDetail';
 
-export const upsertCandidateProfile = async (connection: PoolConnection, data: Candidate) => {
-    console.log("Dữ liệu hồ sơ ứng viên nhận được để upsert:", data);
-    const query = `INSERT INTO Candidates (CandidateID, FullName, Phone, DateOfBirth, Address, ExperienceYears, Education, AvatarUrl)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
+export const upsertCandidateProfile = async (data: Candidate) => {
+    const query = `INSERT INTO Candidates (CandidateID, FullName, Phone, DateOfBirth, Address, AvatarUrl)
+                   VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
                        FullName = VALUES(FullName),
                        Phone = VALUES(Phone),
                        DateOfBirth = VALUES(DateOfBirth),
                        Address = VALUES(Address),
-                       ExperienceYears = VALUES(ExperienceYears),
-                       Education = VALUES(Education),
                        AvatarUrl = VALUES(AvatarUrl)
                   `;
     const values = [
@@ -22,14 +20,25 @@ export const upsertCandidateProfile = async (connection: PoolConnection, data: C
         data.Phone || null, 
         data.DateOfBirth || null, 
         data.Address || null, 
-        data.ExperienceYears || 0, 
-        data.Education || null, 
         data.AvatarUrl || null
     ];
 
-    const [result]: any = await connection.query(query, values);
-    console.log("Kết quả upsert hồ sơ ứng viên:", result);
+    const [result]: any = await pool.query(query, values);
     return result;
+};
+
+export const upsertCandidateDetailMongo = async (candidateId: number, data: any) => {
+    const updateFields: any = {};
+
+    if (data.experience) updateFields.experience = data.experience;
+    if (data.education) updateFields.education = data.education;
+    if (data.projects) updateFields.projects = data.projects;
+
+    return await CandidateDetail.findOneAndUpdate(
+        { candidateId },
+        { $set: updateFields },
+        { new: true, upsert: true } 
+    );
 };
 
 export const getCandidateProfile = async (userId: number) => {
@@ -41,7 +50,16 @@ export const getCandidateProfile = async (userId: number) => {
     `;
     const [rows]: any = await pool.query(query, [userId]);
     if (rows.length === 0) return null;
-    return rows[0];
+    
+    const sqlProfile = rows[0];
+    const mongoDetail = await CandidateDetail.findOne({ candidateId: userId });
+
+    return {
+        ...sqlProfile,
+        experience: mongoDetail?.experience || [],
+        education: mongoDetail?.education || [],
+        projects: mongoDetail?.projects || []
+    };
 };
 
 export const getCandidateSkills = async (userId: number) => {
@@ -59,17 +77,18 @@ export const getCandidateSkills = async (userId: number) => {
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 const buildSkillAnalysisPrompt = (rawText: string, dictionary: any[]) => {
     return `
-        Bạn là một Trưởng phòng Nhân sự cấp cao đa ngành nghề. Dưới đây là đoạn văn bản ứng viên mô tả kỹ năng của họ:
+        Bạn là một Trưởng phòng Nhân sự cấp cao, cực kỳ nghiêm túc và chuyên nghiệp. Dưới đây là đoạn văn bản ứng viên mô tả kỹ năng của họ:
         "${rawText}"
         
         Và đây là danh sách CÁC KỸ NĂNG CHUẨN đang có trong hệ thống database của tôi:
         ${JSON.stringify(dictionary)}
         
         Nhiệm vụ của bạn:
-        1. Trích xuất TẤT CẢ các kỹ năng từ đoạn văn bản trên.
-        2. Đối chiếu với danh sách chuẩn. Nếu khớp (kể cả đồng nghĩa/viết tắt), hãy lấy 'id' chuẩn.
-        3. QUAN TRỌNG: Nếu ứng viên có một kỹ năng MỚI HOÀN TOÀN (không có trong danh sách), hãy trích xuất nó và gán 'id' là chuỗi "new".
-        4. CHỈ trả về một mảng JSON với cấu trúc object. TUYỆT ĐỐI không trả về chữ hay giải thích thêm.
+        1. Trích xuất TẤT CẢ các kỹ năng CHUYÊN MÔN NGHỀ NGHIỆP từ đoạn văn bản trên.
+        2. TUYỆT ĐỐI BỎ QUA và loại trừ các từ ngữ tào lao, sở thích cá nhân, hoặc thói quen không phục vụ cho công việc chuyên môn (ví dụ: nhậu, ngủ, chơi game, lười biếng, chửi thề...). Nếu đoạn văn không chứa bất kỳ kỹ năng công việc nào hợp lệ, hãy trả về mảng rỗng [].
+        3. Đối chiếu với danh sách chuẩn. Nếu khớp (kể cả đồng nghĩa/viết tắt), hãy lấy 'id' chuẩn.
+        4. QUAN TRỌNG: Nếu ứng viên có một kỹ năng CHUYÊN MÔN mới hoàn toàn (không có trong danh sách), hãy trích xuất nó và gán 'id' là chuỗi "new".
+        5. CHỈ trả về một mảng JSON với cấu trúc object. TUYỆT ĐỐI không trả về chữ hay giải thích thêm.
         
         Ví dụ định dạng trả về chuẩn:
         [
@@ -155,27 +174,27 @@ const ensureSkillsExist = async (connection: any, skillsToSave: any[]) => {
 };
 
 const syncCandidateSkills = async (connection: any, userId: number, finalSkillIdsToSave: any[]) => {
-    const [rows]: any = await connection.query(
-        `SELECT SkillID FROM CandidateSkills WHERE CandidateID = ?`, [userId]
-    );
-    const currentSkillIds = rows.map((r: any) => r.SkillID); 
     const wantedSkillIds = finalSkillIdsToSave.map(s => s.id); 
 
-    const idsToRemove = currentSkillIds.filter((id: number) => !wantedSkillIds.includes(id)); 
-    const itemsToAdd = finalSkillIdsToSave.filter(s => !currentSkillIds.includes(s.id)); 
-
-    if (idsToRemove.length > 0) {
+    if (wantedSkillIds.length > 0) {
         await connection.query(
-            `DELETE FROM CandidateSkills WHERE CandidateID = ? AND SkillID IN (?)`,
-            [userId, idsToRemove]
+            `DELETE FROM CandidateSkills WHERE CandidateID = ? AND SkillID NOT IN (?)`,
+            [userId, wantedSkillIds]
+        );
+    } else {
+        await connection.query(
+            `DELETE FROM CandidateSkills WHERE CandidateID = ?`,
+            [userId]
         );
     }
 
-    if (itemsToAdd.length > 0) {
-        const valuesToInsert = itemsToAdd.map(item => [userId, item.id, item.level]);
+    if (finalSkillIdsToSave.length > 0) {
+        const valuesToUpsert = finalSkillIdsToSave.map(item => [userId, item.id, item.level]);
         await connection.query(
-            `INSERT INTO CandidateSkills (CandidateID, SkillID, SkillLevel) VALUES ?`,
-            [valuesToInsert]
+            `INSERT INTO CandidateSkills (CandidateID, SkillID, SkillLevel) 
+             VALUES ? 
+             ON DUPLICATE KEY UPDATE SkillLevel = VALUES(SkillLevel)`,
+            [valuesToUpsert]
         );
     }
 };
@@ -183,6 +202,21 @@ const syncCandidateSkills = async (connection: any, userId: number, finalSkillId
 export const updateCandidateSkills = async (connection: PoolConnection, userId: number, skillsToSave: any[]) => {
     const finalSkills = await ensureSkillsExist(connection, skillsToSave);
     await syncCandidateSkills(connection, userId, finalSkills);
+};
+
+export const saveSkillsTransaction = async (userId: number, skillsToSave: any[]) => {
+    const connection = await pool.getConnection(); 
+    await connection.beginTransaction();
+
+    try {
+        await updateCandidateSkills(connection, userId, skillsToSave);
+        await connection.commit();
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
 
 export const getCandidatesListForEmployer = async () => {
@@ -199,4 +233,3 @@ export const getCandidatesListForEmployer = async () => {
     const [rows]: any = await pool.query(query);
     return rows;
 };
-

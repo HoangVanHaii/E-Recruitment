@@ -6,32 +6,49 @@ import * as resumeService from '../service/resume';
 import pool from "../config/database";
 
 export const upsertProfile = async (req: Request, res: Response, next: NextFunction) => {
-    // try {
-    //     const userId = req.user!.id;
-    //     let avatarUrl = req.body.AvatarUrl; 
+    try {
+        const userId = req.user!.id;
+        let avatarUrl = req.body.AvatarUrl; 
 
-    //     if (req.file) {
-    //         avatarUrl = await uploadToCloudinary('Candidates', req.file);
-    //     }
+        if (req.file) {
+            const uploaded = await uploadToCloudinary('Candidates', req.file as Express.Multer.File);
+            avatarUrl = uploaded.url;
+        }
 
-    //     const profileData = {
-    //         ...req.body,
-    //         CandidateID: userId,
-    //         AvatarUrl: avatarUrl 
-    //     };
+        const profileData = {
+            ...req.body,
+            CandidateID: userId,
+            AvatarUrl: avatarUrl 
+        };
 
-    //     await candidateService.upsertCandidateProfile(profileData);
+        await candidateService.upsertCandidateProfile(profileData);
 
-    //     return res.status(200).json({ 
-    //         success: true,
-    //         message: "Cập nhật hồ sơ ứng viên thành công!",
-    //         data: profileData
-    //     });
+        return res.status(200).json({ 
+            success: true,
+            message: "Cập nhật thông tin cơ bản ứng viên thành công!",
+            data: profileData
+        });
 
-    // } catch (error) {
-    //     console.log(error);
-    //     next(error);
-    // }
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateMasterProfileDetail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.id;
+        const detailData = req.body; 
+
+        const updatedDetail = await candidateService.upsertCandidateDetailMongo(userId, detailData);
+
+        return res.status(200).json({
+            success: true,
+            message: "Cập nhật Hồ sơ chi tiết thành công!",
+            data: updatedDetail
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
@@ -88,20 +105,16 @@ export const analyzeSkillsText = async (req: Request, res: Response, next: NextF
 };
 
 export const saveAnalyzedSkills = async (req: Request, res: Response, next: NextFunction) => {
-    const connection = await pool.getConnection();
     try {
-        await connection.beginTransaction();
         const userId = req.user!.id; 
         const { skills } = req.body; 
 
-        await candidateService.updateCandidateSkills(connection, userId, skills);
-        await connection.commit();
+        await candidateService.saveSkillsTransaction(userId, skills);
         return res.status(200).json({
             success: true,
             message: "Cập nhật hồ sơ kỹ năng thành công!"
         });
     } catch (error) {
-        await connection.rollback();
         next(error);
     }
 };

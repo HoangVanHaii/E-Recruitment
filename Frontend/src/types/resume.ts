@@ -1,8 +1,9 @@
-export interface iResumeDetail{
+export interface iResumeDetail {
     resumeId?: number;
+    templateId?: number;
     title?: string;         
     summary?: string;
-    avatarUrl?: string | File;
+    AvatarUrl?: string | File; 
    
     skills?: {
         skillId?: number;    
@@ -40,17 +41,28 @@ export interface iResumeDetail{
     updatedAt?: Date;
 }
   
-  interface FormProject {
+export interface FormProject {
     projectName: string;
     role: string;
     techString: string; 
     link?: string;
     description?: string;
-  }
+}
   
-  export interface FormState extends Omit<iResumeDetail, 'projects'> {
+export interface FormState extends Omit<iResumeDetail, 'projects'> {
     skills: NonNullable<iResumeDetail['skills']>;
     experience: NonNullable<iResumeDetail['experience']>;
     education: NonNullable<iResumeDetail['education']>;
     projects: FormProject[];
-  }
+}
+
+export interface iResume {
+    ResumeID?: number;        
+    CandidateID: number;
+    Title: string;
+    ResumeFileUrl?: string;  
+    VectorID?: string;        
+    Summary?: string;
+    IsAnalyzed?: boolean;
+    CreatedAt?: Date;
+}

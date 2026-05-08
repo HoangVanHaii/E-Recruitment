@@ -25,3 +25,15 @@ export interface IJobApplication {
     CreatedAt: string;
     MatchScore: number;
 }
+
+export interface IAppliedJob {
+    CompanyID: number;
+    CompanyName: string;
+    JobID: number;
+    JobTitle: string;         
+    ApplicationStatus: string; 
+    ExpiredDate: string;
+    CreatedAt: string;
+    ApplicationID?: number;   
+    // AI_Summary_Review?: string; 
+}

@@ -22,6 +22,7 @@ export const generateSummaryWithAI = async (req: Request, res: Response, next: N
             data: generatedText
         });
     } catch (error) {
+        console.log("Lỗi khi gọi AI:", error);
         next(error);
     }
 };
@@ -33,16 +34,22 @@ export const createManualResume = async (req: Request, res: Response, next: Next
         if (req.file) {
             const uploaded = await uploadToCloudinary("Resumes", req.file as Express.Multer.File);
             resumeData.AvatarUrl = uploaded.url;
+        } else if (req.body.ExistingAvatarUrl) {
+            resumeData.AvatarUrl = req.body.ExistingAvatarUrl;
+        } else {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Vui lòng cung cấp ảnh đại diện cho CV!" 
+            });
         }
-        const { FullName, Phone, DateOfBirth, Address, ExperienceYears, Education } = req.body;
+
+        const { FullName, Phone, DateOfBirth, Address } = req.body;
         const candidateProfile: Candidate = {
             CandidateID: candidateId,
             FullName,
             Phone,
             DateOfBirth,
             Address,
-            ExperienceYears,
-            Education,
             AvatarUrl: resumeData.AvatarUrl
         };
         const result = await resumeService.buildManualResume(candidateId, resumeData, candidateProfile);

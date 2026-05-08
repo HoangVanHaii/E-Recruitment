@@ -5,7 +5,6 @@ export interface IJobApplication {
     FullName: string;
     Phone: string;
     Email: string;
-    ExperienceYears: number;
   
     Status: string;
     CreatedAt: string;

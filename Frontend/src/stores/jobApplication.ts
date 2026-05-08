@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getApplicationDetail, getJobApplications, updateStatusApplication } from '../services/jobApplication';
-import type { IJobApplicationList } from '../types/jobApplication';
+import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications} from '../services/jobApplication';
+import type { IAppliedJob, IJobApplicationList } from '../types/jobApplication';
 
 export const useApplicationStore = defineStore('application',() => {
     const loading = ref<boolean>(false);
@@ -9,6 +9,8 @@ export const useApplicationStore = defineStore('application',() => {
     const error = ref<boolean>(false);
     const errors = ref<Record<string, string>>({});
     const listApplications = ref<IJobApplicationList[]>([]);
+
+    const submittedApplications = ref<IAppliedJob[]>([]);
     const hasNextPage = ref(false);
 
     const getApplicationByJobId = async (jobID: number, page: number = 1, limit: number = 6) => {
@@ -106,15 +108,73 @@ export const useApplicationStore = defineStore('application',() => {
         }
     }
 
+    const getSubmittedApplicationsStore = async (page: number = 1, limit: number = 10) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await getSubmittedApplications(page, limit);
+            console.log("dữ liệu trả về:", data);
+            submittedApplications.value = data.data || [];
+            message.value = data.message || 'Lấy danh sách đã nộp thành công';
+            return true;
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error getSubmittedApplications', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => { map[e.path] = e.msg; });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            } else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
+            return false;
+        } finally {
+            loading.value = false;
+        }
+    }
+
+    const applyJobStore = async (JobID: number, ResumeID: number) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await applyJob(JobID, ResumeID);
+            message.value = data.message || 'Ứng tuyển thành công';
+            return true;
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error applyJob', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => { map[e.path] = e.msg; });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            } else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
+            return false;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     return {
         loading,
         message,
         error,
+        errors,
         listApplications,
         hasNextPage,
+        submittedApplications,
         getApplicationByJobId,
         getApplicationDetailStore,
-        updateApplicationStatusStore
+        updateApplicationStatusStore,
+        getSubmittedApplicationsStore, 
+        applyJobStore 
     }
 
 })

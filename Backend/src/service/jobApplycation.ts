@@ -176,7 +176,8 @@ export const getSubmittedApplications = async (CandidateID: number, page: number
             j.Title AS JobTitle,
             ja.Status AS ApplicationStatus,
             j.ExpiredDate,
-            ja.CreatedAt
+            ja.CreatedAt,
+            ja.ApplicationID
         FROM JobApplications ja
         JOIN Jobs j ON ja.JobID = j.JobID
         JOIN Employers e ON j.EmployerID = e.EmployerID
@@ -267,10 +268,17 @@ const applicationDetailQuery = `
         c.CandidateID,
         c.FullName,
         c.Phone,
-        c.ExperienceYears
+        j.Title AS JobTitle,
+        j.Description,
+        j.SalaryMin,
+        j.SalaryMax,
+        co.CompanyName
     FROM JobApplications a
     JOIN Candidates c ON a.CandidateID = c.CandidateID
     JOIN Users u ON u.UserID = c.CandidateID
+    JOIN Jobs j ON a.JobID = j.JobID
+    JOIN Employers e ON j.EmployerID = e.EmployerID
+    JOIN Companies co ON e.CompanyID = co.CompanyID
     WHERE a.ApplicationID = ?
     LIMIT 1
     `;
@@ -286,8 +294,6 @@ export const getApplicationDetail = async (ApplicationID: number): Promise<IJobA
         FullName: app.FullName,
         Phone: app.Phone,
         Email: app.Email,
-        ExperienceYears: app.ExperienceYears,
-    
         Status: app.Status,
         CreatedAt: app.CreatedAt,
         MatchScore: app.MatchScore,
