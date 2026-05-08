@@ -3,7 +3,6 @@ import * as candidateService from '../service/candidate';
 import { AppError } from "../utils/appError";
 import { uploadToCloudinary } from '../utils/uploadToCloudinary';
 import * as resumeService from '../service/resume';
-import pool from "../config/database";
 
 export const upsertProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {

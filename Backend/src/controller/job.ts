@@ -21,11 +21,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const cachedJobs = await redisClient.get(cacheKey);
         if (cachedJobs) {
             console.log("Lấy dữ liệu từ Redis cache   ");
-            // return res.status(200).json({
-            //     success: true,
-            //     message: "Lấy tất cả job thành công",
-            //     data: JSON.parse(cachedJobs)
-            // });
+            return res.status(200).json({
+                success: true,
+                message: "Lấy tất cả job thành công",
+                data: JSON.parse(cachedJobs)
+            });
         }
         const jobs = await jobService.getAllJobs(filters);
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobs));
@@ -67,12 +67,12 @@ export const getJobDetail = async (req: Request, res: Response, next: NextFuncti
         const cacheKey = `job_detail:${jobId}`;
         const cachedJobDetail = await redisClient.get(cacheKey);
         if (cachedJobDetail) {
-            // console.log("Lấy dữ liệu chi tiết công việc từ Redis cache");
-            // return res.status(200).json({
-            //     success: true,
-            //     message: "Lấy chi tiết công việc thành công",
-            //     data: JSON.parse(cachedJobDetail)
-            // });
+            console.log("Lấy dữ liệu chi tiết công việc từ Redis cache");
+            return res.status(200).json({
+                success: true,
+                message: "Lấy chi tiết công việc thành công",
+                data: JSON.parse(cachedJobDetail)
+            });
         }
         const jobDetail = await jobService.getJobDetail(jobId);
         if (!jobDetail) {
@@ -244,12 +244,12 @@ export const getJobOfMe = async (req: Request, res: Response, next: NextFunction
 
         const cachedJobs = await redisClient.get(cacheKey);
         if (cachedJobs) {
-            // console.log("Lấy dữ liệu từ Redis cache");
-            // return res.status(200).json({
-            //     success: true,
-            //     message: "Lấy công việc của bạn thành công",
-            //     data: JSON.parse(cachedJobs)
-            // });
+            console.log("Lấy dữ liệu từ Redis cache");
+            return res.status(200).json({
+                success: true,
+                message: "Lấy công việc của bạn thành công",
+                data: JSON.parse(cachedJobs)
+            });
         }
         const jobs = await jobService.getJobOfMe(req.user!.id, page, limit, status);
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobs));

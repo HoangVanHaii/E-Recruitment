@@ -1,16 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import *as employerService from "../service/employer";
-import { IEmployer } from "../interface/employer";
 
-export const createEmployer = async (req: Request, res: Response, next: NextFunction) => {  
-    try {
-        const employer: IEmployer = req.body;
-        // const employerId = await employerService.createEmployer(employer);
-        // res.status(201).json({ employerId });
-    } catch (error) {
-        next(error);
-    }
-}
 export const UpdateStatusEmployer = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const EmployerID: number = Number(req.params.EmployerID);
