@@ -1,3 +1,18 @@
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { Settings, ClipboardList, ChevronDown, Briefcase, Mail, MessageCircle } from 'lucide-vue-next';
+import { useAuthStore } from '../stores/auth';
+
+defineProps<{
+    activeMainTab: string
+}>();
+
+defineEmits(['changeTab']);
+
+const authStore = useAuthStore();
+const isFolderOpen = ref(true); 
+</script>
 <template>
     <div class="w-[260px] min-h-screen bg-[#24348b] text-white flex flex-col shrink-0">
         <div class="p-5 border-b border-white/10">
@@ -59,21 +74,11 @@
                     class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/10 transition-colors text-left">
                 <Mail class="w-5 h-5" /> Việc làm đã lưu
             </button>
+            <button @click="$emit('changeTab', 'chat')" 
+                    :class="activeMainTab === 'chat' ? 'bg-white/10 border-l-4 border-white' : ''"
+                    class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/10 transition-colors text-left">
+                <MessageCircle class="w-5 h-5" /> Tin nhắn
+            </button>
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import { Settings, ClipboardList, ChevronDown, Contact, Briefcase, Mail } from 'lucide-vue-next';
-import { useAuthStore } from '../stores/auth';
-
-defineProps<{
-    activeMainTab: string
-}>();
-
-defineEmits(['changeTab']);
-
-const authStore = useAuthStore();
-const isFolderOpen = ref(true); 
-</script>

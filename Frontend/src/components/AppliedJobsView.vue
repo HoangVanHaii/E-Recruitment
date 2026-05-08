@@ -1,3 +1,114 @@
+
+<script setup lang="ts">
+import { onMounted, computed, ref } from 'vue';
+import { useApplicationStore } from '../stores/jobApplication';
+import { formatDate } from '../utils/format';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+const appStore = useApplicationStore();
+const applications = computed(() => appStore.submittedApplications);
+const loading = computed(() => appStore.loading);
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const currentPage = ref(1);
+const limit = 6;
+
+const showDetailModal = ref(false);
+const selectedApp = ref<any>(null);
+
+const fetchApplications = async () => {
+    await appStore.getSubmittedApplicationsStore(currentPage.value, limit);
+};
+
+const handleViewDetail = async (applicationID: number | undefined) => {
+    if (!applicationID) {
+        showNotify.value = true;
+        isSuccessNotify.value = false;
+        messageNotify.value = "Mã đơn không hợp lệ (Undefined)!";
+        return;
+    }
+
+    const data = await appStore.getApplicationDetailStore(applicationID);
+    if (data) {
+        selectedApp.value = data;
+        showDetailModal.value = true;
+    } else {
+        showNotify.value = true;
+        isSuccessNotify.value = false;
+        messageNotify.value = "Lỗi: Không tìm thấy dữ liệu chi tiết đơn này.";
+    }
+};
+
+const prevPage = async () => {
+    if (currentPage.value > 1) {
+        currentPage.value--;
+        await fetchApplications();
+    }
+};
+
+const nextPage = async () => {
+    if (applications.value.length === limit) {
+        currentPage.value++;
+        await fetchApplications();
+    }
+};
+
+onMounted(async () => {
+    await fetchApplications();
+});
+
+const getStatusColor = (status: string) => {
+    switch(status) {
+        case 'Pending': return '#5664d2';
+        case 'Rejected': return '#d9534f';
+        case 'Reviewed': 
+        case 'Accepted': return '#5cb85c';
+        case 'Cancelled': return '#6c757d';
+        default: return '#5664d2';
+    }
+};
+
+const getStatusText = (status: string) => {
+    switch(status) {
+        case 'Pending': return 'Đang đợi duyệt';
+        case 'Rejected': return 'Đã từ chối';
+        case 'Reviewed': return 'Đã xem hồ sơ';
+        case 'Accepted': return 'Đã liên lạc phỏng vấn';
+        case 'Cancelled': return 'Đã hủy đơn';
+        default: return status;
+    }
+};
+
+const getStatusIcon = (status: string) => {
+    switch(status) {
+        case 'Pending': return 'fas fa-clock';
+        case 'Rejected': return 'fas fa-ban';
+        case 'Reviewed': 
+        case 'Accepted': return 'fas fa-phone-alt';
+        case 'Cancelled': return 'fas fa-times';
+        default: return 'fas fa-info-circle';
+    }
+};
+
+const handleCancelApplication = async (app: any) => {
+    if(confirm(`Sếp có chắc muốn hủy đơn ứng tuyển vào ${app.CompanyName} không?`)) {
+        const isSuccess = await appStore.updateApplicationStatusStore(app.ApplicationID, 'Cancelled');
+        showNotify.value = true;
+        if (isSuccess) {
+            isSuccessNotify.value = true;
+            messageNotify.value = 'Hủy đơn thành công!';
+            await fetchApplications(); 
+        } else {
+            isSuccessNotify.value = false;
+            messageNotify.value = appStore.message || 'Lỗi khi hủy đơn!';
+        }
+    }
+};
+</script>
 <template>
     <div class="w-full pb-10 font-sans relative">
         
@@ -136,133 +247,3 @@
 
     </div>
 </template>
-
-<script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
-import { useApplicationStore } from '../stores/jobApplication';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const appStore = useApplicationStore();
-const applications = computed(() => appStore.submittedApplications);
-const loading = computed(() => appStore.loading);
-
-// ==========================================
-// STATE QUẢN LÝ
-// ==========================================
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const currentPage = ref(1);
-const limit = 6;
-
-// Biến cho Modal chi tiết
-const showDetailModal = ref(false);
-const selectedApp = ref<any>(null);
-
-// ==========================================
-// HÀM XỬ LÝ CHÍNH
-// ==========================================
-const fetchApplications = async () => {
-    await appStore.getSubmittedApplicationsStore(currentPage.value, limit);
-};
-
-const handleViewDetail = async (applicationID: number | undefined) => {
-    // Nếu không có ID thì báo lỗi và dừng luôn
-    if (!applicationID) {
-        showNotify.value = true;
-        isSuccessNotify.value = false;
-        messageNotify.value = "Mã đơn không hợp lệ (Undefined)!";
-        return;
-    }
-
-    // Nếu có ID thì mới chạy tiếp
-    const data = await appStore.getApplicationDetailStore(applicationID);
-    if (data) {
-        selectedApp.value = data;
-        showDetailModal.value = true;
-    } else {
-        showNotify.value = true;
-        isSuccessNotify.value = false;
-        messageNotify.value = "Lỗi: Không tìm thấy dữ liệu chi tiết đơn này.";
-    }
-};
-
-const prevPage = async () => {
-    if (currentPage.value > 1) {
-        currentPage.value--;
-        await fetchApplications();
-    }
-};
-
-const nextPage = async () => {
-    if (applications.value.length === limit) {
-        currentPage.value++;
-        await fetchApplications();
-    }
-};
-
-onMounted(async () => {
-    await fetchApplications();
-});
-
-// ==========================================
-// TIỆN ÍCH HIỂN THỊ
-// ==========================================
-const formatDate = (dateStr: string) => {
-    if (!dateStr) return '---';
-    const d = new Date(dateStr);
-    return new Intl.DateTimeFormat('vi-VN', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-    }).format(d);
-};
-
-const getStatusColor = (status: string) => {
-    switch(status) {
-        case 'Pending': return '#5664d2';
-        case 'Rejected': return '#d9534f';
-        case 'Reviewed': 
-        case 'Accepted': return '#5cb85c';
-        case 'Cancelled': return '#6c757d';
-        default: return '#5664d2';
-    }
-};
-
-const getStatusText = (status: string) => {
-    switch(status) {
-        case 'Pending': return 'Đang đợi duyệt';
-        case 'Rejected': return 'Đã từ chối';
-        case 'Reviewed': return 'Đã xem hồ sơ';
-        case 'Accepted': return 'Đã liên lạc phỏng vấn';
-        case 'Cancelled': return 'Đã hủy đơn';
-        default: return status;
-    }
-};
-
-const getStatusIcon = (status: string) => {
-    switch(status) {
-        case 'Pending': return 'fas fa-clock';
-        case 'Rejected': return 'fas fa-ban';
-        case 'Reviewed': 
-        case 'Accepted': return 'fas fa-phone-alt';
-        case 'Cancelled': return 'fas fa-times';
-        default: return 'fas fa-info-circle';
-    }
-};
-
-const handleCancelApplication = async (app: any) => {
-    if(confirm(`Sếp có chắc muốn hủy đơn ứng tuyển vào ${app.CompanyName} không?`)) {
-        const isSuccess = await appStore.updateApplicationStatusStore(app.ApplicationID, 'Cancelled');
-        showNotify.value = true;
-        if (isSuccess) {
-            isSuccessNotify.value = true;
-            messageNotify.value = 'Hủy đơn thành công!';
-            await fetchApplications(); 
-        } else {
-            isSuccessNotify.value = false;
-            messageNotify.value = appStore.message || 'Lỗi khi hủy đơn!';
-        }
-    }
-};
-</script>

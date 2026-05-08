@@ -1,3 +1,59 @@
+
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useResumeStore } from '../stores/resume'; 
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+const router = useRouter();
+const resumeStore = useResumeStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+
+const resumeList = computed(() => resumeStore.resumes || []);
+
+onMounted(async () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await resumeStore.fetchMyResumesStore();
+});
+
+const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'Vừa xong';
+    const d = new Date(dateStr);
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+};
+
+const goToCreateResume = () => {
+    router.push({ query: { tab: 'create_cv' } });
+};
+
+const editResume = (resumeId: number) => {
+    router.push({ query: { tab: 'create_cv', id: resumeId } });
+};
+
+const viewResume = (resumeId: number) => {
+    router.push(`/resume/detail/${resumeId}`);
+};
+
+const deleteResume = async (resumeId: number) => {
+    if (confirm('Bạn có chắc chắn muốn xóa CV này vĩnh viễn không?')) {
+        await resumeStore.deleteResumeStore(resumeId); 
+        
+        if (!resumeStore.error) {
+            isSuccessNotify.value = true;
+            messageNotify.value = 'Đã xóa CV thành công!';
+        } else {
+            isSuccessNotify.value = false;
+            messageNotify.value = resumeStore.message || 'Xóa CV thất bại!';
+        }
+        showNotify.value = true;
+    }
+};
+</script>
 <template>
     <div class="w-full pb-10">
         <Notify v-if="showNotify" :message="messageNotify" :isSuccess="isSuccessNotify" @close="showNotify = false" />
@@ -5,7 +61,7 @@
 
         <div class="mb-12">
             <h2 class="text-[17px] font-black text-[#14205c] mb-6 tracking-wide">
-                // CV xin việc của tôi ({{ resumeList.length }} Mẫu)
+                 CV xin việc của tôi ({{ resumeList.length }} Mẫu)
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
@@ -75,7 +131,7 @@
 
         <div>
             <h2 class="text-[17px] font-black text-[#14205c] mb-6 tracking-wide">
-                // Mẫu CV đã thích (0 Mẫu)
+                Mẫu CV đã thích (0 Mẫu)
             </h2>
             <div class="bg-white rounded-2xl border border-gray-200 p-10 text-center flex flex-col items-center justify-center shadow-sm">
                 <div class="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-300 mb-3">
@@ -86,62 +142,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useResumeStore } from '../stores/resume'; 
-import { useAuthStore } from '../stores/auth';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const router = useRouter();
-const resumeStore = useResumeStore();
-const authStore = useAuthStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const candidateName = computed(() => authStore.user?.Name || 'Ứng viên');
-
-const resumeList = computed(() => resumeStore.resumes || []);
-
-onMounted(async () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    await resumeStore.fetchMyResumesStore();
-});
-
-const formatDate = (dateStr: string) => {
-    if (!dateStr) return 'Vừa xong';
-    const d = new Date(dateStr);
-    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-};
-
-const goToCreateResume = () => {
-    router.push({ query: { tab: 'create_cv' } });
-};
-
-const editResume = (resumeId: number) => {
-    router.push({ query: { tab: 'create_cv', id: resumeId } });
-};
-
-const viewResume = (resumeId: number) => {
-    router.push(`/resume/detail/${resumeId}`);
-};
-
-const deleteResume = async (resumeId: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa CV này vĩnh viễn không?')) {
-        await resumeStore.deleteResumeStore(resumeId); 
-        
-        if (!resumeStore.error) {
-            isSuccessNotify.value = true;
-            messageNotify.value = 'Đã xóa CV thành công!';
-        } else {
-            isSuccessNotify.value = false;
-            messageNotify.value = resumeStore.message || 'Xóa CV thất bại!';
-        }
-        showNotify.value = true;
-    }
-};
-</script>

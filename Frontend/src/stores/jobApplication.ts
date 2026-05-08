@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications, getChartStats, ApplyJob} from '../services/jobApplication';
+import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications, getChartStats} from '../services/jobApplication';
 import type { IAppliedJob, IJobApplicationList } from '../types/jobApplication';
 
 export const useApplicationStore = defineStore('application',() => {

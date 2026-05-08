@@ -1,3 +1,38 @@
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+const authStore = useAuthStore();
+
+const loading = ref(false);
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const email = ref('');
+const password = ref('');
+
+onMounted(() => {
+    if (authStore.user) {
+        email.value = authStore.user.Email || '';
+    }
+});
+
+const handleSave = async () => {
+    loading.value = true;
+    
+    setTimeout(() => {
+        loading.value = false;
+        isSuccessNotify.value = true;
+        messageNotify.value = 'Chức năng đổi mật khẩu đang chờ Backend API!';
+        showNotify.value = true;
+        password.value = ''; 
+    }, 1000);
+};
+</script>
 <template>
     <div class="w-full">
         <Notify  
@@ -44,38 +79,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const authStore = useAuthStore();
-
-const loading = ref(false);
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const email = ref('');
-const password = ref('');
-
-onMounted(() => {
-    if (authStore.user) {
-        email.value = authStore.user.Email || '';
-    }
-});
-
-const handleSave = async () => {
-    loading.value = true;
-    
-    setTimeout(() => {
-        loading.value = false;
-        isSuccessNotify.value = true;
-        messageNotify.value = 'Chức năng đổi mật khẩu đang chờ Backend API!';
-        showNotify.value = true;
-        password.value = ''; 
-    }, 1000);
-};
-</script>

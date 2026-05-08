@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router'; // THÊM DÒNG NÀY
+import { useRoute, useRouter } from 'vue-router'; 
 import Notify from '../components/Notify.vue';
 import Loading from '../components/Loading.vue';
 import { useResumeStore } from '../stores/resume';
@@ -18,7 +18,6 @@ export interface Candidate {
 const route = useRoute();
 const router = useRouter();
 
-// KIỂM TRA XEM CÓ PHẢI LÀ CHẾ ĐỘ EDIT KHÔNG
 const editResumeId = computed(() => Number(route.query.id));
 const isEditMode = computed(() => !!editResumeId.value && editResumeId.value > 0);
 
@@ -97,7 +96,6 @@ const onAvatarChange = (event: Event) => {
     }
 };
 
-// Hàm định dạng ngày cho thẻ <input type="date">
 const formatDateForInput = (dateStr: any) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -109,7 +107,6 @@ onMounted(async () => {
     if (candidateStore.candidateSkills.length === 0) await candidateStore.fetchSkillsStore();
     if (skillStore.dictionary.length === 0) await skillStore.fetchDictionaryStore();
 
-    // Nạp thông tin cá nhân cơ bản (Dùng chung cho cả Create và Edit)
     const p = candidateStore.profile;
     if (p) {
         candidateForm.value.FullName = p.FullName || '';
@@ -119,7 +116,6 @@ onMounted(async () => {
     }
 
     if (isEditMode.value) {
-        // === CHẾ ĐỘ EDIT: LẤY DỮ LIỆU CV CŨ LÊN ===
         await useResume.fetchResumeDetailStore(editResumeId.value);
         const cv = useResume.currentResume;
         
@@ -129,7 +125,6 @@ onMounted(async () => {
             selectedTemplateId.value = cv.templateId || 1;
             if (cv.AvatarUrl) avatarPreview.value = cv.AvatarUrl as string;
 
-            // Đổ dữ liệu cũ vào các mảng "new" để user tự do chỉnh sửa
             newExperiences.value = (cv.experience || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
             newEducation.value = (cv.education || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
             
@@ -144,14 +139,12 @@ onMounted(async () => {
                 level: s.level || 'Khá'
             }));
 
-            // Đảm bảo không dính dáng tới các mảng selected từ Master Profile nữa
             selectedExperiences.value = [];
             selectedProjects.value = [];
             selectedEducation.value = [];
             selectedSkills.value = [];
         }
     } else {
-        // === CHẾ ĐỘ CREATE: LẤY TỪ MASTER PROFILE MẶC ĐỊNH ===
         if (p) {
             if (p.AvatarUrl) avatarPreview.value = p.AvatarUrl;
             if (p.experience) selectedExperiences.value = p.experience.map((_: any, i: number) => i);
@@ -225,7 +218,6 @@ const handleGenerateAI = async () => {
 };
 
 const handleSubmit = async () => {
-    // Chỉ đồng bộ Master Profile nếu là tạo mới (Để tránh nhân đôi dữ liệu khi edit)
     if (!isEditMode.value) {
         await syncNewDataToMasterProfile();
     }
@@ -236,7 +228,6 @@ const handleSubmit = async () => {
     }));
 
     if (isEditMode.value) {
-        // === GỌI API UPDATE (PUT) BẰNG JSON ===
         const updatePayload = {
             title: resumeForm.value.title || '',
             summary: resumeForm.value.summary || '',
@@ -247,7 +238,6 @@ const handleSubmit = async () => {
             projects: processedProjects
         };
 
-        // GỌI STORE UPDATE CỦA SẾP
         await useResume.updateResumeStore(editResumeId.value, updatePayload); 
         
         if(!useResume.error) {
@@ -259,7 +249,6 @@ const handleSubmit = async () => {
         }
 
     } else {
-        // === GỌI API CREATE (POST) BẰNG FORMDATA GỐC ===
         const formData = new FormData();
         if (avatarFile.value) formData.append('AvatarUrl', avatarFile.value); 
         else if (candidateStore.profile?.AvatarUrl) formData.append('ExistingAvatarUrl', candidateStore.profile.AvatarUrl);
@@ -268,12 +257,10 @@ const handleSubmit = async () => {
         formData.append('title', resumeForm.value.title || '');
         formData.append('summary', resumeForm.value.summary || '');
         
-        // THÊM LẠI 4 DÒNG NÀY ĐỂ KHÔNG BỊ NULL NÈ SẾP:
         formData.append('FullName', candidateForm.value.FullName || '');
         formData.append('Phone', candidateForm.value.Phone || '');
         formData.append('DateOfBirth', candidateForm.value.DateOfBirth || '');
         formData.append('Address', candidateForm.value.Address || '');
-        // -----------------------------------------
         
         formData.append('skills', JSON.stringify(finalData.skills));
         formData.append('experience', JSON.stringify(finalData.experience));
@@ -283,8 +270,6 @@ const handleSubmit = async () => {
         await useResume.createResumeStore(formData);
         if(!useResume.error) {
                 showToast('Tạo CV thành công!', true);
-                
-                // Tẩy não form ngay lập tức để không tạo trùng
                 resumeForm.value.title = '';
                 resumeForm.value.summary = '';
                 newExperiences.value = [];
@@ -293,7 +278,6 @@ const handleSubmit = async () => {
                 newSkills.value = [];
                 avatarFile.value = null;
                 
-                // Trả lại 1.5 giây delay để user đọc kịp cái thông báo
                 setTimeout(() => {
                     router.push({ query: { tab: 'resumes_list' } });
                 }, 1500); 

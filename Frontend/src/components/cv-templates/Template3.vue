@@ -1,3 +1,17 @@
+
+
+<script setup lang="ts">
+import { useAuthStore } from '../../stores/auth';
+const authStore = useAuthStore();
+defineProps<{ resume: any }>();
+
+const formatDate = (dateStr: any) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return ''; 
+    return `${d.getMonth() + 1}/${d.getFullYear()}`;
+};
+</script>
 <template>
     <div id="cv-document" class="max-w-[210mm] min-h-[297mm] mx-auto bg-white shadow-2xl flex flex-col md:flex-row print:flex-row overflow-hidden print:shadow-none print:m-0 text-slate-800">
         
@@ -110,16 +124,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { useAuthStore } from '../../stores/auth';
-const authStore = useAuthStore();
-defineProps<{ resume: any }>();
-
-const formatDate = (dateStr: any) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return ''; 
-    return `${d.getMonth() + 1}/${d.getFullYear()}`;
-};
-</script>
