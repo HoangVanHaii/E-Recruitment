@@ -123,7 +123,6 @@ export const getAllJobs = async (filters: IJobFilters) => {
         totalPages = Math.ceil( (total || 0 ) / Limit);
     }
 
-    // nếu có score thì order by score, không thì order by createdAt
     const dataQuery = `
         SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status, r.Score
         FROM jobs j
@@ -430,3 +429,184 @@ export const searchJobsByKeyword = async (q: string) => {
     const [rows] = await pool.query(sql, [`%${q}%`, `%${q}%`]);
     return rows as any[];
 };
+
+export const getJobForAdmin = async () => {
+    const dataQuery = `
+        SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status,
+            COUNT(ja.ApplicationID) AS ApplicationCount
+        FROM jobs j
+        JOIN employers e ON j.EmployerID = e.EmployerID
+        JOIN companies c ON e.CompanyID = c.CompanyID
+        LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+        GROUP BY j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl, j.Status
+        ORDER BY j.CreatedAt DESC
+        LIMIT 5
+    `;
+    const [rows]: any = await pool.query(dataQuery);
+
+    const jobIds = rows.map((job: any) => job.JobID);
+    const finalJobList = await mergeJob(jobIds, rows);
+
+    return {
+        items: finalJobList as IJob[],
+    };
+}
+
+export const getJobForAdminByStatus = async (page: number, limit: number, status: string) => {
+    console.log(page, " ", limit, " ", status);
+    const offset = (page - 1) * limit;
+    let total: number | undefined = undefined;
+    let totalPages: number | undefined = undefined;
+
+    const baseParams: any[] = [];
+    const whereClause = status !== 'All' ? 'WHERE j.Status = ?' : '';
+    if(status !== 'All') {
+        baseParams.push(status);
+    }
+    if (page === 1) {
+        const countQuery = `
+            SELECT COUNT(*) as totalItems
+            FROM jobs j
+            JOIN employers e ON j.EmployerID = e.EmployerID
+            JOIN companies c ON e.CompanyID = c.CompanyID
+            ${whereClause}
+        `;
+        const [countResult]: any = await pool.query(countQuery, baseParams);
+        total = countResult[0].totalItems;
+        totalPages = Math.ceil((total || 0) / limit);
+    }
+    const dataQuery = `
+        SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status,
+            COUNT(ja.ApplicationID) AS ApplicationCount
+        FROM jobs j
+        JOIN employers e ON j.EmployerID = e.EmployerID
+        JOIN companies c ON e.CompanyID = c.CompanyID
+        LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+        ${whereClause}
+        GROUP BY j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl, j.Status
+        ORDER BY j.CreatedAt DESC
+        LIMIT ? OFFSET ?
+    `;
+    const [rows]: any = await pool.query(dataQuery, [...baseParams, limit, offset]);
+    const jobIds = rows.map((job: any) => job.JobID);
+    const finalJobList = await mergeJob(jobIds, rows);
+
+    return {
+        items: finalJobList as IJob[],
+        ...(total !== undefined && { total, totalPages })
+    };
+}
+export const getMonthlyJobStats = async () => {
+    const query = `
+        SELECT 
+            COUNT(CASE 
+                WHEN YEAR(CreatedAt) = YEAR(CURDATE())
+                AND MONTH(CreatedAt) = MONTH(CURDATE())
+                THEN 1 END) AS currentMonth,
+
+            COUNT(CASE 
+                WHEN YEAR(CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                AND MONTH(CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                THEN 1 END) AS lastMonth
+        FROM jobs
+    `;
+
+    const [rows]: any = await pool.query(query);
+    const { currentMonth = 0, lastMonth = 0 } = rows[0];
+
+    const percentChange =
+        lastMonth === 0
+            ? currentMonth > 0 ? 100 : 0
+            : ((currentMonth - lastMonth) / lastMonth) * 100;
+
+    return {
+        currentMonth,
+        lastMonth,
+        percentChange: Number(percentChange.toFixed(1))
+    };
+};
+export const getMonthlyJobStatsPending = async () => {
+    const query = `
+        SELECT 
+            COUNT(CASE 
+                WHEN YEAR(CreatedAt) = YEAR(CURDATE())
+                AND MONTH(CreatedAt) = MONTH(CURDATE())
+                THEN 1 END) AS currentMonth,
+
+            COUNT(CASE 
+                WHEN YEAR(CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                AND MONTH(CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                AND Status = 'Pending'
+                THEN 1 END) AS lastMonth
+        FROM jobs
+    `;
+    const [rows]: any = await pool.query(query);
+    const { currentMonth = 0, lastMonth = 0 } = rows[0];
+
+    const percentChange =
+        lastMonth === 0
+            ? currentMonth > 0 ? 100 : 0
+            : ((currentMonth - lastMonth) / lastMonth) * 100;
+
+    return {
+        currentMonth,
+        lastMonth,
+        percentChange: Number(percentChange.toFixed(1))
+    };
+}
+export const getMonthlyEmployerStats = async () => {
+    const query = `
+        SELECT 
+            COUNT(CASE 
+                WHEN YEAR(e.CreatedAt) = YEAR(CURDATE())
+                AND MONTH(e.CreatedAt) = MONTH(CURDATE())
+                THEN 1 END) AS currentMonth,
+
+            COUNT(CASE 
+                WHEN YEAR(e.CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                AND MONTH(e.CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                THEN 1 END) AS lastMonth
+        FROM employers e
+    `;
+
+    const [rows]: any = await pool.query(query);
+    const { currentMonth = 0, lastMonth = 0 } = rows[0];
+
+    const percentChange =
+        lastMonth === 0
+            ? currentMonth > 0 ? 100 : 0
+            : ((currentMonth - lastMonth) / lastMonth) * 100;
+
+    return {
+        currentMonth,
+        lastMonth,
+        percentChange: Number(percentChange.toFixed(1))
+    };
+}
+export const get7DayJobStats = async () => {
+    const query = `
+        SELECT
+            DATE(CreatedAt) AS date,
+            COUNT(*) AS count
+        FROM jobs
+        WHERE CreatedAt >= CURDATE() - INTERVAL 6 DAY
+        GROUP BY DATE(CreatedAt)
+        ORDER BY DATE(CreatedAt) ASC      
+    `;
+    const [rows]: any = await pool.query(query);
+    
+    const statsMap: Record<string, number> = {};
+    for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateString = date.toISOString().split('T')[0];
+        statsMap[dateString] = 0;
+    }
+
+    rows.forEach((row: any) => {
+        const dateString = row.date.toISOString().split('T')[0];
+        statsMap[dateString] = row.count;
+    });
+
+    return Object.entries(statsMap).map(([date, count]) => ({ date, count }));
+}

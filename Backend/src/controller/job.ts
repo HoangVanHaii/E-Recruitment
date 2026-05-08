@@ -4,6 +4,7 @@ import *as employerService from "../service/employer";
 import redisClient from "../config/redisClient";
 import { IJobPayload, IJobDetailPayload, IJobFilters } from "../interface/job";
 import { AppError } from "../utils/appError";
+import { getMonthlyNewCandidates, get7DayCandidateStats } from "../service/candidate";
 
 export const getAllJobs = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -295,6 +296,73 @@ export const getAllCategories = async (req: Request, res: Response, next: NextFu
             success: true,
             message: "Lấy danh sách category thành công",
             data: categories
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+export const getJobForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const jobsData = await jobService.getJobForAdmin();
+        res.status(200).json({
+            success: true,
+            message: "Lấy công việc cho admin thành công",
+            data: jobsData
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+export const getJobForAdminByStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const status = req.query.status as string;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const jobsData = await jobService.getJobForAdminByStatus(page, limit, status);
+        res.status(200).json({
+            success: true,
+            message: "Lấy công việc cho admin theo trạng thái thành công",
+            data: jobsData
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+export const getStatsMonthlyForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const [candidateStats, jobStats, employerStats, jobStatsPending] = await Promise.all([
+            getMonthlyNewCandidates(),
+            jobService.getMonthlyJobStats(),
+            jobService.getMonthlyEmployerStats(),
+            jobService.getMonthlyJobStatsPending()
+        ]);
+        res.status(200).json({
+            success: true,
+            message: "Lấy thống kê cho admin thành công",
+            data: {
+                candidateStats,
+                jobStats,
+                employerStats,
+                jobStatsPending
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}   
+export const get7DayStatsForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const [candidateStats, jobStats] = await Promise.all([
+            get7DayCandidateStats(),
+            jobService.get7DayJobStats()
+        ]);
+        res.status(200).json({
+            success: true,
+            message: "Lấy thống kê 7 ngày cho admin thành công",
+            data: {
+                candidateStats,
+                jobStats
+            }
         });
     } catch (error) {
         next(error);

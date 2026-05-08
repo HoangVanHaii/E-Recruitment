@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { IProfile } from '../types/user';
-import { getProfile, login, register, registerSendOtp, verifyOtp } from '../services/auth';
+import { getProfile, login, register, registerSendOtp, updateStatus, verifyOtp } from '../services/auth';
 import { useMessageStore } from './message';
 import { connectSocket, disconnectSocket } from '../services/socket';
 import type { IUser } from '../types/user';
@@ -127,9 +127,24 @@ export const useAuthStore = defineStore('auth',() => {
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        // window.location.href = '/login';
         disconnectSocket();
+        window.location.href = '/login-section';
     };
+    const updateStatusStore = async (userId: number, status: string) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await updateStatus(userId, status);
+            message.value = data.message || 'Cập nhật trạng thái người dùng thành công';
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi cập nhật trạng thái người dùng:", err.response?.data);
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật trạng thái người dùng';
+        } finally {
+            loading.value = false;
+        }
+    }
     return {
         loading,
         message,
@@ -146,7 +161,8 @@ export const useAuthStore = defineStore('auth',() => {
         registerStore,
         loginStore,
         fetchProfile,
-        handleLogout
+        handleLogout,
+        updateStatusStore
     }
 
 })

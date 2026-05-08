@@ -14,6 +14,8 @@ import MainLayout from '../components/MainLayout.vue'
 import FooterLayout from '../components/FooterLayout.vue'
 
 import SidebarEmployer from '../components/SidebarEmployer.vue'
+import SidebarAdmin from '../components/admin/SidebarAdmin.vue'
+
 //Employer
 import CreateJobView from '../views/CreateJobView.vue'
 import PostedJobsView from '../views/PostedJobsView.vue'
@@ -23,9 +25,24 @@ import EmployerDashboard from '../views/EmployerDashboard.vue'
 import EmployerProfile from '../views/EmployerProfile.vue'
 import EmployeeRequestsView from '../views/EmployeeRequestsView..vue'
 import { useAuthStore } from '../stores/auth'
+import EmployerChatView from '../views/EmployerChatView.vue'
+
+//Admin
+import DashBoardAdmin from '../views/admin/DashBoardAdmin.vue'
+import CandidateManagement from '../views/admin/CandidateManagement.vue'
+import EmployerManagement from '../views/admin/EmployerManagement.vue'
+import AllJobManagement from '../views/admin/AllJobManagement.vue'
+import AdminProfile from '../views/admin/AdminProfile.vue'
+import ChangePassAdmin from '../views/admin/ChangePassAdmin.vue'
+
+// 403 & 404
+import Forbidden from '../views/Forbidden.vue'
+import PageNotFound from '../views/PageNotFound.vue'
 
 const routes: Array<RouteRecordRaw> = [
     { path: '/', redirect: '/home' },
+
+    // --- MAIN LAYOUT ---
     {
         path: '/',
         component: MainLayout,
@@ -43,7 +60,7 @@ const routes: Array<RouteRecordRaw> = [
         ]
     },
 
-
+    // --- EMPLOYER ---
     {
         path: '/',
         component: FooterLayout,
@@ -57,9 +74,35 @@ const routes: Array<RouteRecordRaw> = [
             { path: 'employer-dashboard', name: 'employer-dashboard', component: EmployerDashboard },
             { path: 'employer-profile', name: 'employer-profile', component: EmployerProfile },
             { path: 'employer-requests', name: 'employer-requests', component: EmployeeRequestsView}
+            { path: 'employer-chat', name: 'employer-chat', component: EmployerChatView },
         ]
     },
-  
+
+    // --- ADMIN ---
+    {
+        path: '/admin',
+        children: [
+            { path: 'admin-dashboard', name: 'admin-dashboard', component: DashBoardAdmin },
+            { path: 'candidate-management', name: 'candidate-management', component: CandidateManagement },
+            { path: 'employer-management', name: 'employer-management', component: EmployerManagement },
+            { path: 'all-job-management', name: 'all-job-management', component: AllJobManagement },
+            { path: 'all-job-pending', name: 'all-job-pending', component: AllJobManagement, props: { status: 'Pending' } },
+            { path: 'all-job-reported', name: 'all-job-reported', component: AllJobManagement, props: { status: 'Reported' } },
+            { path: 'admin-profile', name: 'admin-profile', component: AdminProfile },
+            { path: 'change-password', name: 'admin-change-password', component: ChangePassAdmin },
+        ]
+    },
+
+    {
+        path: '/403',
+        name: 'forbidden-403',
+        component: Forbidden
+    },
+    {
+        path: '/:pathMatch(.*)*', 
+        name: 'not-found-404',
+        component: PageNotFound
+    }
 ]
 
 

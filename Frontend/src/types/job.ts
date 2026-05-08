@@ -10,6 +10,7 @@ export interface IJob {
     SalaryMin?: number;
     SalaryMax?: number;
     JobType?: string;
+    ApplicationCount?: number;
 }
 export interface IJobDetail {
     JobID: number;

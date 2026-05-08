@@ -12,6 +12,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 }
 export const updateStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log("Received request to update user status with params:", req.params, "and body:", req.body);
         const userId = parseInt(req.params.id as string);
         const { status } = req.body;
         const user = await userService.searchUserById(userId);
