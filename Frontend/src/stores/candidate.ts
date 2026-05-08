@@ -6,7 +6,8 @@ import {
     updateMasterProfileDetail,
     getCandidateSkills,
     analyzeSkillsTextWithAI,
-    saveCandidateSkills
+    saveCandidateSkills,
+    getCandidateInfo
 } from '../services/candidate';
 import type { ICandidateProfile, ICandidateDetail } from '../types/candidate';
 import type { ICandidateSkill } from '../types/skill';
@@ -49,6 +50,17 @@ export const useCandidateStore = defineStore('candidate', () => {
             loading.value = true;
             const data = await getProfile();
             profile.value = data.data; 
+        } catch (err: any) {
+            console.error("Lỗi khi lấy Profile:", err.response?.data);
+        } finally {
+            loading.value = false;
+        }
+    }
+    const getCandidateInfoStore = async () => {
+        try {
+            loading.value = true;
+            const data = await getCandidateInfo();
+            return data.data;
         } catch (err: any) {
             console.error("Lỗi khi lấy Profile:", err.response?.data);
         } finally {
@@ -161,6 +173,7 @@ export const useCandidateStore = defineStore('candidate', () => {
         allCandidates,
         totalPages,
         total,
-        fetchAllCandidates
+        fetchAllCandidates,
+        getCandidateInfoStore
     }
 });

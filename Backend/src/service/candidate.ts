@@ -1,5 +1,5 @@
 import pool from "../config/database";
-import { Candidate } from "../interface/candidate";
+import { Candidate, ICandidateInfo } from "../interface/candidate";
 import { GoogleGenAI } from "@google/genai"; 
 import * as skillService from "./skill";
 import { PoolConnection } from "mysql2/promise";
@@ -320,4 +320,23 @@ export const getAllCandidates = async (page: number, limit: number) => {
         items: rows as Candidate[],
         ...(total !== undefined) && { totalpage, total }
     }
+}
+
+export const getCandidateInfo = async (candidateId: number) => {
+    const query = `
+        SELECT 
+            c.CandidateID,
+            c.FullName,
+            c.Phone,
+            c.DateOfBirth,
+            c.Address,
+            c.AvatarUrl,
+            u.Email
+        FROM Candidates c
+        JOIN Users u ON c.CandidateID = u.UserID
+        WHERE c.CandidateID = ?
+    `;
+
+    const [rows]: any = await pool.query(query, [candidateId]);
+    return rows[0] as ICandidateInfo;
 }

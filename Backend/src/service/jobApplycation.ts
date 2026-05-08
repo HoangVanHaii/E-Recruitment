@@ -268,8 +268,8 @@ const applicationDetailQuery = `
         c.CandidateID,
         c.FullName,
         c.Phone,
+        c.AvatarUrl,
         j.Title AS JobTitle,
-        j.Description,
         j.SalaryMin,
         j.SalaryMax,
         co.CompanyName
@@ -282,18 +282,17 @@ const applicationDetailQuery = `
     WHERE a.ApplicationID = ?
     LIMIT 1
     `;
-
+    
 export const getApplicationDetail = async (ApplicationID: number): Promise<IJobApplication | null> => {
-  
     const [rows]: any = await pool.query( applicationDetailQuery, [ApplicationID]);
     if (rows.length === 0) return null;
     const app = rows[0];
     const result: IJobApplication = {
         ApplicationID: app.ApplicationID,
-    
         FullName: app.FullName,
         Phone: app.Phone,
         Email: app.Email,
+        AvatarUrl: app.AvatarUrl,
         Status: app.Status,
         CreatedAt: app.CreatedAt,
         MatchScore: app.MatchScore,

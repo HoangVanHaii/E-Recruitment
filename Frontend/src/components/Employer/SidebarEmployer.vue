@@ -17,7 +17,7 @@ const isSuccessNotify = ref(true);
 const isMobileMenuOpen = ref(false);
 const CompanyOfMe = ref<ICompanyOfMe | null>(null);
 
-interface SubMenuItem { id: string; label: string; routeName?: string; }
+interface SubMenuItem { id: string; icon: string; label: string; routeName?: string; }
 interface MenuItem { id: string; label: string; icon: string; isOpen?: boolean; routeName?: string; subItems?: SubMenuItem[]; }
 
 const menuItems = ref<MenuItem[]>([
@@ -25,15 +25,15 @@ const menuItems = ref<MenuItem[]>([
     {
         id: 'account', label: 'Quản lý công ty', icon: 'fas fa-user-shield', isOpen: false,
         subItems: [
-            { id: 'profile-update', label: 'Cập nhật hồ sơ', routeName: 'employer-profile' },
-            { id: 'approved-employer', label: 'Duyệt nhân viên', routeName: 'employer-requests' },
+            { id: 'profile-update', icon: 'fas fa-user-edit', label: 'Cập nhật hồ sơ', routeName: 'employer-profile' },
+            { id: 'approved-employer', icon: 'fas fa-user-check', label: 'Duyệt nhân viên', routeName: 'employer-requests' },
         ]
     },
     {
-        id: 'post', label: 'Đăng tin', icon: 'fas fa-edit', isOpen: true,
+        id: 'post', label: 'Đăng tin', icon: 'fas fa-edit', isOpen: false,
         subItems: [
-            { id: 'post-new', label: 'Đăng tin mới', routeName: 'create-job' },
-            { id: 'post-history', label: 'Tin đã đăng', routeName: 'posted-jobs' }
+            { id: 'post-new', icon: 'fas fa-plus', label: 'Đăng tin mới', routeName: 'create-job' },
+            { id: 'post-history', icon: 'fas fa-list-ul', label: 'Tin đã đăng', routeName: 'posted-jobs' }
         ]
     },
     { id: 'candidates', label: 'Ứng viên ứng tuyển', icon: 'fas fa-users', routeName: 'job-applications' },
@@ -56,9 +56,19 @@ const handleClick = (item: MenuItem) => {
     if (item.routeName) {
         router.push({ name: item.routeName });
         isMobileMenuOpen.value = false;
+        menuItems.value.forEach(m => {
+            if (m.subItems) m.isOpen = false;
+        });
+        return;
     }
     if (item.subItems) {
-        item.isOpen = !item.isOpen;
+        const currentState = item.isOpen;
+            menuItems.value.forEach(m => {
+            if (m.subItems) {
+                m.isOpen = false;
+            }
+        });
+        item.isOpen = !currentState;
     }
 };
 
@@ -184,13 +194,15 @@ const handleLogout = () => {
                             :key="sub.id"
                             @click="goRoute(sub.routeName)"
                             :class="[
-                                'w-full text-left pl-14 pr-6 py-2.5 text-sm font-medium transition-all',
+                                'w-full text-left pl-10 pr-6 py-2.5 text-sm font-medium transition-all flex items-center gap-3',
                                 route.name === sub.routeName
                                     ? 'bg-[#151c60] text-white border-r-4 border-blue-400'
                                     : 'text-blue-100 hover:text-white hover:bg-white/5'
                             ]"
                         >
-                            {{ sub.label }}
+                            <i v-if="sub.icon" :class="[sub.icon, 'w-5 text-center text-xs']"></i>
+                            
+                            <span>{{ sub.label }}</span>
                         </button>
                     </div>
                 </transition>

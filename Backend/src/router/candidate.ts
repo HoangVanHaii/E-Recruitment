@@ -9,6 +9,8 @@ const router = express.Router();
 
 // SQL Profile
 router.get('/profile', authMiddleware, candidateController.getProfile); 
+router.get('/info', authMiddleware, candidateController.getCandidateInfo); 
+
 router.post('/profile', authMiddleware, upload.single('AvatarUrl'), candidateMiddleware.upsertProfileValidation, validateRequest, candidateController.upsertProfile);
 
 // Mongo Master Profile 

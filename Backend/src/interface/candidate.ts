@@ -21,3 +21,12 @@ export interface iCandidateDetail extends Document {
     Email?: string;
     Status?: string;
 }
+export interface ICandidateInfo {
+    CandidateID: number;
+    FullName: string;
+    Phone: string;
+    DateOfBirth: string;
+    Address: string;
+    Email: string;
+    AvatarUrl?: string;
+}

@@ -7,6 +7,11 @@ export const getProfile = async () => {
     return response.data;
 }
 
+export const getCandidateInfo = async () => {
+    const response = await api.get('/candidates/info'); 
+    return response.data;
+}
+
 export const upsertProfile = async (formData: FormData) => {
     const response = await api.post('/candidates/profile', formData, {
         headers: {
