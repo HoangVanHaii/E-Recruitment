@@ -23,4 +23,5 @@ router.post('/skills', authMiddleware, candidateMiddleware.saveAnalyzedSkillsVal
 router.get('/employer/list', authMiddleware, isEmployer, candidateMiddleware.getCandidatesListValidation, validateRequest, candidateController.getCandidatesForEmployer);
 router.get('/employer/detail/:id', authMiddleware, isEmployer, candidateMiddleware.getCandidateDetailValidation, validateRequest, candidateController.getCandidateDetailForEmployer);
 
-export default router;  
+router.get('/admin/all-candidates', authMiddleware, isAdmin, candidateController.getAllCandidates);
+export default router;

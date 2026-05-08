@@ -233,3 +233,91 @@ export const getCandidatesListForEmployer = async () => {
     const [rows]: any = await pool.query(query);
     return rows;
 };
+
+export const getMonthlyNewCandidates = async () => {
+    const query = `
+        SELECT 
+            COUNT(CASE
+                WHEN YEAR(CreatedAt) = YEAR(CURDATE())
+                AND MONTH(CreatedAt) = MONTH(CURDATE())
+                THEN 1 END) As currentCount,
+
+                COUNT(CASE
+                    WHEN YEAR(CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
+                    AND MONTH(CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
+                    THEN 1 END) As lastCount 
+        FROM Candidates
+    `;
+    const [rows]: any = await pool.query(query);
+    const { currentMonth = 0, lastMonth = 0 } = rows[0];
+    const percentageChange = lastMonth === 0 ?
+        (currentMonth > 0 ? 100 : 0)
+        : ((currentMonth - lastMonth) / lastMonth) * 100;
+    return {
+        currentMonth,
+        lastMonth,
+        percentChange: Number(percentageChange.toFixed(1))
+    };
+}
+export const get7DayCandidateStats = async () => {
+    const query = `
+        SELECT
+            DATE(CreatedAt) AS date,
+            COUNT(*) AS count
+        FROM Candidates
+        WHERE CreatedAt >= CURDATE() - INTERVAL 6 DAY
+        GROUP BY DATE(CreatedAt)
+        ORDER BY DATE(CreatedAt) ASC      
+    `;
+    const [rows]: any = await pool.query(query);
+
+    const statsMap: Record<string, number> = {};
+    for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateString = date.toISOString().split('T')[0];
+        statsMap[dateString] = 0;
+    }
+
+    rows.forEach((row: any) => {
+        const dateString = row.date.toISOString().split('T')[0];
+        statsMap[dateString] = row.count;
+    });
+
+    return Object.entries(statsMap).map(([date, count]) => ({ date, count }));
+}
+export const getAllCandidates = async (page: number, limit: number) => {
+    const offset = (page - 1) * limit;
+    let totalpage : number | undefined = undefined;
+    let total : number | undefined = undefined;
+    if (page === 1) {
+        const countQuery = `SELECT COUNT(*) AS total FROM Candidates`;
+        const [countResult]: any = await pool.query(countQuery);
+        total = countResult[0].total;
+        totalpage = Math.ceil(total || 0 / limit);
+    }
+    const query = `
+        SELECT 
+            c.CandidateID, 
+            c.FullName, 
+            c.AvatarUrl, 
+            c.Phone,
+            c.CreatedAt,
+            c.DateOfBirth,
+            c.Address,
+            c.ExperienceYears,
+            c.Education,
+            u.Email, 
+            u.Status
+        FROM Candidates c
+        JOIN Users u ON c.CandidateID = u.UserID
+        WHERE u.Role = 'Candidate'
+        ORDER BY CandidateID DESC
+        LIMIT ? OFFSET ?
+    `;
+    const [rows]: any = await pool.query(query, [limit, offset]);
+    return {
+        items: rows as Candidate[],
+        ...(total !== undefined) && { totalpage, total }
+    }
+}

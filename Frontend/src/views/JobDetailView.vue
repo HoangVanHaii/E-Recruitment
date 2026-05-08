@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Header from '../components/Header.vue';
 import SearchBar from '../components/SearchBar.vue';
 import Chat from '../components/Chat.vue';
 import ChatWindow from '../components/ChatWindow.vue';
@@ -9,7 +8,10 @@ import { useRouter, useRoute } from 'vue-router';
 import { useJobStore } from '../stores/job';
 import { formatSalary, formatTextToList } from '../utils/format';
 import Loading from '../components/Loading.vue';
+import ApplyJob from '../components/ApplyJob.vue';
 import Notify from '../components/Notify.vue';
+import { useApplicationStore } from '../stores/jobApplication';
+const useApplication = useApplicationStore();
 const showNotify = ref(false);
 const messageNotify = ref('');
 const isSuccessNotify = ref(true);
@@ -17,7 +19,6 @@ const jobStore = useJobStore();
 const job = ref(jobStore.jobDetail);
 const router = useRouter();
 const route = useRoute();
-
 const activeChat = ref<boolean>(false);
 const toggleChat = () => {
     activeChat.value = !activeChat.value;
@@ -26,6 +27,21 @@ const closeChatWindow = () => {
     activeChat.value = false;
 };
 const isSaved = ref<boolean>(false);
+const isModalOpen = ref(false);
+
+const openModal = () => {
+    const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+            showNotify.value = true;
+            isSuccessNotify.value = false;
+          messageNotify.value = 'Vui lòng đăng nhập'; 
+            setTimeout(() => {
+                router.push('/login');
+            }, 2000);
+          return;
+      }
+  isModalOpen.value = true;
+};
 onMounted(async () => {
     const jobId = Number(route.params.id);
     await jobStore.fetchJobDetail(jobId);
@@ -59,6 +75,20 @@ const toggleSave = async () => {
         isSaved.value = false;
     }
 };
+const handleApply = async (ResumeID: number) => {
+    isModalOpen.value = true;
+    if (!job.value) return;
+    await useApplication.ApplyJobStore(job.value.JobID, ResumeID);
+    if (useApplication.error) {
+        showNotify.value = true;
+        messageNotify.value = useApplication.message || 'Ứng tuyển thất bại!';
+        isSuccessNotify.value = false;
+    } else {
+        showNotify.value = true;
+        messageNotify.value = 'Ứng tuyển thành công!';
+        isSuccessNotify.value = true;
+    }
+};
 </script>
 
 <template>
@@ -69,6 +99,15 @@ const toggleSave = async () => {
         :isSuccess="isSuccessNotify" 
         @close="showNotify = false"
     />
+    <ApplyJob
+        v-if="isModalOpen"
+        :is-open="isModalOpen"
+        :job-title="job?.Title"
+        :company-name="job?.CompanyName"
+        @close="isModalOpen = false"
+        @submit="handleApply"
+    />
+
     <SearchBar />
     <div v-if="job" class="bg-[#f3f4f6] min-h-screen pb-12">
         <div class="max-w-5xl mx-auto px-4 pt-6">
@@ -180,7 +219,7 @@ const toggleSave = async () => {
                 </div>
                 
                 <div class="flex flex-wrap items-center gap-4">
-                    <button class="flex items-center gap-2 bg-[#5161e2] hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-md shadow-sm transition-all">
+                    <button @click="openModal" class="flex items-center gap-2 bg-[#5161e2] hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-md shadow-sm transition-all">
                         <Send class="w-4 h-4" />
                         <span>Ứng tuyển ngay</span>
                     </button>

@@ -66,3 +66,9 @@ export interface iResume {
     IsAnalyzed?: boolean;
     CreatedAt?: Date;
 }
+export interface iResumeList {
+    ResumeID: number;
+    Title: string;
+    CreatedAt: Date;
+    AvatarUrl?: string; 
+}

@@ -107,6 +107,66 @@ export const useApplicationStore = defineStore('application',() => {
             loading.value = false;
         }
     }
+    const getChartStatsStore = async (type: string) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await getChartStats(type);
+            const stats = data.data || null;
+            message.value = data.message || 'Lấy thống kê đơn ứng tuyển thành công';
+            return stats;
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error getChartStats', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => {
+                    map[e.path] = e.msg;
+                });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            }
+            else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
+            return null;
+        } finally {
+            loading.value = false;
+        }
+    }
+    const ApplyJobStore = async (JobID: number, ResumeID: number) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            errors.value = {};
+            const data = await ApplyJob(JobID, ResumeID);
+    
+            const result = data.data || null;
+            message.value = data.message || 'Ứng tuyển thành công';
+    
+            return result;
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error ApplyJob', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => {
+                    map[e.path] = e.msg;
+                });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            } else {
+                message.value = res?.message || 'Ứng tuyển thất bại';
+            }
+            return null;
+        } finally {
+            loading.value = false;
+        }
+    };
 
     const getSubmittedApplicationsStore = async (page: number = 1, limit: number = 10) => {
         try {
@@ -175,6 +235,8 @@ export const useApplicationStore = defineStore('application',() => {
         updateApplicationStatusStore,
         getSubmittedApplicationsStore, 
         applyJobStore 
+        getChartStatsStore,
+        ApplyJobStore
     }
 
 })

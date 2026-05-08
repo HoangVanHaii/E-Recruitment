@@ -38,4 +38,13 @@ export const deleteResume = async (resumeId: number) => {
 export const getResumeDetailByEmployer = async (resumeId: number) => {
     const response = await api.get(`/resumes/employer/${resumeId}`);
     return response.data;
-};
+}
+
+export const getListResumeOfMe = async () => {
+    const response = await api.get('/resumes/of-me');
+    return response.data;
+}
+export const getResumeDetailById = async (ResumeID: number) => {
+    const response = await api.get(`/resumes/detail/${ResumeID}`);
+    return response.data;
+}

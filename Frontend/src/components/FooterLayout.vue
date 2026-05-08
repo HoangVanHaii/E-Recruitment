@@ -1,12 +1,11 @@
+<script setup lang="ts">
+import Footer from '../components/Footer.vue';
+</script>
 <template>
     <div class="footer-only-layout">
-      <main>
-        <router-view /> </main>
-      
-      <Footer />
+        <main>
+            <router-view /> </main>
+            
+            <Footer />
     </div>
-  </template>
-  
-  <script setup>
-  import Footer from '../components/Footer.vue';
-  </script>
+</template>

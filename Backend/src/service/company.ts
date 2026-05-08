@@ -40,25 +40,63 @@ export const CreateCompany = async (connection: PoolConnection, company: ICreate
 };
 
 export const UpdateCompany = async (CompanyID: number, CompanyData: IUpdateCompany) => {
-    const fields: string[] = [];
-    const values: any[] = [];
-
-    Object.entries(CompanyData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-            fields.push(`${key} = ?`);
-            values.push(value);
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        const fields: string[] = [];
+        const values: any[] = [];
+    
+        Object.entries(CompanyData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "" && key !== "Position") {
+                fields.push(`${key} = ?`);
+                values.push(value);
+            }
+        })
+        if (fields.length === 0) throw new AppError("Không có gì để cập nhật", 400);
+    
+        const query = `UPDATE Companies SET ${fields.join(", ")} WHERE CompanyID = ?`
+        values.push(CompanyID);
+    
+        const [result]: any = await pool.query(query, values);
+        if (result.affectedRows === 0) {
+            throw new AppError("Công ty không tồn tại", 404);
         }
-    })
-    if (fields.length === 0) throw new AppError("Không có gì để cập nhật", 400);
-
-    const query = `UPDATE Companies SET ${fields.join(", ")} WHERE CompanyID = ?`
-    values.push(CompanyID);
-
-    const [result]: any = await pool.query(query, values);
-    if (result.affectedRows === 0) {
-        throw new AppError("Công ty không tồn tại", 404);
+        if (CompanyData.Position) {
+            await updateEmployer(connection, CompanyID, CompanyData.Position);
+        }
+        await connection.commit();
+        return result;
+        
+    } catch (error) {
+        await connection.rollback();
+        throw error;
     }
-    return result;
+}
+export const checkEmployer = async (EmployerID: number)=>{
+    const query = `SELECT * FROM employers WHERE EmployerID = ?`;
+    const values = [EmployerID];
+    const [result]: any = await pool.query(query, values);
+    if (result.length === 0) {
+        throw new AppError("Bạn không thuộc công ty nào", 403);
+    }
+    if (result[0].ApprovalStatus === "Pending") {
+        throw new AppError("Yêu cầu của bạn đang chờ phê duyệt", 403);
+    }
+    else if(result[0].ApprovalStatus === "Rejected"){
+        throw new AppError("Yêu cầu của bạn đã bị từ chối", 403);
+    }
+
+}   
+const updateEmployer = async (connection: PoolConnection, CompanyID: number, Position: string) => {
+    const query = `UPDATE employers SET Position = ? WHERE CompanyID = ?`
+    const values = [Position, CompanyID];
+
+    const [result]: any = await connection.query(query, values);
+
+    if (result.affectedRows === 0) {
+        throw new AppError("Công ty không tồn tại hoăc đã bị xóa", 404);
+    }
+    return true;
 }
 export const UpdateCompanyStatus = async (CompanyID: number, status: string) => {
     const query = `UPDATE companies SET Status = ? WHERE CompanyID = ?`
@@ -72,13 +110,20 @@ export const UpdateCompanyStatus = async (CompanyID: number, status: string) => 
     return true;
 }
 export const GetCompanyDetail = async (Role: string, CompanyID: number) => {
-    let query = `SELECT * FROM companies WHERE CompanyID = ?`;
+    let query = `
+        SELECT 
+            c.*, 
+            e.Position
+        FROM companies c
+        JOIN employers e ON c.CompanyID = e.CompanyID
+        WHERE c.CompanyID = ?
+    `;
     const values: any = [CompanyID];
 
-    if (Role !== "Admin") {
-        query += ' AND Status = ?';
-        values.push(true);
-    }
+    // if (Role !== "Admin") {
+    //     query += ' AND Status = ?';
+    //     values.push(true);
+    // }
 
     const [result]: any = await pool.query(query, values);
 
@@ -122,8 +167,8 @@ export const getCompanyOfMe = async (userId: number) => {
         SELECT c.CompanyID, c.CompanyName, c.LogoUrl
             FROM employers e
             JOIN companies c ON c.CompanyID = e.CompanyID
-        WHERE e.EmployerID = ?`;
-    const [rows]: any = await pool.query(query, [userId]);
+        WHERE e.EmployerID = ? AND e.ApprovalStatus = ? `;
+    const [rows]: any = await pool.query(query, [userId, "Approved"]);
     return rows[0];
 }
 export const CheckCompanyId = async (CompanyID: number): Promise<Boolean> => {

@@ -139,4 +139,18 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 }
-        
+export const getCurrentRole = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = Number(req.user!.id);
+
+        const Role = await userService.getCurrentRole(userId);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy Role thành công",
+            data: Role
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+

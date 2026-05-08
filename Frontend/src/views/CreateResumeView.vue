@@ -1,3 +1,262 @@
+<script setup lang="ts">
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+import { useResumeStore } from '../stores/resume';
+import { onMounted, ref } from 'vue';
+import type { iResumeDetail, FormState } from '../types/resume';
+import type { ICandidate } from '../types/candidate';
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const useResume = useResumeStore();
+const isSuccessNotify = ref(true);
+
+const avatarFile = ref<File | null>(null);
+const avatarPreview = ref<string | null>(null);
+        
+const showToast = (message: string, isSuccess: boolean) => {
+    messageNotify.value = message;
+    isSuccessNotify.value = isSuccess;
+    showNotify.value = true;
+    
+    setTimeout(() => {
+        showNotify.value = false;
+    }, 3000);
+};
+
+const onAvatarChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        const file = target.files[0];
+        avatarFile.value = file;
+        avatarPreview.value = URL.createObjectURL(file);
+    }
+};
+
+type ArraySection = 'skills' | 'experience' | 'education' | 'projects';
+
+const candidateForm = ref<ICandidate>({
+    CandidateID: 0,
+    FullName: '',
+    Phone: '',
+    DateOfBirth: '',
+    Address: '',
+    ExperienceYears: undefined,
+    Education: '',
+
+});
+
+const resumeForm = ref<FormState>({
+    title: '',
+    summary: '',
+    skills: [{ skillName: '', level: '' }],
+    experience: [{ companyName: '', position: '', startDate: '', endDate: '', isCurrent: false, description: '' }],
+    education: [{ institution: '', degree: '', major: '', startDate: '', endDate: '', gpa: '' }],
+    projects: [{ projectName: '', role: '', techString: '', link: '', description: '' }]
+});
+
+const isLastItemValid = (section: ArraySection): boolean => {
+    const list = resumeForm.value[section] as any[];
+    if (list.length === 0) return true; 
+    
+    const lastItem = list[list.length - 1];
+    
+    switch (section) {
+        case 'skills':
+            return !!(lastItem.skillName.trim() && lastItem.level);
+        case 'experience':
+            return !!(lastItem.companyName.trim() && lastItem.position.trim() && lastItem.startDate);
+        case 'education':
+            return !!(lastItem.institution.trim() && lastItem.major.trim() && lastItem.degree.trim() && lastItem.startDate);
+        case 'projects':
+            return !!(lastItem.projectName.trim() && lastItem.role.trim() && lastItem.techString.trim());
+        default:
+            return true;
+    }
+};
+
+const addItem = (section: ArraySection) => {
+    if (!isLastItemValid(section)) {
+        showToast('Vui lòng điền đủ thông tin bắt buộc ở ô hiện tại trước khi thêm mới!', false);
+        return;
+    }
+    
+    if (section === 'skills') {
+        resumeForm.value.skills.push({ skillName: '', level: '' });
+    } else if (section === 'experience') {
+        resumeForm.value.experience.push({ companyName: '', position: '', startDate: '', endDate: '', isCurrent: false, description: '' });
+    } else if (section === 'education') {
+        resumeForm.value.education.push({ institution: '', degree: '', major: '', startDate: '', endDate: '', gpa: '' });
+    } else if (section === 'projects') {
+        resumeForm.value.projects.push({ projectName: '', role: '', techString: '', link: '', description: '' });
+    }
+};
+
+const removeItem = (section: ArraySection, index: number) => {
+    resumeForm.value[section].splice(index, 1);
+};
+
+const handleSubmit = async () => {
+    if (!avatarFile.value) {
+        return showToast('Vui lòng tải lên ảnh đại diện!', false);
+    }
+    
+    const processedExperience = resumeForm.value.experience.map(exp => {
+        const result = { ...exp };
+        if (result.isCurrent) {
+            result.endDate = undefined; 
+        }
+        return result;
+    });
+    
+    const payload: iResumeDetail = {
+        ...resumeForm.value,
+        experience: processedExperience,
+        projects: resumeForm.value.projects.map(p => ({
+            projectName: p.projectName,
+            role: p.role,
+            link: p.link || undefined,
+            description: p.description || undefined,
+            technologies: p.techString 
+            ? p.techString.split(',')
+            .map(tech => tech.trim())
+            .filter(tech => tech.length > 0) 
+            : []
+        }))
+    };
+
+    const formData = new FormData();
+    if (avatarFile.value) {
+        formData.append('AvatarUrl', avatarFile.value); 
+    }
+    
+    // Gắn thông tin chung
+    formData.append('title', payload.title || '');
+    formData.append('summary', payload.summary || '');
+    
+    // Gắn thông tin Candidate vào formData
+    formData.append('candidate', JSON.stringify(candidateForm.value));
+    
+    // Hoặc nếu Backend yêu cầu gắn từng property riêng lẻ, hãy mở comment đoạn dưới đây:
+    
+    formData.append('FullName', candidateForm.value.FullName || '');
+    formData.append('Phone', candidateForm.value.Phone || '');
+    formData.append('DateOfBirth', candidateForm.value.DateOfBirth || '');
+    formData.append('Address', candidateForm.value.Address || '');
+    if (candidateForm.value.ExperienceYears !== undefined) formData.append('ExperienceYears', candidateForm.value.ExperienceYears.toString());
+    formData.append('Education', candidateForm.value.Education || '');
+    
+    // Gắn các danh sách 
+    formData.append('skills', JSON.stringify(payload.skills || []));
+    formData.append('experience', JSON.stringify(payload.experience || []));
+    formData.append('education', JSON.stringify(payload.education || []));
+    formData.append('projects', JSON.stringify(payload.projects || []));
+    
+    await useResume.createResumeStore(formData);
+    if(useResume.error) {
+        showToast(useResume.message || 'Có lỗi xảy ra khi lưu CV!', false);
+    } else {
+        showToast(useResume.message || 'Tạo CV thành công!', true);
+    }
+};
+
+
+
+
+
+
+
+
+
+// 1. Chuẩn bị các dữ liệu mẫu dạng Object/Array
+const mockCandidate = {
+    FullName: "Trần Huy Vui",
+    Phone: "0901234567",
+    DateOfBirth: "2002-01-01",
+    Address: "TP.HCM",
+    ExperienceYears: 2,
+    Education: "Đại học Sư phạm TP.HCM (HCMUE)"
+};
+
+const mockSkills = [
+    { skillName: "Vue 3 & TypeScript", level: "Tốt" },
+    { skillName: "Node.js & Express", level: "Khá" },
+    { skillName: "MongoDB & SQL Server", level: "Tốt" }
+];
+
+const mockExperience = [
+    {
+        companyName: "Dự án cá nhân",
+        position: "Full-stack Developer",
+        startDate: "2023-06-01",
+        isCurrent: true,
+        description: "Phát triển hệ thống quản lý nhân sự với phân quyền RBAC và mã hóa AES-256."
+    }
+];
+
+const mockEducation = [
+    {
+        institution: "Đại học Sư phạm TP.HCM",
+        major: "Công nghệ thông tin",
+        degree: "Cử nhân",
+        startDate: "2020-09-01",
+        endDate: "2024-06-01"
+    }
+];
+
+const mockProjects = [
+    {
+        projectName: "Fashion-shop E-commerce",
+        role: "Backend Developer",
+        technologies: ["Node.js", "Express", "Cloudinary"],
+        link: "https://github.com/...",
+        description: "Xây dựng backend cho trang web thương mại điện tử."
+    }
+];
+
+// 2. Khởi tạo FormData và nhét dữ liệu vào
+const formData = new FormData();
+
+// Tạo một file ảnh giả (Mock Image File) để pass qua Multer
+const mockImageContent = new Blob(['(⌐■_■) mock image data'], { type: 'image/png' });
+const mockImageFile = new File([mockImageContent], "avatar_test.png", { type: "image/png" });
+
+// Append file
+formData.append('AvatarUrl', mockImageFile);
+
+// Append thông tin chung
+formData.append('title', 'Lập trình viên Backend (Node.js)');
+formData.append('summary', 'Mục tiêu trở thành Backend Developer chuyên nghiệp, đạt TOEIC 800+.');
+
+// Append các cục JSON đã stringify
+// formData.append('candidate', JSON.stringify(mockCandidate));
+formData.append('FullName', mockCandidate.FullName);
+formData.append('Phone', mockCandidate.Phone);
+formData.append('DateOfBirth', mockCandidate.DateOfBirth);
+formData.append('Address', mockCandidate.Address);
+formData.append('ExperienceYears', mockCandidate.ExperienceYears.toString());
+formData.append('Education', mockCandidate.Education);
+
+formData.append('skills', JSON.stringify(mockSkills));
+formData.append('experience', JSON.stringify(mockExperience));
+formData.append('education', JSON.stringify(mockEducation));
+formData.append('projects', JSON.stringify(mockProjects));
+
+
+onMounted(async () => {
+    await useResume.createResumeStore(formData);
+    for (let pair of formData.entries()) {
+        console.log(`${pair[0]}:`, pair[1]);
+    }
+    if(useResume.error) {
+        showToast(useResume.message || 'Có lỗi xảy ra khi lưu CV!', false);
+    } else {
+        showToast(useResume.message || 'Tạo CV thành công!', true);
+    }
+});
+
+
+</script>
 <template>
     <div class="max-w-5xl mx-auto pb-8 font-sans text-slate-800">
         <Notify v-if="showNotify" :message="messageNotify" :isSuccess="isSuccessNotify" @close="showNotify = false" />

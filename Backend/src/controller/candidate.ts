@@ -162,3 +162,19 @@ export const getCandidateDetailForEmployer = async (req: Request, res: Response,
         next(error);
     }
 };
+
+export const getAllCandidates = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const candidates = await candidateService.getAllCandidates(page, limit);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy danh sách ứng viên thành công!",
+            data: candidates
+        })
+    }
+    catch (error) {
+        next(error);
+    }
+}

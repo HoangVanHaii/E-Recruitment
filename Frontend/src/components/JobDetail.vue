@@ -1,3 +1,73 @@
+
+
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { useJobStore } from '../stores/job'; 
+import type { IJobDetail } from '../types/job'; 
+import Notify from './Notify.vue';
+const useJob = useJobStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+
+const props = defineProps<{
+    isOpen: boolean;
+    jobId: number | null;
+}>();
+
+const emit = defineEmits(['close']);
+const job = ref<IJobDetail | null>(null);
+const isLoading = ref(false);
+const error = ref('');
+watch(() => props.isOpen, async (newVal) => {
+    if (newVal && props.jobId) {
+        document.body.style.overflow = 'hidden';
+        job.value = await useJob.getJobDetailStore(props.jobId);
+        console.log(job.value);
+        if(useJob.error) {
+            showNotify.value = true;
+            messageNotify.value = useJob.message || 'Vui lòng thử lại sau.';
+            isSuccessNotify.value = false;
+        }
+        else {
+            showNotify.value = true;
+            messageNotify.value = 'Lấy dữ liệu thành công!';
+            isSuccessNotify.value = true;
+        }
+
+    } else {
+        document.body.style.overflow = '';
+        job.value = null;
+        error.value = '';
+    }
+});
+
+const closeModal = () => {
+    emit('close');
+};
+const formatDate = (date: Date | string) => {
+    if (!date) return '';
+    return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
+};
+
+const formatSalary = (min: number, max: number) => {
+    if (!min && !max) return "Thỏa thuận";
+    const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+    if (min && !max) return `Từ ${formatter.format(min)}`;
+    if (!min && max) return `Lên đến ${formatter.format(max)}`;
+    return `${formatter.format(min)} - ${formatter.format(max)}`;
+};
+
+const getStatusBadgeClass = (status: string) => {
+    const base = "px-3 py-1 rounded-lg text-sm font-bold border";
+    if (status === 'Approved' || status === 'Đang đăng') return `${base} bg-emerald-50 text-emerald-600 border-emerald-100`;
+    if (status === 'Pending' || status === 'Đang chờ duyệt') return `${base} bg-sky-50 text-sky-600 border-sky-100`;
+    if (status === 'Rejected' || status === 'Từ chối') return `${base} bg-red-50 text-red-600 border-red-100`;
+    return `${base} bg-slate-100 text-slate-500 border-slate-200`;
+};
+</script>
 <template>
     <Teleport to="body">
         <transition name="modal-fade">
@@ -133,13 +203,13 @@
                                     <i class="fas fa-comments text-blue-600"></i> Quy trình phỏng vấn
                                 </h3>
                                 <div class="space-y-4">
-                                    <div v-for="round in job.InterviewProcess" :key="round.RoundOrder" class="flex gap-4 p-4 border border-slate-200 rounded-xl bg-white shadow-sm">
+                                    <div v-for="round in job.InterviewProcess" :key="round.roundOrder" class="flex gap-4 p-4 border border-slate-200 rounded-xl bg-white shadow-sm">
                                         <div class="w-10 h-10 shrink-0 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center">
-                                            {{ round.RoundOrder }}
+                                            {{ round.roundOrder }}
                                         </div>
                                         <div>
-                                            <h4 class="font-bold text-slate-800">{{ round.RoundTitle }}</h4>
-                                            <p class="text-sm text-slate-600 mt-1">{{ round.Details }}</p>
+                                            <h4 class="font-bold text-slate-800">{{ round.roundTitle }}</h4>
+                                            <p class="text-sm text-slate-600 mt-1">{{ round.details }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -151,146 +221,14 @@
             </div>
         </transition>
     </Teleport>
+    <Notify  
+        v-if="showNotify" 
+        :message="messageNotify" 
+        :isSuccess="isSuccessNotify" 
+        @close="showNotify = false"
+    />
 </template>
-
-<script setup lang="ts">
-import { ref, watch } from 'vue';
-// Nếu bạn có dùng Store để lấy data thì import vào đây
-import { useJobStore } from '../stores/job'; 
-const useJob = useJobStore();
-
-export interface IInterviewRound {
-    RoundOrder: number;
-    RoundTitle: string;
-    Details: string;
-}
-
-export interface IJobDetail {
-    JobID: number;
-    Title: string;
-    Location: string;
-    CreatedAt: Date | string;
-    CompanyName: string;
-    CompanyLogo: string;
-    Status: string;
-    SalaryMin: number;
-    SalaryMax: number;
-    JobType: string;
-    Quantity: number;
-    Description: string;
-    WorkingSchedule?: string;
-    Requirements: string;
-    Benefits: string[];
-    Tags: string[];
-    RawTextForAi: string;
-    InterviewProcess?: IInterviewRound[];
-}
-
-const props = defineProps<{
-    isOpen: boolean;
-    jobId: number | null;
-}>();
-
-const emit = defineEmits(['close']);
-
-// State quản lý dữ liệu Modal
-const job = ref<IJobDetail | null>(null);
-const isLoading = ref(false);
-const error = ref('');
-
-// --- THEO DÕI SỰ KIỆN MỞ MODAL ---
-// Khi isOpen đổi thành true và có jobId, ta sẽ gọi API
-watch(() => props.isOpen, async (newVal) => {
-    if (newVal && props.jobId) {
-        document.body.style.overflow = 'hidden';
-        job.value =  await useJob.getJobDetailStore(props.jobId);
-    } else {
-        document.body.style.overflow = '';
-        job.value = null;
-        error.value = '';
-    }
-});
-
-// --- HÀM GỌI API ---
-const fetchJobDetail = async (id: number) => {
-    isLoading.value = true;
-    error.value = '';
-    
-    try {
-        // TODO: THAY THẾ BẰNG HÀM GỌI API THẬT TỪ STORE CỦA BẠN
-        // Ví dụ: const response = await useJobStore().getJobDetailById(id);
-        // job.value = response.data;
-
-        // --- MOCK DATA GIẢ LẬP GỌI API MẤT 1 GIÂY ---
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        job.value = {
-            JobID: id,
-            Title: "Senior Frontend Developer (Vue3 / TypeScript)",
-            Location: "Quận 1, TP. Hồ Chí Minh",
-            CreatedAt: new Date(),
-            CompanyName: "TechCorp Vietnam Co., Ltd",
-            CompanyLogo: "",
-            Status: "Approved",
-            SalaryMin: 25000000,
-            SalaryMax: 45000000,
-            JobType: "Full-time",
-            Quantity: 2,
-            WorkingSchedule: "Thứ 2 - Thứ 6 (08:30 - 18:00)",
-            Description: "- Phát triển các tính năng mới cho nền tảng ERP của công ty sử dụng Vue 3, Composition API.\n- Tối ưu hóa hiệu suất giao diện người dùng, đảm bảo trải nghiệm mượt mà trên nhiều thiết bị.\n- Phối hợp chặt chẽ với team Backend và UI/UX Designer.",
-            Requirements: "- Ít nhất 3 năm kinh nghiệm làm việc với Vue.js.\n- Thành thạo TypeScript, HTML5, CSS3, Tailwind CSS.\n- Có kiến thức về State Management (Pinia/Vuex).\n- Có tinh thần trách nhiệm cao, kỹ năng giải quyết vấn đề tốt.",
-            Benefits: [
-                "Lương tháng 13 + Thưởng hiệu suất (1-3 tháng lương).",
-                "Bảo hiểm sức khỏe cao cấp PTI cho nhân viên và người thân.",
-                "Cấp MacBook Pro M2 khi làm việc.",
-                "Môi trường làm việc trẻ trung, linh hoạt thời gian."
-            ],
-            Tags: ["Vue3", "TypeScript", "TailwindCSS", "Frontend"],
-            RawTextForAi: "...",
-            InterviewProcess: [
-                { RoundOrder: 1, RoundTitle: "Phỏng vấn nhân sự", Details: "Trao đổi online 30 phút để tìm hiểu về kinh nghiệm và văn hóa." },
-                { RoundOrder: 2, RoundTitle: "Phỏng vấn kỹ thuật", Details: "Làm bài test thuật toán nhỏ và trao đổi sâu về VueJS với Tech Lead." }
-            ]
-        };
-
-    } catch (err) {
-        console.error("Lỗi khi tải chi tiết job:", err);
-        error.value = "Không thể tải thông tin công việc. Vui lòng thử lại sau.";
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-// --- HÀM ĐÓNG MODAL ---
-const closeModal = () => {
-    emit('close');
-};
-
-// --- HELPER FORMAT DỮ LIỆU ---
-const formatDate = (date: Date | string) => {
-    if (!date) return '';
-    return new Intl.DateTimeFormat('vi-VN').format(new Date(date));
-};
-
-const formatSalary = (min: number, max: number) => {
-    if (!min && !max) return "Thỏa thuận";
-    const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-    if (min && !max) return `Từ ${formatter.format(min)}`;
-    if (!min && max) return `Lên đến ${formatter.format(max)}`;
-    return `${formatter.format(min)} - ${formatter.format(max)}`;
-};
-
-const getStatusBadgeClass = (status: string) => {
-    const base = "px-3 py-1 rounded-lg text-sm font-bold border";
-    if (status === 'Approved' || status === 'Đang đăng') return `${base} bg-emerald-50 text-emerald-600 border-emerald-100`;
-    if (status === 'Pending' || status === 'Đang chờ duyệt') return `${base} bg-sky-50 text-sky-600 border-sky-100`;
-    if (status === 'Rejected' || status === 'Từ chối') return `${base} bg-red-50 text-red-600 border-red-100`;
-    return `${base} bg-slate-100 text-slate-500 border-slate-200`;
-};
-</script>
-
 <style scoped>
-/* Hiệu ứng Fade cho lớp nền đen */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
     transition: opacity 0.3s ease;
@@ -300,7 +238,6 @@ const getStatusBadgeClass = (status: string) => {
     opacity: 0;
 }
 
-/* Hiệu ứng trượt lên nhẹ cho khung trắng */
 .animate-slide-up {
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -316,7 +253,6 @@ const getStatusBadgeClass = (status: string) => {
     }
 }
 
-/* Custom scrollbar bên trong modal */
 .overflow-y-auto::-webkit-scrollbar {
     width: 6px;
 }

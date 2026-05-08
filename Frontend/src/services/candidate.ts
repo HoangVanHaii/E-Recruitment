@@ -35,3 +35,10 @@ export const saveCandidateSkills = async (skills: ICandidateSkill[]) => {
     const response = await api.post('/candidates/skills', { skills });
     return response.data;
 }
+
+export const getAllCandidates = async (page: number, limit: number) => {
+    const response = await api.get('/candidates/admin/all-candidates', {
+        params: { page, limit }
+    });
+    return response.data;
+};

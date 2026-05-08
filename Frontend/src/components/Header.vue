@@ -11,6 +11,7 @@ const messageStore = useMessageStore();
 const authStore = useAuthStore();
 const router = useRouter();
 const activeChat = ref<any>(null);
+
 const openChatWindow = (chatData: any) => {
     messageStore.markAsRead(chatData.userId);
     activeChat.value = chatData;
@@ -20,6 +21,7 @@ const closeChatWindow = () => {
 };
 const showChat = ref<boolean>(false);
 const showProfile = ref<boolean>(false);
+
 const toggleChat = () => {
     showChat.value = !showChat.value;
 };
@@ -27,22 +29,23 @@ const toggleProfile = () => {
     showProfile.value = !showProfile.value;
 };
 
-// ---- Scroll shrink logic ----
+// ---- Scroll shrink logic (no flicker) ----
 const isScrolled = ref(false);
-let lastScrollY = 0;
+const SCROLL_THRESHOLD = 50;
+let scrollTimer: ReturnType<typeof setTimeout> | null = null;
 
 const handleScroll = () => {
-    const currentY = window.scrollY;
-    
-    if (currentY > lastScrollY && currentY > 10) {
-        // Đang cuộn xuống → shrink
-        isScrolled.value = true;
-    } else {
-        // Đang cuộn lên → full size
-        isScrolled.value = false;
-    }
-    lastScrollY = currentY;
+    if (scrollTimer) return; // throttle ~1 frame
+
+    scrollTimer = setTimeout(() => {
+        scrollTimer = null;
+        const newVal = window.scrollY > SCROLL_THRESHOLD;
+        if (newVal !== isScrolled.value) {
+            isScrolled.value = newVal;
+        }
+    }, 16);
 };
+
 onMounted(async () => {
     await authStore.fetchProfile();
     if (authStore.isLogin) {
@@ -53,13 +56,14 @@ onMounted(async () => {
 
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
+    if (scrollTimer) clearTimeout(scrollTimer);
 });
 
-const handleLogin = () => router.push({ name: 'login' });
-const handleRegister = () => router.push({ name: 'register' });
+const handleLogin = () => router.push({ name: 'login-section' });
+const handleRegister = () => router.push({ name: 'register-section' });
 const handleCreateJob = () => {
     if (!authStore.isLogin) {
-        router.push({ name: 'login' });
+        router.push({ name: 'login-section' });
         return;
     }
     router.push({ name: 'CreateJob' });

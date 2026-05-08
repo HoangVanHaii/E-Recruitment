@@ -1,3 +1,157 @@
+<script setup lang="ts">
+import Notify from '../components/Notify.vue';
+import SidebarEmployer from '../components/SidebarEmployer.vue';
+import Loading from '../components/Loading.vue';
+import { useJobStore } from '../stores/job';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import type { IInterviewRound } from '../types/job';
+
+const showNotify = ref<Boolean>(false);
+const messageNotify = ref<string>('');
+const isSuccessNotify = ref(true);
+const useJob = useJobStore();
+const categories = ref<{ CategoryID: number; CategoryName: string }[]>([]);
+const isOpen = ref<Boolean>(false);
+
+const selectedCategoryName = computed(() => {
+    if (!jobForm.value.CategoryID) return null;
+    const selected = categories.value.find(c => c.CategoryID === jobForm.value.CategoryID);
+    return selected ? selected.CategoryName : null;
+});
+
+const dropdownRef = ref<HTMLDivElement | null>(null);
+
+const selectCategory = (id: number) => {
+    jobForm.value.CategoryID = id;
+    isOpen.value = false;
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+        isOpen.value = false;
+    }
+};
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
+
+onMounted(async () => {
+    document.addEventListener('click', handleClickOutside);
+    await useJob.fetchCategories();
+    if (useJob.error) {
+        showNotify.value = true;
+        messageNotify.value = useJob.message || 'Không thể tải danh mục!';
+        isSuccessNotify.value = false;
+    } else {
+        categories.value = useJob.listCategoryJobs;
+    }
+});
+
+const jobForm = ref({
+    CategoryID: null as number | null,
+    Title: '',
+    Quantity: 1,
+    SalaryMin: null as number | null,
+    SalaryMax: null as number | null,
+    Location: '',
+    JobType: 'Full-time',
+    ExperienceRequired: 0,
+    ExpiredDate: '',
+    Description: '',
+    Requirements: '',
+    WorkingSchedule: '',
+    Benefits: [''],
+    Tags: [''],
+    InterviewProcess: [
+        { roundOrder: 1, roundTitle: 'Phỏng vấn Nhân sự', details: 'Trao đổi về văn hóa công ty và định hướng.' }
+    ] as IInterviewRound[]
+});
+
+
+const addBenefit = () => jobForm.value.Benefits.push('');
+const removeBenefit = (index: number) => jobForm.value.Benefits.splice(index, 1);
+const addTag = () => jobForm.value.Tags.push('');
+const removeTag = (index: number) => jobForm.value.Tags.splice(index, 1);
+const addRound = () => {
+    jobForm.value.InterviewProcess.push({ 
+        roundOrder: jobForm.value.InterviewProcess.length + 1, 
+        roundTitle: '', 
+        details: '' 
+    });
+};
+const removeRound = (index: number) => jobForm.value.InterviewProcess.splice(index, 1);
+const handleSubmit = async () => {
+    const cleanedBenefits = jobForm.value.Benefits.filter(b => b.trim() !== '');
+    const cleanedTags = jobForm.value.Tags.filter(t => t.trim() !== '');
+    const cleanedProcess = jobForm.value.InterviewProcess
+        .filter(p => p.roundTitle.trim() !== '')
+        .map((p, index) => ({
+            roundOrder: index + 1,
+            roundTitle: p.roundTitle,
+            details: p.details
+        }));
+
+    const rawText = `${jobForm.value.Title} - ${jobForm.value.Description} - ${jobForm.value.Requirements}`;
+    const finalSubmitData = {
+        employerId: 1,
+        categoryId: Number(jobForm.value.CategoryID),
+        title: jobForm.value.Title,
+        quantity: Number(jobForm.value.Quantity),
+        salaryMin: jobForm.value.SalaryMin ? Number(jobForm.value.SalaryMin) : 0,
+        salaryMax: jobForm.value.SalaryMax ? Number(jobForm.value.SalaryMax) : 0,
+        location: jobForm.value.Location,
+        jobType: jobForm.value.JobType,
+        experienceRequired: Number(jobForm.value.ExperienceRequired),
+        expiredDate: new Date(jobForm.value.ExpiredDate).toISOString(), 
+        description: jobForm.value.Description,
+        requirements: jobForm.value.Requirements,
+        workingSchedule: jobForm.value.WorkingSchedule,
+        benefits: cleanedBenefits,
+        tags: cleanedTags,
+        interviewProcess: cleanedProcess,
+        rawTextForAi: rawText
+    };
+    await useJob.createJobStore(finalSubmitData);
+    if (useJob.error) {
+        showNotify.value = true;
+        messageNotify.value = useJob.message || 'Đăng tin thất bại! Vui lòng kiểm tra lại thông tin.';
+        isSuccessNotify.value = false;
+    } else {
+        showNotify.value = true;
+        messageNotify.value = useJob.message || 'Đăng tin thành công!';
+        isSuccessNotify.value = true;
+        
+        // Có thể reset lại form ở đây nếu muốn:
+        // jobForm.value.Title = '';
+        // jobForm.value.Description = ''; 
+    }
+};
+
+
+</script>
+
+<style scoped>
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+</style>
+
 <template>
     <Notify  
         v-if="showNotify" 
@@ -37,12 +191,60 @@
                                     <input v-model="jobForm.Title" type="text" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm" placeholder="VD: Senior Frontend Developer (VueJS)">
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Danh mục (Ngành nghề) <span class="text-red-500">*</span></label>
-                                    <select v-model="jobForm.CategoryID" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm appearance-none">
-                                        <option :value="null" disabled>Chọn danh mục</option>
-                                        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                                    </select>
+                                <div class="relative" ref="dropdownRef">
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                                        Danh mục (Ngành nghề) <span class="text-red-500">*</span>
+                                    </label>
+                                    
+                                    <div 
+                                        @click="isOpen = !isOpen"
+                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer flex justify-between items-center transition-all text-sm group"
+                                        :class="{'bg-white ring-2 ring-blue-500/20 border-blue-500': isOpen}"
+                                    >
+                                        <span :class="{'text-slate-400': !jobForm.CategoryID, 'text-slate-900': jobForm.CategoryID}">
+                                            {{ selectedCategoryName || 'Chọn danh mục' }}
+                                        </span>
+
+                                        <svg 
+                                            class="w-4 h-4 text-slate-400 transition-transform duration-200 group-hover:text-slate-600" 
+                                            :class="{'rotate-180': isOpen}" 
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+
+                                    <transition
+                                        enter-active-class="transition duration-100 ease-out"
+                                        enter-from-class="transform scale-95 opacity-0"
+                                        enter-to-class="transform scale-100 opacity-100"
+                                        leave-active-class="transition duration-75 ease-in"
+                                        leave-from-class="transform scale-100 opacity-100"
+                                        leave-to-class="transform scale-95 opacity-0"
+                                    >
+                                        <div 
+                                            v-if="isOpen"
+                                            class="absolute z-20 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] max-h-60 overflow-y-auto py-1 custom-scrollbar"
+                                        >
+                                            <div
+                                                v-for="cat in categories" 
+                                                :key="cat.CategoryID"
+                                                @click="selectCategory(cat.CategoryID)"
+                                                class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between"
+                                                :class="jobForm.CategoryID === cat.CategoryID ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700 hover:bg-slate-50'"
+                                            >
+                                                {{ cat.CategoryName }}
+                                                
+                                                <svg v-if="jobForm.CategoryID === cat.CategoryID" class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                            </div>
+
+                                            <div v-if="!categories || categories.length === 0" class="px-4 py-3 text-sm text-slate-400 text-center italic">
+                                                Không có dữ liệu
+                                            </div>
+                                        </div>
+                                    </transition>
                                 </div>
 
                                 <div>
@@ -80,7 +282,7 @@
 
                                 <div>
                                     <label class="block text-sm font-semibold text-slate-700 mb-2">Kinh nghiệm (Năm)</label>
-                                    <input v-model="jobForm.ExperienceRequired" type="number" min="0" step="0.5" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm" placeholder="VD: 1.5">
+                                    <input v-model="jobForm.ExperienceRequired" type="number" min="0" step="1" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm" placeholder="VD: 1">
                                 </div>
 
                                 <div>
@@ -126,7 +328,7 @@
                                         </button>
                                     </div>
                                     <div class="space-y-3">
-                                        <div v-for="(benefit, index) in jobForm.Benefits" :key="'ben-'+index" class="flex gap-2">
+                                        <div v-for="(_, index) in jobForm.Benefits" :key="'ben-'+index" class="flex gap-2">
                                             <input v-model="jobForm.Benefits[index]" type="text" class="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none text-sm focus:border-blue-500" placeholder="VD: Thưởng tháng 13...">
                                             <button v-if="jobForm.Benefits.length > 1" type="button" @click="removeBenefit(index)" class="px-3 text-slate-400 hover:text-red-500 transition-colors">
                                                 <i class="fas fa-trash-alt"></i>
@@ -143,7 +345,7 @@
                                         </button>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
-                                        <div v-for="(tag, index) in jobForm.Tags" :key="'tag-'+index" class="flex items-center bg-slate-100 border border-slate-200 rounded-full pl-3 pr-1 py-1">
+                                        <div v-for="(_, index) in jobForm.Tags" :key="'tag-'+index" class="flex items-center bg-slate-100 border border-slate-200 rounded-full pl-3 pr-1 py-1">
                                             <input v-model="jobForm.Tags[index]" type="text" class="bg-transparent border-none outline-none text-sm w-24 text-slate-700" placeholder="Tag...">
                                             <button type="button" @click="removeTag(index)" class="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
                                                 <i class="fas fa-times text-xs"></i>
@@ -170,8 +372,8 @@
                                         {{ index + 1 }}
                                     </div>
                                     <div class="flex-1 space-y-3">
-                                        <input v-model="round.RoundTitle" type="text" class="w-full bg-transparent border-b border-slate-300 focus:border-blue-500 outline-none pb-1 font-semibold text-slate-800" placeholder="Tên vòng (VD: Phỏng vấn kỹ thuật)">
-                                        <textarea v-model="round.Details" rows="2" class="w-full bg-transparent border-b border-slate-300 focus:border-blue-500 outline-none pb-1 text-sm text-slate-600 resize-none" placeholder="Mô tả chi tiết vòng này..."></textarea>
+                                        <input v-model="round.roundTitle" type="text" class="w-full bg-transparent border-b border-slate-300 focus:border-blue-500 outline-none pb-1 font-semibold text-slate-800" placeholder="Tên vòng (VD: Phỏng vấn kỹ thuật)">
+                                        <textarea v-model="round.details" rows="2" class="w-full bg-transparent border-b border-slate-300 focus:border-blue-500 outline-none pb-1 text-sm text-slate-600 resize-none" placeholder="Mô tả chi tiết vòng này..."></textarea>
                                     </div>
                                     <button type="button" @click="removeRound(index)" class="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
                                         <i class="fas fa-trash-alt"></i>
@@ -193,246 +395,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import SidebarEmployer from '../components/SidebarEmployer.vue';
-import { useJobStore } from '../stores/job';
-
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-import  type{ IInterviewRound, IJobDetailPayload, IJobPayload } from '../types/job';
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-// --- CÁC INTERFACE ---
-
-
-const useJob = useJobStore();
-// Mock data Danh mục ngành nghề
-const categories = ref([
-    { id: 1, name: 'Công nghệ thông tin (IT)' },
-    { id: 2, name: 'Marketing / Truyền thông' },
-    { id: 3, name: 'Tài chính / Kế toán' },
-    { id: 4, name: 'Nhân sự (HR)' },
-]);
-
-// --- STATE FORM ---
-// Dùng các key viết hoa chữ đầu (PascalCase) để map trực tiếp với Interface
-const jobForm = ref({
-    CategoryID: null as number | null,
-    Title: '',
-    Quantity: 1,
-    SalaryMin: null as number | null,
-    SalaryMax: null as number | null,
-    Location: '',
-    JobType: 'Full-time',
-    ExperienceRequired: 0,
-    ExpiredDate: '',
-    Description: '',
-    Requirements: '',
-    WorkingSchedule: '',
-    Benefits: [''],
-    Tags: [''],
-    InterviewProcess: [
-        { RoundOrder: 1, RoundTitle: 'Phỏng vấn Nhân sự', Details: 'Trao đổi về văn hóa công ty và định hướng.' }
-    ] as IInterviewRound[]
-});
-
-// --- CÁC HÀM XỬ LÝ MẢNG ĐỘNG ---
-
-const addBenefit = () => jobForm.value.Benefits.push('');
-const removeBenefit = (index: number) => jobForm.value.Benefits.splice(index, 1);
-
-const addTag = () => jobForm.value.Tags.push('');
-const removeTag = (index: number) => jobForm.value.Tags.splice(index, 1);
-
-const addRound = () => {
-    jobForm.value.InterviewProcess.push({ 
-        RoundOrder: jobForm.value.InterviewProcess.length + 1, 
-        RoundTitle: '', 
-        Details: '' 
-    });
-};
-const removeRound = (index: number) => jobForm.value.InterviewProcess.splice(index, 1);
-
-// --- XỬ LÝ SUBMIT ---
-// --- XỬ LÝ SUBMIT TỪ FORM ---
-const handleSubmit = async () => {
-    // 1. Làm sạch dữ liệu rỗng và đánh lại roundOrder (dùng camelCase luôn)
-    const cleanedBenefits = jobForm.value.Benefits.filter(b => b.trim() !== '');
-    const cleanedTags = jobForm.value.Tags.filter(t => t.trim() !== '');
-    const cleanedProcess = jobForm.value.InterviewProcess
-        .filter(p => p.RoundTitle.trim() !== '')
-        .map((p, index) => ({
-            roundOrder: index + 1,
-            roundTitle: p.RoundTitle,
-            details: p.Details
-        }));
-
-    // Tự động tạo đoạn text thô cho AI
-    const rawText = `${jobForm.value.Title} - ${jobForm.value.Description} - ${jobForm.value.Requirements}`;
-
-    // 2. Gom dữ liệu theo đúng chuẩn camelCase mà Backend mong muốn (Giống y hệt cục Test)
-    const finalSubmitData = {
-        employerId: 1, // Fix cứng tạm hoặc lấy từ biến Auth
-        categoryId: Number(jobForm.value.CategoryID),
-        title: jobForm.value.Title,
-        quantity: Number(jobForm.value.Quantity),
-        salaryMin: jobForm.value.SalaryMin ? Number(jobForm.value.SalaryMin) : 0,
-        salaryMax: jobForm.value.SalaryMax ? Number(jobForm.value.SalaryMax) : 0,
-        location: jobForm.value.Location,
-        jobType: jobForm.value.JobType,
-        experienceRequired: Number(jobForm.value.ExperienceRequired),
-        // Để nguyên chuỗi 'YYYY-MM-DD' hoặc đổi ra chuẩn ISO, tránh gửi Object Date
-        expiredDate: new Date(jobForm.value.ExpiredDate).toISOString(), 
-        
-        description: jobForm.value.Description,
-        requirements: jobForm.value.Requirements,
-        workingSchedule: jobForm.value.WorkingSchedule,
-        benefits: cleanedBenefits,
-        tags: cleanedTags,
-        interviewProcess: cleanedProcess,
-        rawTextForAi: rawText
-    };
-
-    console.log('Dữ liệu form chuẩn bị submit:', finalSubmitData);
-
-    // 3. Bắn API
-    await useJob.createJobStore(finalSubmitData);
-
-    // 4. Xử lý hiển thị thông báo
-    if (useJob.error) {
-        showNotify.value = true;
-        messageNotify.value = useJob.message || 'Đăng tin thất bại! Vui lòng kiểm tra lại thông tin.';
-        isSuccessNotify.value = false;
-    } else {
-        showNotify.value = true;
-        messageNotify.value = useJob.message || 'Đăng tin thành công!';
-        isSuccessNotify.value = true;
-        
-        // Có thể reset lại form ở đây nếu muốn:
-        // jobForm.value.Title = '';
-        // jobForm.value.Description = ''; 
-    }
-};
-
-
-/////////////////////////////////////////////////
-
-// Khai báo biến cho phần Payload Cơ bản (IJobPayload)
-const jobPayloadIT: IJobPayload = {
-    EmployerID: 1045,
-    CategoryID: 1,
-    Title: "Senior Backend Developer (Node.js/PostgreSQL)",
-    Quantity: 2,
-    SalaryMin: 25000000,
-    SalaryMax: 40000000,
-    Location: "Quận 1, TP. Hồ Chí Minh",
-    JobType: "Full-time",
-    ExperienceRequired: 3,
-    ExpiredDate: new Date("2026-05-30T23:59:59.000Z"),
-    VectorID: "vec_tech_node_001"
-};
-
-// Khai báo biến cho phần Chi tiết (IJobDetailPayload)
-const jobDetailIT: IJobDetailPayload = {
-    Description: "Thiết kế, phát triển và bảo trì các API backend hiệu suất cao. Tối ưu hóa database query và tham gia xây dựng kiến trúc Microservices cho hệ thống ERP của công ty.",
-    Requirements: "- Tối thiểu 3 năm kinh nghiệm lập trình Node.js.\n- Thành thạo database quan hệ (PostgreSQL) và caching (Redis).\n- Ưu tiên ứng viên có kinh nghiệm với Docker, Kubernetes.",
-    WorkingSchedule: "Thứ 2 - Thứ 6 (09:00 - 18:00)",
-    Benefits: [
-        "Lương tháng 13 + Thưởng hiệu quả dự án",
-        "Bảo hiểm sức khỏe toàn diện PTI",
-        "Cấp Macbook Pro M3 khi làm việc",
-        "Được làm Remote 4 ngày/tháng"
-    ],
-    Tags: ["Node.js", "Backend", "PostgreSQL", "Microservices"],
-    InterviewProcess: [
-        {
-            RoundOrder: 1,
-            RoundTitle: "Phỏng vấn nhân sự (Online)",
-            Details: "Trao đổi ngắn 30 phút với HR về định hướng nghề nghiệp, văn hóa công ty và kỳ vọng mức lương."
-        },
-        {
-            RoundOrder: 2,
-            RoundTitle: "Phỏng vấn kỹ thuật (Offline)",
-            Details: "Phỏng vấn trực tiếp 90 phút với Technical Lead, tập trung vào System Design và giải quyết bài toán thực tế."
-        }
-    ],
-    RawTextForAi: "Senior Backend Developer (Node.js/PostgreSQL) - Thiết kế, phát triển và bảo trì các API backend hiệu suất cao. Tối thiểu 3 năm kinh nghiệm lập trình Node.js. Thành thạo PostgreSQL và Redis."
-};
-
-// Gộp lại để test (nếu API của bạn nhận 1 object duy nhất)
-const fullITJobSubmitData = { ...jobPayloadIT, ...jobDetailIT };
-onMounted(async () => {
-    // 1. Dịch data từ PascalCase (Interface) sang camelCase (Backend cần)
-    const testPayload = {
-        employerId: fullITJobSubmitData.EmployerID,
-        categoryId: fullITJobSubmitData.CategoryID,
-        title: fullITJobSubmitData.Title,
-        quantity: fullITJobSubmitData.Quantity,
-        salaryMin: fullITJobSubmitData.SalaryMin,
-        salaryMax: fullITJobSubmitData.SalaryMax,
-        location: fullITJobSubmitData.Location,
-        jobType: fullITJobSubmitData.JobType,
-        experienceRequired: fullITJobSubmitData.ExperienceRequired,
-        expiredDate: fullITJobSubmitData.ExpiredDate,
-        vectorId: fullITJobSubmitData.VectorID,
-        
-        description: fullITJobSubmitData.Description,
-        requirements: fullITJobSubmitData.Requirements,
-        workingSchedule: fullITJobSubmitData.WorkingSchedule,
-        benefits: fullITJobSubmitData.Benefits,
-        tags: fullITJobSubmitData.Tags,
-        // Map lại mảng interviewProcess
-        interviewProcess: fullITJobSubmitData.InterviewProcess.map(p => ({
-            roundOrder: p.RoundOrder,
-            roundTitle: p.RoundTitle,
-            details: p.Details
-        })),
-        rawTextForAi: fullITJobSubmitData.RawTextForAi
-    };
-
-    console.log("Dữ liệu test chuẩn bị gửi:", testPayload);
-
-    // 2. Bắn API với payload đã được chuẩn hóa
-    // await useJob.createJobStore(testPayload);
-
-    // // 3. Xử lý thông báo
-    // if(useJob.error) {
-    //     showNotify.value = true;
-    //     messageNotify.value = useJob.message || 'Đăng tin thất bại!';
-    //     isSuccessNotify.value = false;
-        
-    // } else {
-    //     showNotify.value = true;
-    //     messageNotify.value = useJob.message || 'Đăng tin thành công!';
-    //     isSuccessNotify.value = true;
-    // }
-});
-</script>
-
-<style scoped>
-/* Tuỳ chỉnh Date Picker */
-input[type="date"]::-webkit-inner-spin-button,
-input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.6;
-}
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-}
-
-/* Custom Scrollbar */
-.overflow-y-auto::-webkit-scrollbar {
-    width: 6px;
-}
-.overflow-y-auto::-webkit-scrollbar-track {
-    background: transparent;
-}
-.overflow-y-auto::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 10px;
-}
-</style>

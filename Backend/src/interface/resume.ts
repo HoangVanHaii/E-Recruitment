@@ -11,7 +11,12 @@ export interface iResume {
     IsAnalyzed?: boolean;
     CreatedAt?: Date;
 }
-
+export interface iResumeList {
+    ResumeID: number;
+    Title: string;
+    CreatedAt: Date;
+    AvatarUrl?: string; 
+}
 export interface iResumeDetail extends Document {
     resumeId: number;
     templateId?: number;

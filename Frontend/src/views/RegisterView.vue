@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
+import Notify from '../components/Notify.vue';
 import router from '../router';
 import VerifyOtp from '../components/VerifyOtp.vue';
 import PasswordForm from '../components/PasswordForm.vue';
 import { useRoute } from 'vue-router';
-import Notify from '../components/Notify.vue';
+import { ref, computed, onMounted } from 'vue';
+import { useAuthStore } from '../stores/auth';
 
 
 const route = useRoute();

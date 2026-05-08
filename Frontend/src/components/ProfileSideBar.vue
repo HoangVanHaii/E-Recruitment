@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// 1. Đổi X thành ChevronRight
 import { ChevronRight, User, LogOut, FileText, ClipboardEdit, Briefcase, Bookmark, Settings } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
@@ -52,36 +51,36 @@ const goTo = (routeName: string) => {
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                 
-    <button @click="goTo('Profile')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
-        <User class="w-5 h-5 text-blue-600" />
-        <span class="text-[14.5px] text-gray-700 font-medium">Thông tin cá nhân</span>
-    </button>
+                <button @click="goTo('Profile')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
+                    <User class="w-5 h-5 text-blue-600" />
+                    <span class="text-[14.5px] text-gray-700 font-medium">Thông tin cá nhân</span>
+                </button>
 
-    <button @click="goTo('CV')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
-        <FileText class="w-5 h-5 text-blue-600" />
-        <span class="text-[14.5px] text-gray-700 font-medium">Hồ sơ xin việc</span>
-    </button>
+                <button @click="goTo('CV')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
+                    <FileText class="w-5 h-5 text-blue-600" />
+                    <span class="text-[14.5px] text-gray-700 font-medium">Hồ sơ xin việc</span>
+                </button>
 
-    <button @click="goTo('CompleteProfile')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
-        <ClipboardEdit class="w-5 h-5 text-blue-600" />
-        <span class="text-[14.5px] text-gray-700 font-medium">Hoàn thiện hồ sơ</span>
-    </button>
+                <button @click="goTo('CompleteProfile')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
+                    <ClipboardEdit class="w-5 h-5 text-blue-600" />
+                    <span class="text-[14.5px] text-gray-700 font-medium">Hoàn thiện hồ sơ</span>
+                </button>
 
-    <button @click="goTo('AppliedJobs')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
-        <Briefcase class="w-5 h-5 text-blue-600" />
-        <span class="text-[14.5px] text-gray-700 font-medium">Việc làm đã ứng tuyển</span>
-    </button>
+                <button @click="goTo('AppliedJobs')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
+                    <Briefcase class="w-5 h-5 text-blue-600" />
+                    <span class="text-[14.5px] text-gray-700 font-medium">Việc làm đã ứng tuyển</span>
+                </button>
 
-    <button @click="goTo('SavedJobs')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
-        <Bookmark class="w-5 h-5 text-blue-600" />
-        <span class="text-[14.5px] text-gray-700 font-medium">Việc làm đã lưu</span>
-    </button>
-    
-    <button @click="goTo('Settings')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left">
-        <Settings class="w-5 h-5 text-gray-600" />
-        <span class="text-[14.5px] text-gray-700 font-medium">Cài đặt</span>
-    </button>
-</div>
+                <button @click="goTo('SavedJobs')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left border-b border-gray-50">
+                    <Bookmark class="w-5 h-5 text-blue-600" />
+                    <span class="text-[14.5px] text-gray-700 font-medium">Việc làm đã lưu</span>
+                </button>
+                
+                <button @click="goTo('Settings')" class="flex items-center gap-3 w-full p-4 hover:bg-gray-50 transition-colors text-left">
+                    <Settings class="w-5 h-5 text-gray-600" />
+                    <span class="text-[14.5px] text-gray-700 font-medium">Cài đặt</span>
+                </button>
+            </div>
 
         </div>
 

@@ -34,6 +34,7 @@ export interface ICompanyDetailResponse {
     BusinessLicenseUrl: string;
     ContactEmail?: string;
     City?: string;
+    Position?: string;
     Status: boolean;
     CreatedAt: Date;
     UpdatedAt: Date;
@@ -42,4 +43,23 @@ export interface ICompanyOfMe{
     CompanyID: number;
     CompanyName: string;
     LogoUrl?: string;
+}
+
+export interface ICompanyResponse{
+    CompanyID: number;
+    CompanyName: string;
+    Industry: string;
+    City?: string;
+    LogoUrl?: string;
+}
+export interface IUpdateCompany{
+    CompanyName?: string;
+    CompanyDescription?: string;
+    TaxCode: string;
+    Industry?: string;
+    Website?: string;
+    LogoUrl?: File | string;
+    ContactEmail?: string;
+    City?: string;
+    BusinessLicenseUrl?: File | string;
 }

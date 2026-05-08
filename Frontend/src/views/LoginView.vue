@@ -53,13 +53,12 @@ const handleSubmit = async () => {
         message.value = useAuth.message || 'Có lỗi xảy ra!';
     } else {
         if(useAuth.role === 'Employer') {
-            router.push({ 
-            path: '/create-job', 
-            state: { 
-                loginSuccess: true
-            } 
-        });
-        } else {
+            router.push({  path: '/employer-dashboard'});
+        }
+        else if (useAuth.role === 'Admin') {
+            router.push({path: '/admin-dashboard'})
+        }
+        else {
             router.push({ 
                 path: '/home', 
                 state: { 
