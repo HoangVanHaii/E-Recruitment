@@ -14,7 +14,6 @@ import MainLayout from '../components/MainLayout.vue'
 import FooterLayout from '../components/FooterLayout.vue'
 
 import SidebarEmployer from '../components/SidebarEmployer.vue'
-import SidebarAdmin from '../components/admin/SidebarAdmin.vue'
 
 //Employer
 import CreateJobView from '../views/CreateJobView.vue'
@@ -46,17 +45,24 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         component: MainLayout,
-        meta: { roles: ['Employer', 'Admin'] },
+        meta: { roles: [ "Candidate"] },
+        children: [
+            { path: 'job-detail/:id', name: 'job-detail', component: JobDetailView },
+            { path: 'create-resume', name: 'create-resume', component: CreateResumeView },
+        ]
+    },
+    {
+        path: '/',
+        component: MainLayout,
+        meta: { roles: ['Employer', 'Admin', "Candidate"] },
         children: [
             { path: 'request-otp', name: 'request-otp', component: RegisterView },
             { path: 'verify-otp', name: 'verify-otp', component: VerifyOtp },
             { path: 'register', name: 'register', component: PasswordForm },
             { path: 'login', name: 'login', component: LoginView },
             { path: 'home', name: 'home', component: HomeView },
-            { path: 'job-detail/:id', name: 'job-detail', component: JobDetailView },
             { path: 'login-section', name: 'login-section', component: LoginSectionView },
             { path: 'register-section', name: 'register-section', component: RegisterSectionView },
-            { path: 'create-resume', name: 'create-resume', component: CreateResumeView },
         ]
     },
 
@@ -81,6 +87,7 @@ const routes: Array<RouteRecordRaw> = [
     // --- ADMIN ---
     {
         path: '/admin',
+        meta: { roles: ['Admin'] },
         children: [
             { path: 'admin-dashboard', name: 'admin-dashboard', component: DashBoardAdmin },
             { path: 'candidate-management', name: 'candidate-management', component: CandidateManagement },
@@ -111,23 +118,18 @@ const router = createRouter({
     routes
 })
 
-// router.beforeEach((to, from, next) => {
-
-//     const authStore = useAuthStore()
-//     if (!authStore.user) {
-//         // await authStore.getMe()
-//     }
-
-//     const role = authStore.user?.r
-
-//     if (to.meta.roles) {
-
-//         const allowedRoles = to.meta.roles as string[]
-
-//         if (!allowedRoles.includes(role!)) {
-//             return next('/403')
-//         }
-//     }
-
-// })
+router.beforeEach(async (to, _, next) => {
+    const authStore = useAuthStore()
+    if (!authStore.user) {
+        await authStore.getCurrentRoleStore()
+    }
+    const role = authStore.role;
+    if (to.meta.roles) {
+        const allowedRoles = to.meta.roles as string[]
+        if (!allowedRoles.includes(role!)) {
+            return next('/403')
+        }
+    }
+    next()
+})
 export default router

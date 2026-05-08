@@ -19,7 +19,7 @@ const totalpages = ref<number>(0);
             error.value = false;
             loading.value = true;
             message.value = '';
-            const data = await UpdateStatusEmployer(EmployerID, ApprovalStatus);
+            await UpdateStatusEmployer(EmployerID, ApprovalStatus);
             
             message.value = 'Cập nhật trạng thái nhân viên thành công';
         } catch (err: any) {

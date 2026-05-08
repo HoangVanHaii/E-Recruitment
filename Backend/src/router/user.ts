@@ -11,4 +11,6 @@ router.post('/register', userMiddleware.registerValidation, validateRequest, use
 router.post('/login', userMiddleware.loginValidation, validateRequest, userController.login);
 router.post('/refresh-token', userMiddleware.refreshTokenValidation, validateRequest, userController.refreshToken);
 router.get('/profile', authMiddleware, userController.getProfile);
+router.get('/role', authMiddleware, userController.getCurrentRole);
+
 export default router;

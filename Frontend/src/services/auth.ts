@@ -20,7 +20,12 @@ export const getProfile = async () => {
     const response = await api.get('/users/profile');
     return response.data;
 }
+export const getCurrentRole = async () => {
+    const response = await api.get('/users/role');
+    return response.data;
+}
 export const updateStatus = async (userId: number, status: string) => {
     const response = await api.put(`/admin/users/${userId}/status`, { status });
     return response.data;
 }
+
