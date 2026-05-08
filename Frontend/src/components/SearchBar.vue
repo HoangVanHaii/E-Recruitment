@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { Search, Plus, ChevronRight } from 'lucide-vue-next';
 import SearchJob from './SearchJob.vue';
 import { useJobStore } from '../stores/job';
@@ -20,10 +20,6 @@ const searchResults = ref<IJob[]>([]);
 const showSidebar = ref(false);
 const isSearching = ref(false);
 const currentKeyword = ref('');
-
-// Canvas snowflake refs
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-let animationId: number;
 
 const handleSearch = async (keywordToSearch?: string) => {
   const query = typeof keywordToSearch === 'string' ? keywordToSearch : searchQuery.value;
@@ -55,6 +51,10 @@ interface Snowflake {
   angle: number;
 }
 
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+let animationId: number;
+let resizeObserver: ResizeObserver | null = null;
+
 const initSnow = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
@@ -62,30 +62,42 @@ const initSnow = () => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  const resize = () => {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-  };
-  resize();
-  window.addEventListener('resize', resize);
+  const flakes: Snowflake[] = [];
+  let initialized = false;
 
-  const count = 60;
-  const flakes: Snowflake[] = Array.from({ length: count }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    radius: Math.random() * 3.5 + 1,
-    speed: Math.random() * 0.8 + 0.3,
-    opacity: Math.random() * 0.5 + 0.3,
-    drift: Math.random() * 2 - 1,
-    driftSpeed: Math.random() * 0.01 + 0.003,
-    angle: Math.random() * Math.PI * 2,
-  }));
+  const resize = () => {
+    const { offsetWidth, offsetHeight } = canvas;
+    if (!offsetWidth || !offsetHeight) return;
+
+    canvas.width = offsetWidth;
+    canvas.height = offsetHeight;
+
+    if (!initialized) {
+      initialized = true;
+      flakes.length = 0;
+      for (let i = 0; i < 60; i++) {
+        flakes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 3.5 + 1,
+          speed: Math.random() * 0.8 + 0.3,
+          opacity: Math.random() * 0.5 + 0.3,
+          drift: Math.random() * 2 - 1,
+          driftSpeed: Math.random() * 0.01 + 0.003,
+          angle: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+  };
+
+  resizeObserver = new ResizeObserver(() => resize());
+  resizeObserver.observe(canvas);
+  resize();
 
   const draw = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     flakes.forEach((f) => {
-      // Draw a 6-pointed snowflake
       ctx.save();
       ctx.translate(f.x, f.y);
       ctx.rotate(f.angle);
@@ -99,7 +111,6 @@ const initSnow = () => {
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, f.radius * 2.5);
-        // small branches
         ctx.moveTo(0, f.radius * 1.2);
         ctx.lineTo(f.radius * 0.7, f.radius * 0.5);
         ctx.moveTo(0, f.radius * 1.2);
@@ -109,7 +120,6 @@ const initSnow = () => {
 
       ctx.restore();
 
-      // Move
       f.y += f.speed;
       f.angle += f.driftSpeed;
       f.x += Math.sin(f.angle) * f.drift;
@@ -128,12 +138,14 @@ const initSnow = () => {
   draw();
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick();
   initSnow();
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(animationId);
+  resizeObserver?.disconnect();
 });
 </script>
 

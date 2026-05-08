@@ -1,9 +1,3 @@
-export interface IEmployer {
-    EmployerID: number;
-    CompanyID: number;
-    Position: string;
-    ApprovalStatus?: string; 
-}
 export interface ITopEmployer {
     EmployerID: number;
     CompanyName: string;
@@ -11,6 +5,7 @@ export interface ITopEmployer {
     LogoUrl: string;
     JobCount: number;
 }
+
 export interface IEmployerForAdmin {
     EmployerID: number;
     Email: string;
