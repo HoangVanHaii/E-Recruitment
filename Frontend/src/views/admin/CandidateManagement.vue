@@ -167,7 +167,7 @@ const formatDate = (dateString?: string) => {
                                 <tr class="border-b border-slate-100 bg-slate-50/50">
                                     <th class="text-left px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Ứng viên</th>
                                     <th class="text-left px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Liên hệ</th>
-                                    <th class="text-left px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Kinh nghiệm</th>
+                                    <th class="text-left px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Ngày sinh</th>
                                     <th class="text-center px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Trạng thái</th>
                                     <th class="text-right px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[11px]">Thao tác</th>
                                 </tr>
@@ -207,7 +207,7 @@ const formatDate = (dateString?: string) => {
                                         <p class="text-slate-400 text-[11.5px] mt-0.5">{{ candidate.Phone || 'Chưa cập nhật SĐT' }}</p>
                                     </td>
                                     <td class="px-6 py-4 text-slate-600">
-                                        {{ candidate.ExperienceYears !== undefined ? `${candidate.ExperienceYears} năm` : 'Chưa có' }}
+                                        {{ formatDate(candidate.DateOfBirth) }}
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <span 
@@ -336,7 +336,7 @@ const formatDate = (dateString?: string) => {
                         </div>
                     </div>
                     
-                    <div class="border-t border-slate-100 pt-5 space-y-4">
+                    <!-- <div class="border-t border-slate-100 pt-5 space-y-4">
                         <h5 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Học vấn & Kinh nghiệm</h5>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[13px]">
                             <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
@@ -347,8 +347,8 @@ const formatDate = (dateString?: string) => {
                                 <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-1">Số năm kinh nghiệm</p>
                                 <p class="font-medium text-slate-700"><i class="fas fa-briefcase mr-2 text-[#4c5bd4]"></i>{{ selectedCandidate.ExperienceYears !== undefined ? `${selectedCandidate.ExperienceYears} năm` : 'Chưa cập nhật' }}</p>
                             </div>
-                        </div>
-                    </div>
+                        </div> 
+                    </div>-->
                 </div>
             </div>
         </div>
