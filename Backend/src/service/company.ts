@@ -1,6 +1,6 @@
 import { PoolConnection } from "mysql2/promise";
 import pool from "../config/database";
-import { ICompanyDetailResponse, ICompanyResponse, ICreateCompany, IUpdateCompany } from "../interface/company";
+import { ICompanyDetailResponse, ICompanyResponse, ICreateCompany, IUpdateCompany, ICompanyBasic, ICompanyDetail } from "../interface/company";
 import { AppError } from "../utils/appError";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 import cloudinary from "../config/cloudinary";
@@ -146,6 +146,56 @@ export const GetAllCompany = async (Role: string) => {
     
     return Role === "Admin" ? result as ICompanyDetailResponse[] : result as ICompanyResponse[];
 }
+export const getAllCompanyForAdmin = async (page: number, limit: number) => {
+    const offset = (page - 1) * limit;
+    let totalPages: number | undefined = undefined;
+    const total: number | undefined = undefined;
+    
+    if (page == 1) {
+        const countQuery = `SELECT COUNT(*) as total FROM Companies`;
+        const [countResult]: any = await pool.query(countQuery);
+        const total = countResult[0].total;
+        totalPages = Math.ceil((total || 0 ) / limit);
+    }
+    const dataQuery = `
+        SELECT CompanyID, CompanyName, Industry, City, LogoUrl, TaxCode, Status
+        FROM Companies
+        ORDER BY CreatedAt DESC
+        LIMIT ? OFFSET ?
+    `;
+    const values = [limit, offset]; 
+    const [dataResult]: any = await pool.query(dataQuery, values);
+    
+    return {
+        items: dataResult as ICompanyBasic[],
+        ...(total !== undefined && { total, totalPages })
+    }
+};
+export const getCompanyDetailForAdmin = async (CompanyID: number) => {
+    const query = `
+        SELECT CompanyID, CompanyName, CompanyDescription, Industry, Website, LogoUrl, TaxCode, BusinessLicenseUrl, ContactEmail, City, Status
+        FROM Companies
+        WHERE CompanyID = ?
+    `;
+    const values = [CompanyID];
+    const [result]: any = await pool.query(query, values);
+
+    if (!result || result.length === 0) {
+        throw new AppError("Công ty không tồn tại hoặc bạn không có quyền xem", 404);
+    }
+    return result[0] as ICompanyDetail;
+}
+export const updateCompanyStatusForAdmin = async (CompanyID: number, Status: boolean) => {
+    const query = `UPDATE Companies SET Status = ? WHERE CompanyID = ?`
+    const values = [Status, CompanyID];
+
+    const [result]: any = await pool.query(query, values);
+
+    if (result.affectedRows === 0) {
+        throw new AppError("Công ty không tồn tại hoăc đã bị xóa", 404);
+    }
+    return true;
+}
 export const getCompanyIdOfMe = async (userID: number): Promise<number | null> => {
     const sql = `
         SELECT CompanyID
@@ -162,6 +212,7 @@ export const getCompanyIdOfMe = async (userID: number): Promise<number | null> =
 
     return rows[0].CompanyID;
 };
+
 export const getCompanyOfMe = async (userId: number) => {
     const query = `
         SELECT c.CompanyID, c.CompanyName, c.LogoUrl

@@ -34,7 +34,9 @@ const menuItems = ref<MenuItem[]>([
         { id: 'all-jobs', label: 'Tất cả bài đăng', routeName: 'all-job-management', icon: 'fas fa-list-ul' },
         { id: 'pending-jobs', label: 'Chờ duyệt', routeName: 'all-job-pending', icon: 'fas fa-clock', status: 'Pending' },
         { id: 'reported-jobs', label: 'Bị báo cáo', routeName: 'all-job-reported', icon: 'fas fa-flag', status: 'Rejected' }
-    ]},
+    ]
+    },
+    { id: 'companies', label: 'Quản lý Công ty', icon: 'fas fa-city', routeName: 'company-management' },
 ]);
 
 const closeMobile = () => emit('close-mobile-menu');
