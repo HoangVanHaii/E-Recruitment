@@ -61,8 +61,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     try {
         const { email, password } = req.body;
         const user :IUser = await userService.searchUserByEmail(email);
-        if (!user || user.Status === 'Deleted') {
-            throw new AppError('Tài khoản không tồn tại', 404);
+        if (!user || user.Status === 'Banned') {
+            throw new AppError('Tài khoản không tồn tại hoặc đã bị cấm', 404);
         }
         const isPasswordValid = await bcrypt.compare(password, user.PasswordHash);
         if (!isPasswordValid) {
@@ -146,7 +146,7 @@ export const requestOtpForgotPassword = async (req: Request, res: Response, next
         const user = await userService.searchUserByEmail(email);
         
         if (!user || user.Status === 'Banned') {
-            throw new AppError('Email này không tồn tại trong hệ thống hoặc đã bị xóa', 404);
+            throw new AppError('Email này không tồn tại trong hệ thống hoặc đã bị cấm', 404);
         }
 
         const result = await sendEmail(email);
