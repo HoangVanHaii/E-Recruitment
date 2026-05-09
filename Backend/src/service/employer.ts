@@ -303,7 +303,7 @@ export const getAllEmployers = async (page: number, limit: number) => {
             c.CompanyName,
             c.LogoUrl,
             c.Industry,
-            e.Status AS EmployerStatus
+            e.ApprovalStatus AS EmployerStatus
         FROM Users u
         JOIN Employers e ON u.UserID = e.EmployerID
         LEFT JOIN Companies c ON e.CompanyID = c.CompanyID
