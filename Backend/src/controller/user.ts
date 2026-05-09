@@ -145,7 +145,7 @@ export const requestOtpForgotPassword = async (req: Request, res: Response, next
         const { email } = req.body;
         const user = await userService.searchUserByEmail(email);
         
-        if (!user || user.Status === 'Deleted') {
+        if (!user || user.Status === 'Banned') {
             throw new AppError('Email này không tồn tại trong hệ thống hoặc đã bị xóa', 404);
         }
 
