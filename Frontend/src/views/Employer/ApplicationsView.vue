@@ -1,3 +1,111 @@
+
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import ApplicationDetail from '../../components/Employer/ApplicationDetail.vue';
+import { useApplicationStore } from '../../stores/jobApplication';
+import type { IJobApplicationList } from '../../types/jobApplication';
+import Notify from '../../components/Notify.vue';
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+
+const useApplication = useApplicationStore();
+const props = defineProps({
+    jobId: { type: [Number, null], required: true },
+    jobTitle: { type: String, default: 'Đang tải...' }
+});
+
+const emit = defineEmits(['back']);
+
+const loading = ref(false);
+const applications = ref<IJobApplicationList[]>([]);
+const activeStatus = ref('All');
+const selectedApp = ref<any>(null);
+
+const statusTabs = [
+    { label: 'Tất cả đơn', value: 'All' },
+    { label: 'Chưa xem', value: 'Pending' },
+    { label: 'Đã xem', value: 'Reviewed' },
+    { label: 'Hẹn phỏng vấn', value: 'Interviewing' },
+    { label: 'Trúng tuyển', value: 'Accepted' },
+    { label: 'Đã loại', value: 'Rejected' },
+];
+
+onMounted(async () => {
+    loading.value = true;
+    if (props.jobId) {
+        await useApplication.getApplicationByJobId(props.jobId);
+        applications.value = useApplication.listApplications;
+    }
+    loading.value = false;
+});
+
+const filteredApplications = computed(() => {
+    if (activeStatus.value === 'All') return applications.value;
+    return applications.value.filter(app => app.Status === activeStatus.value);
+});
+
+const openCV = (app: any) => {
+    selectedApp.value = app;
+    if (app.Status === 'Pending') {
+        updateStatus(app.ApplicationID, 'Reviewed');
+    }
+};
+
+const updateStatus = async (appId: number, newStatus: string) => {
+    await useApplication.updateApplicationStatusStore(appId, newStatus);
+    if(useApplication.error) {
+        messageNotify.value = 'Cập nhật trạng thái thất bại';
+        isSuccessNotify.value = false;
+        showNotify.value = true;
+        return;
+    }
+    const app = applications.value.find(a => a.ApplicationID === appId);
+    if (app) app.Status = newStatus;
+    messageNotify.value = 'Cập nhật trạng thái thành công';
+    isSuccessNotify.value = true;
+    showNotify.value = true;
+};
+
+const formatDate = (date: string) => {
+    // alert()
+    const d = new Date(date);
+    return d.toLocaleDateString('vi-VN');
+};
+
+const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+        'Pending': 'Chưa xem',
+        'Reviewed': 'Đã xem',
+        'Interviewing': 'Hẹn phỏng vấn',
+        'Accepted': 'Trúng tuyển',
+        'Rejected': 'Đã loại'
+    };
+    return map[status] || status;
+};
+
+const getStatusBadgeClass = (s: string) => {
+    if (s === 'Accepted') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    if (s === 'Rejected') return 'bg-rose-50 text-rose-600 border-rose-100';
+    if (s === 'Interviewing') return 'bg-amber-50 text-amber-600 border-amber-100';
+    if (s === 'Reviewed') return 'bg-blue-50 text-blue-600 border-blue-100';
+    return 'bg-slate-100 text-slate-500 border-slate-200';
+};
+
+const getStatusBorderColor = (s: string) => {
+    if (s === 'Accepted') return 'border-l-[5px] border-l-emerald-500';
+    if (s === 'Rejected') return 'border-l-[5px] border-l-rose-500 grayscale-[0.3]';
+    if (s === 'Interviewing') return 'border-l-[5px] border-l-amber-500';
+    if (s === 'Reviewed') return 'border-l-[5px] border-l-blue-500';
+    return 'border-l-[5px] border-l-slate-300';
+};
+
+const getScoreBgColor = (sc: number) => sc >= 80 ? 'bg-emerald-500' : (sc >= 50 ? 'bg-amber-500' : 'bg-rose-500');
+const getScoreTextColor = (sc: number) => sc >= 80 ? 'text-emerald-600' : (sc >= 50 ? 'text-amber-500' : 'text-rose-500');
+</script>
 <template>
     <Notify  
         v-if="showNotify" 
@@ -137,114 +245,6 @@
         
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import ApplicationDetail from '../components/ApplicationDetail.vue';
-import { useApplicationStore } from '../stores/jobApplication';
-import type { IJobApplicationList } from '../types/jobApplication';
-import Notify from '../components/Notify.vue';
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-
-const useApplication = useApplicationStore();
-const props = defineProps({
-    jobId: { type: [Number, null], required: true },
-    jobTitle: { type: String, default: 'Đang tải...' }
-});
-
-const emit = defineEmits(['back']);
-
-const loading = ref(false);
-const applications = ref<IJobApplicationList[]>([]);
-const activeStatus = ref('All');
-const selectedApp = ref<any>(null);
-
-const statusTabs = [
-    { label: 'Tất cả đơn', value: 'All' },
-    { label: 'Chưa xem', value: 'Pending' },
-    { label: 'Đã xem', value: 'Reviewed' },
-    { label: 'Hẹn phỏng vấn', value: 'Interviewing' },
-    { label: 'Trúng tuyển', value: 'Accepted' },
-    { label: 'Đã loại', value: 'Rejected' },
-];
-
-onMounted(async () => {
-    loading.value = true;
-    if (props.jobId) {
-        await useApplication.getApplicationByJobId(props.jobId);
-        applications.value = useApplication.listApplications;
-    }
-    loading.value = false;
-});
-
-const filteredApplications = computed(() => {
-    if (activeStatus.value === 'All') return applications.value;
-    return applications.value.filter(app => app.Status === activeStatus.value);
-});
-
-const openCV = (app: any) => {
-    selectedApp.value = app;
-    if (app.Status === 'Pending') {
-        updateStatus(app.ApplicationID, 'Reviewed');
-    }
-};
-
-const updateStatus = async (appId: number, newStatus: string) => {
-    await useApplication.updateApplicationStatusStore(appId, newStatus);
-    if(useApplication.error) {
-        messageNotify.value = 'Cập nhật trạng thái thất bại';
-        isSuccessNotify.value = false;
-        showNotify.value = true;
-        return;
-    }
-    const app = applications.value.find(a => a.ApplicationID === appId);
-    if (app) app.Status = newStatus;
-    messageNotify.value = 'Cập nhật trạng thái thành công';
-    isSuccessNotify.value = true;
-    showNotify.value = true;
-};
-
-const formatDate = (date: string) => {
-    // alert()
-    const d = new Date(date);
-    return d.toLocaleDateString('vi-VN');
-};
-
-const getStatusLabel = (status: string) => {
-    const map: Record<string, string> = {
-        'Pending': 'Chưa xem',
-        'Reviewed': 'Đã xem',
-        'Interviewing': 'Hẹn phỏng vấn',
-        'Accepted': 'Trúng tuyển',
-        'Rejected': 'Đã loại'
-    };
-    return map[status] || status;
-};
-
-const getStatusBadgeClass = (s: string) => {
-    if (s === 'Accepted') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-    if (s === 'Rejected') return 'bg-rose-50 text-rose-600 border-rose-100';
-    if (s === 'Interviewing') return 'bg-amber-50 text-amber-600 border-amber-100';
-    if (s === 'Reviewed') return 'bg-blue-50 text-blue-600 border-blue-100';
-    return 'bg-slate-100 text-slate-500 border-slate-200';
-};
-
-const getStatusBorderColor = (s: string) => {
-    if (s === 'Accepted') return 'border-l-[5px] border-l-emerald-500';
-    if (s === 'Rejected') return 'border-l-[5px] border-l-rose-500 grayscale-[0.3]';
-    if (s === 'Interviewing') return 'border-l-[5px] border-l-amber-500';
-    if (s === 'Reviewed') return 'border-l-[5px] border-l-blue-500';
-    return 'border-l-[5px] border-l-slate-300';
-};
-
-const getScoreBgColor = (sc: number) => sc >= 80 ? 'bg-emerald-500' : (sc >= 50 ? 'bg-amber-500' : 'bg-rose-500');
-const getScoreTextColor = (sc: number) => sc >= 80 ? 'text-emerald-600' : (sc >= 50 ? 'text-amber-500' : 'text-rose-500');
-</script>
-
 <style scoped>
 .list-enter-active, .list-leave-active { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .list-enter-from { opacity: 0; transform: translateY(20px); }

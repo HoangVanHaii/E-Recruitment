@@ -64,7 +64,7 @@ const candidateStore = useCandidateStore();
 
 const tabs = [
     { id: 'contact', name: 'Thông tin liên hệ', icon: Contact },
-    { id: 'account', name: 'Tài khoản', icon: Settings },
+    // { id: 'account', name: 'Tài khoản', icon: Settings },
     { id: 'education', name: 'Trình độ học vấn', icon: GraduationCap },
     { id: 'experience', name: 'Kinh nghiệm làm việc', icon: Briefcase },
     { id: 'project', name: 'Dự án tham gia', icon: FolderOpen },

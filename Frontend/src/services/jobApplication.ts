@@ -27,3 +27,11 @@ export const getSubmittedApplications = async (page: number = 1, limit: number =
     });
     return response.data;
 }
+export const getChartStats = async (type: string) => {
+    const response = await api.get('/job-application/stats', { params: { type } });
+    return response.data;
+}
+export const ApplyJob = async (JobID: number, ResumeID: number) => {
+    const response = await api.post(`/job-application/`, {JobID, ResumeID});
+    return response.data;
+}

@@ -20,6 +20,11 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && originalRequest.url.includes('/login')) {
             return Promise.reject(error);
         }
+        // if (error.response?.status === 403) {
+        //     console.error("Bạn không có quyền truy cập!");
+        //     window.location.href = '/403'; // Điều hướng sang trang 403
+        //     return Promise.reject(error);
+        // }
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
@@ -34,10 +39,9 @@ api.interceptors.response.use(
                 });
 
                 if (res.status === 200) {
-                    const { token, newRefreshToken } = res.data;
-                    localStorage.setItem('accessToken', token);
-                    if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-                    originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                    const newAccessToken = res.data.data;
+                    localStorage.setItem('accessToken', newAccessToken);
+                    originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
                     return api(originalRequest);
                 }
             } catch (refreshError) {

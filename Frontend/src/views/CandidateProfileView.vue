@@ -14,9 +14,10 @@ import MyResumesView from '../components/MyResumesView.vue';
 import AppliedJobsView from '../components/AppliedJobsView.vue';
 import AccountManagement from '../components/AccountManagement.vue';
 
+import ChatView from './ChatView.vue';
+
 const route = useRoute();
 const router = useRouter();
-
 const activeTab = computed(() => (route.query.tab as string) || 'contact');
 
 const activeMainTab = computed(() => {
@@ -49,6 +50,9 @@ const changeTab = (tabName: string) => {
             <div class="max-w-6xl mx-auto">
                 <div class="mb-6">
                     <!-- <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                <div class="mb-6" v-if="activeTab !== 'chat'">
+                    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+
                         <template v-if="activeMainTab === 'resumes_list'">
                             Quản lý <span class="text-blue-600">CV cá nhân</span>
                         </template>
@@ -58,9 +62,9 @@ const changeTab = (tabName: string) => {
                     </h1> -->
                 </div>
 
-                <div class="flex flex-col lg:flex-row gap-6 items-start">
+                <div class="flex flex-col lg:flex-row gap-6 items-start" >
                     
-                    <div v-if="activeMainTab === 'online_profile'" class="w-full lg:w-[280px] shrink-0 lg:sticky top-6">
+                    <div v-if="activeMainTab === 'online_profile' && activeTab !== 'chat'" class="w-full lg:w-[280px] shrink-0 lg:sticky top-6">
                         <ResumeProgressMenu 
                             :current-tab="activeTab" 
                             @change-tab="changeTab" 
@@ -78,13 +82,14 @@ const changeTab = (tabName: string) => {
                             </div> -->
 
                             <ContactForm v-else-if="activeTab === 'contact'" />
-                            <AccountForm v-else-if="activeTab === 'account'" />
+                            <!-- <AccountForm v-else-if="activeTab === 'account'" /> -->
                             <EducationForm v-else-if="activeTab === 'education'" />
                             <ExperienceForm v-else-if="activeTab === 'experience'" />
                             <ProjectForm v-else-if="activeTab === 'project'" />
                             <CreateCVForm v-else-if="activeTab === 'create_cv'" />
                             <SkillFrom  v-else-if="activeTab === 'skill'" />
-                            
+                            <ChatView v-else-if="activeTab === 'chat'" />
+
                             <div v-else class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 text-center py-20 text-slate-400">
                                 <i class="fas fa-tools text-4xl mb-4 text-slate-200"></i>
                                 <p class="font-bold text-lg text-slate-500">Tính năng đang phát triển...</p>

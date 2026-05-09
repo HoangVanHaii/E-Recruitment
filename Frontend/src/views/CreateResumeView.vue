@@ -1,3 +1,291 @@
+<script setup lang="ts">
+import { onMounted, ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router'; 
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+import { useResumeStore } from '../stores/resume';
+import { useCandidateStore } from '../stores/candidate'; 
+import { useSkillStore } from '../stores/skill'; 
+import type { ICandidateDetail } from '../types/candidate';
+
+export interface Candidate {
+    FullName: string;
+    Phone?: string;
+    DateOfBirth?: string;
+    Address?: string;
+}
+
+const route = useRoute();
+const router = useRouter();
+
+const editResumeId = computed(() => Number(route.query.id));
+const isEditMode = computed(() => !!editResumeId.value && editResumeId.value > 0);
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+const isGeneratingAI = ref(false);
+
+const useResume = useResumeStore();
+const candidateStore = useCandidateStore();
+const skillStore = useSkillStore(); 
+
+const selectedTemplateId = ref<number>(1);
+const avatarFile = ref<File | null>(null);
+const avatarPreview = ref<string | null>(null);
+
+const candidateForm = ref<Candidate>({ FullName: '', Phone: '', DateOfBirth: '', Address: '' });
+const resumeForm = ref({ title: '', summary: '' });
+
+const masterSkillsArray = computed(() => candidateStore.candidateSkills || []);
+
+const selectedExperiences = ref<number[]>([]);
+const selectedProjects = ref<number[]>([]);
+const selectedEducation = ref<number[]>([]);
+const selectedSkills = ref<number[]>([]);
+
+const newExperiences = ref<any[]>([]);
+const newProjects = ref<any[]>([]);
+const newEducation = ref<any[]>([]);
+const newSkills = ref<any[]>([]); 
+
+const searchQuery = ref('');
+const showDropdown = ref(false);
+
+const filteredDictionary = computed(() => {
+    if (!searchQuery.value.trim()) return [];
+    
+    const pickedMasterIds = selectedSkills.value.map(i => {
+        const item = masterSkillsArray.value[i] as any;
+        return item?.skillId || item?.SkillID;
+    });
+    const pickedNewIds = newSkills.value.map(s => s.skillId);
+    const allPickedIds = [...pickedMasterIds, ...pickedNewIds];
+
+    return skillStore.dictionary.filter(s => 
+        s.SkillName.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
+        !allPickedIds.includes(s.SkillID)
+    ).slice(0, 10);
+});
+
+const selectManualSkill = (item: any) => {
+    newSkills.value.unshift({ skillId: item.SkillID, skillName: item.SkillName, level: 'Khá' });
+    searchQuery.value = ''; showDropdown.value = false;
+};
+
+const addCustomSkill = () => {
+    if (!searchQuery.value.trim()) return;
+    newSkills.value.unshift({ skillId: 'new', skillName: searchQuery.value.trim(), level: 'Khá' });
+    searchQuery.value = ''; showDropdown.value = false;
+};
+
+watch(searchQuery, (newVal) => { if(!newVal) showDropdown.value = false; });
+
+const showToast = (message: string, isSuccess: boolean) => {
+    messageNotify.value = message; 
+    isSuccessNotify.value = isSuccess; 
+    showNotify.value = true;
+    setTimeout(() => { showNotify.value = false; }, 3000);
+};
+
+const onAvatarChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        avatarFile.value = target.files[0];
+        avatarPreview.value = URL.createObjectURL(avatarFile.value);
+    }
+};
+
+const formatDateForInput = (dateStr: any) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? '' : d.toISOString().substring(0, 10);
+};
+
+onMounted(async () => {
+    if (!candidateStore.profile) await candidateStore.getProfileStore();
+    if (candidateStore.candidateSkills.length === 0) await candidateStore.fetchSkillsStore();
+    if (skillStore.dictionary.length === 0) await skillStore.fetchDictionaryStore();
+
+    const p = candidateStore.profile;
+    if (p) {
+        candidateForm.value.FullName = p.FullName || '';
+        candidateForm.value.Phone = p.Phone || '';
+        candidateForm.value.Address = p.Address || '';
+        candidateForm.value.DateOfBirth = p.DateOfBirth ? new Date(p.DateOfBirth).toISOString().substring(0, 10) : '';
+    }
+
+    if (isEditMode.value) {
+        await useResume.fetchResumeDetailStore(editResumeId.value);
+        const cv = useResume.currentResume;
+        
+        if (cv) {
+            resumeForm.value.title = cv.title || '';
+            resumeForm.value.summary = cv.summary || '';
+            selectedTemplateId.value = cv.templateId || 1;
+            if (cv.AvatarUrl) avatarPreview.value = cv.AvatarUrl as string;
+
+            newExperiences.value = (cv.experience || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
+            newEducation.value = (cv.education || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
+            
+            newProjects.value = (cv.projects || []).map((prj: any) => ({
+                ...prj,
+                techString: Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies
+            }));
+
+            newSkills.value = (cv.skills || []).map((s: any) => ({
+                skillId: s.skillId || 'old',
+                skillName: s.skillName || s,
+                level: s.level || 'Khá'
+            }));
+
+            selectedExperiences.value = [];
+            selectedProjects.value = [];
+            selectedEducation.value = [];
+            selectedSkills.value = [];
+        }
+    } else {
+        if (p) {
+            if (p.AvatarUrl) avatarPreview.value = p.AvatarUrl;
+            if (p.experience) selectedExperiences.value = p.experience.map((_: any, i: number) => i);
+            if (p.projects) selectedProjects.value = p.projects.map((_: any, i: number) => i);
+            if (p.education) selectedEducation.value = p.education.map((_: any, i: number) => i);
+        }
+        if (masterSkillsArray.value.length > 0) {
+            selectedSkills.value = masterSkillsArray.value.map((_, i) => i);
+        }
+    }
+});
+
+const addNewItem = (section: string) => {
+    if (section === 'experience') newExperiences.value.unshift({ companyName: '', position: '', startDate: '', endDate: '', isCurrent: false, description: '' });
+    else if (section === 'projects') newProjects.value.unshift({ projectName: '', role: '', techString: '', link: '', description: '' });
+    else if (section === 'education') newEducation.value.unshift({ institution: '', degree: '', major: '', startDate: '', endDate: '', gpa: '' });
+};
+
+const getHybridDataObjects = () => {
+    const p = candidateStore.profile;
+    const masterExp = p?.experience ? selectedExperiences.value.map(i => p.experience![i]) : [];
+    const masterPrj = p?.projects ? selectedProjects.value.map(i => p.projects![i]) : [];
+    const masterEdu = p?.education ? selectedEducation.value.map(i => p.education![i]) : [];
+    
+    const pickedSkills = selectedSkills.value.map(i => {
+        const rawSkill = masterSkillsArray.value[i] as any; 
+        return {
+            skillId: rawSkill.SkillID || rawSkill.skillId,
+            skillName: rawSkill.SkillName || rawSkill.skillName,
+            level: rawSkill.SkillLevel || rawSkill.level || 'Khá',
+            isNew: false 
+        };
+    });
+    
+    return {
+        skills: [...pickedSkills, ...newSkills.value],
+        education: [...masterEdu, ...newEducation.value],
+        experience: [...masterExp, ...newExperiences.value],
+        projects: [...masterPrj, ...newProjects.value]
+    };
+};
+
+const syncNewDataToMasterProfile = async () => {
+    if (newExperiences.value.length === 0 && newProjects.value.length === 0 && newEducation.value.length === 0) return;
+    const p = candidateStore.profile;
+    const payload: ICandidateDetail = {};
+    if (newExperiences.value.length > 0) payload.experience = [...(p?.experience || []), ...newExperiences.value];
+    if (newEducation.value.length > 0) payload.education = [...(p?.education || []), ...newEducation.value];
+    if (newProjects.value.length > 0) {
+        payload.projects = [...(p?.projects || []), ...newProjects.value.map(prj => ({
+            ...prj, technologies: typeof prj.techString === 'string' ? prj.techString.split(',').map((t: string) => t.trim()).filter(Boolean) : []
+        }))];
+    }
+    await candidateStore.updateMasterProfileStore(payload);
+};
+
+const handleGenerateAI = async () => {
+    isGeneratingAI.value = true;
+    try {
+        const finalData = getHybridDataObjects();
+        const summaryData = await useResume.generateAISummaryStore(finalData);
+        if (!useResume.error && summaryData) {
+            resumeForm.value.summary = summaryData; 
+            showToast('AI đã phân tích dữ liệu và viết xong tóm tắt!', true);
+        } else {
+            showToast(useResume.message || 'Lỗi AI', false);
+        }
+    } catch (error) { 
+        showToast('Hệ thống AI đang bận', false); 
+    } finally { isGeneratingAI.value = false; }
+};
+
+const handleSubmit = async () => {
+    if (!isEditMode.value) {
+        await syncNewDataToMasterProfile();
+    }
+
+    const finalData = getHybridDataObjects();
+    const processedProjects = finalData.projects.map((p: any) => ({
+        ...p, technologies: typeof p.techString === 'string' ? p.techString.split(',').map((t: string) => t.trim()).filter(Boolean) : (p.technologies || [])
+    }));
+
+    if (isEditMode.value) {
+        const updatePayload = {
+            title: resumeForm.value.title || '',
+            summary: resumeForm.value.summary || '',
+            templateId: selectedTemplateId.value,
+            skills: finalData.skills,
+            experience: finalData.experience,
+            education: finalData.education,
+            projects: processedProjects
+        };
+
+        await useResume.updateResumeStore(editResumeId.value, updatePayload); 
+        
+        if(!useResume.error) {
+            showToast('Cập nhật CV thành công!', true);
+            
+            setTimeout(() => router.push({ query: { tab: 'resumes_list' } }), 1000);
+        } else {
+            showToast(useResume.message || 'Lỗi cập nhật', false);
+        }
+
+    } else {
+        const formData = new FormData();
+        if (avatarFile.value) formData.append('AvatarUrl', avatarFile.value); 
+        else if (candidateStore.profile?.AvatarUrl) formData.append('ExistingAvatarUrl', candidateStore.profile.AvatarUrl);
+        
+        formData.append('templateId', selectedTemplateId.value.toString());
+        formData.append('title', resumeForm.value.title || '');
+        formData.append('summary', resumeForm.value.summary || '');
+        
+        formData.append('FullName', candidateForm.value.FullName || '');
+        formData.append('Phone', candidateForm.value.Phone || '');
+        formData.append('DateOfBirth', candidateForm.value.DateOfBirth || '');
+        formData.append('Address', candidateForm.value.Address || '');
+        
+        formData.append('skills', JSON.stringify(finalData.skills));
+        formData.append('experience', JSON.stringify(finalData.experience));
+        formData.append('education', JSON.stringify(finalData.education));
+        formData.append('projects', JSON.stringify(processedProjects));
+        
+        await useResume.createResumeStore(formData);
+        if(!useResume.error) {
+                showToast('Tạo CV thành công!', true);
+                resumeForm.value.title = '';
+                resumeForm.value.summary = '';
+                newExperiences.value = [];
+                newProjects.value = [];
+                newEducation.value = [];
+                newSkills.value = [];
+                avatarFile.value = null;
+                
+                setTimeout(() => {
+                    router.push({ query: { tab: 'resumes_list' } });
+                }, 1500); 
+            }
+        else showToast(useResume.message || 'Lỗi khi tạo CV!', false);
+    }
+};
+</script>
 <template>
     <div class="max-w-5xl mx-auto pb-8 font-sans text-slate-800">
         <Notify v-if="showNotify" :message="messageNotify" :isSuccess="isSuccessNotify" @close="showNotify = false" />
@@ -287,307 +575,4 @@
     </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router'; // THÊM DÒNG NÀY
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-import { useResumeStore } from '../stores/resume';
-import { useCandidateStore } from '../stores/candidate'; 
-import { useSkillStore } from '../stores/skill'; 
-import type { ICandidateDetail } from '../types/candidate';
 
-export interface Candidate {
-    FullName: string;
-    Phone?: string;
-    DateOfBirth?: string;
-    Address?: string;
-}
-
-const route = useRoute();
-const router = useRouter();
-
-// KIỂM TRA XEM CÓ PHẢI LÀ CHẾ ĐỘ EDIT KHÔNG
-const editResumeId = computed(() => Number(route.query.id));
-const isEditMode = computed(() => !!editResumeId.value && editResumeId.value > 0);
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-const isGeneratingAI = ref(false);
-
-const useResume = useResumeStore();
-const candidateStore = useCandidateStore();
-const skillStore = useSkillStore(); 
-
-const selectedTemplateId = ref<number>(1);
-const avatarFile = ref<File | null>(null);
-const avatarPreview = ref<string | null>(null);
-
-const candidateForm = ref<Candidate>({ FullName: '', Phone: '', DateOfBirth: '', Address: '' });
-const resumeForm = ref({ title: '', summary: '' });
-
-const masterSkillsArray = computed(() => candidateStore.candidateSkills || []);
-
-const selectedExperiences = ref<number[]>([]);
-const selectedProjects = ref<number[]>([]);
-const selectedEducation = ref<number[]>([]);
-const selectedSkills = ref<number[]>([]);
-
-const newExperiences = ref<any[]>([]);
-const newProjects = ref<any[]>([]);
-const newEducation = ref<any[]>([]);
-const newSkills = ref<any[]>([]); 
-
-const searchQuery = ref('');
-const showDropdown = ref(false);
-
-const filteredDictionary = computed(() => {
-    if (!searchQuery.value.trim()) return [];
-    
-    const pickedMasterIds = selectedSkills.value.map(i => {
-        const item = masterSkillsArray.value[i] as any;
-        return item?.skillId || item?.SkillID;
-    });
-    const pickedNewIds = newSkills.value.map(s => s.skillId);
-    const allPickedIds = [...pickedMasterIds, ...pickedNewIds];
-
-    return skillStore.dictionary.filter(s => 
-        s.SkillName.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-        !allPickedIds.includes(s.SkillID)
-    ).slice(0, 10);
-});
-
-const selectManualSkill = (item: any) => {
-    newSkills.value.unshift({ skillId: item.SkillID, skillName: item.SkillName, level: 'Khá' });
-    searchQuery.value = ''; showDropdown.value = false;
-};
-
-const addCustomSkill = () => {
-    if (!searchQuery.value.trim()) return;
-    newSkills.value.unshift({ skillId: 'new', skillName: searchQuery.value.trim(), level: 'Khá' });
-    searchQuery.value = ''; showDropdown.value = false;
-};
-
-watch(searchQuery, (newVal) => { if(!newVal) showDropdown.value = false; });
-
-const showToast = (message: string, isSuccess: boolean) => {
-    messageNotify.value = message; 
-    isSuccessNotify.value = isSuccess; 
-    showNotify.value = true;
-    setTimeout(() => { showNotify.value = false; }, 3000);
-};
-
-const onAvatarChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-        avatarFile.value = target.files[0];
-        avatarPreview.value = URL.createObjectURL(avatarFile.value);
-    }
-};
-
-// Hàm định dạng ngày cho thẻ <input type="date">
-const formatDateForInput = (dateStr: any) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? '' : d.toISOString().substring(0, 10);
-};
-
-onMounted(async () => {
-    if (!candidateStore.profile) await candidateStore.getProfileStore();
-    if (candidateStore.candidateSkills.length === 0) await candidateStore.fetchSkillsStore();
-    if (skillStore.dictionary.length === 0) await skillStore.fetchDictionaryStore();
-
-    // Nạp thông tin cá nhân cơ bản (Dùng chung cho cả Create và Edit)
-    const p = candidateStore.profile;
-    if (p) {
-        candidateForm.value.FullName = p.FullName || '';
-        candidateForm.value.Phone = p.Phone || '';
-        candidateForm.value.Address = p.Address || '';
-        candidateForm.value.DateOfBirth = p.DateOfBirth ? new Date(p.DateOfBirth).toISOString().substring(0, 10) : '';
-    }
-
-    if (isEditMode.value) {
-        // === CHẾ ĐỘ EDIT: LẤY DỮ LIỆU CV CŨ LÊN ===
-        await useResume.fetchResumeDetailStore(editResumeId.value);
-        const cv = useResume.currentResume;
-        
-        if (cv) {
-            resumeForm.value.title = cv.title || '';
-            resumeForm.value.summary = cv.summary || '';
-            selectedTemplateId.value = cv.templateId || 1;
-            if (cv.AvatarUrl) avatarPreview.value = cv.AvatarUrl as string;
-
-            // Đổ dữ liệu cũ vào các mảng "new" để user tự do chỉnh sửa
-            newExperiences.value = (cv.experience || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
-            newEducation.value = (cv.education || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
-            
-            newProjects.value = (cv.projects || []).map((prj: any) => ({
-                ...prj,
-                techString: Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies
-            }));
-
-            newSkills.value = (cv.skills || []).map((s: any) => ({
-                skillId: s.skillId || 'old',
-                skillName: s.skillName || s,
-                level: s.level || 'Khá'
-            }));
-
-            // Đảm bảo không dính dáng tới các mảng selected từ Master Profile nữa
-            selectedExperiences.value = [];
-            selectedProjects.value = [];
-            selectedEducation.value = [];
-            selectedSkills.value = [];
-        }
-    } else {
-        // === CHẾ ĐỘ CREATE: LẤY TỪ MASTER PROFILE MẶC ĐỊNH ===
-        if (p) {
-            if (p.AvatarUrl) avatarPreview.value = p.AvatarUrl;
-            if (p.experience) selectedExperiences.value = p.experience.map((_: any, i: number) => i);
-            if (p.projects) selectedProjects.value = p.projects.map((_: any, i: number) => i);
-            if (p.education) selectedEducation.value = p.education.map((_: any, i: number) => i);
-        }
-        if (masterSkillsArray.value.length > 0) {
-            selectedSkills.value = masterSkillsArray.value.map((_, i) => i);
-        }
-    }
-});
-
-const addNewItem = (section: string) => {
-    if (section === 'experience') newExperiences.value.unshift({ companyName: '', position: '', startDate: '', endDate: '', isCurrent: false, description: '' });
-    else if (section === 'projects') newProjects.value.unshift({ projectName: '', role: '', techString: '', link: '', description: '' });
-    else if (section === 'education') newEducation.value.unshift({ institution: '', degree: '', major: '', startDate: '', endDate: '', gpa: '' });
-};
-
-const getHybridDataObjects = () => {
-    const p = candidateStore.profile;
-    const masterExp = p?.experience ? selectedExperiences.value.map(i => p.experience![i]) : [];
-    const masterPrj = p?.projects ? selectedProjects.value.map(i => p.projects![i]) : [];
-    const masterEdu = p?.education ? selectedEducation.value.map(i => p.education![i]) : [];
-    
-    const pickedSkills = selectedSkills.value.map(i => {
-        const rawSkill = masterSkillsArray.value[i] as any; 
-        return {
-            skillId: rawSkill.SkillID || rawSkill.skillId,
-            skillName: rawSkill.SkillName || rawSkill.skillName,
-            level: rawSkill.SkillLevel || rawSkill.level || 'Khá',
-            isNew: false 
-        };
-    });
-    
-    return {
-        skills: [...pickedSkills, ...newSkills.value],
-        education: [...masterEdu, ...newEducation.value],
-        experience: [...masterExp, ...newExperiences.value],
-        projects: [...masterPrj, ...newProjects.value]
-    };
-};
-
-const syncNewDataToMasterProfile = async () => {
-    if (newExperiences.value.length === 0 && newProjects.value.length === 0 && newEducation.value.length === 0) return;
-    const p = candidateStore.profile;
-    const payload: ICandidateDetail = {};
-    if (newExperiences.value.length > 0) payload.experience = [...(p?.experience || []), ...newExperiences.value];
-    if (newEducation.value.length > 0) payload.education = [...(p?.education || []), ...newEducation.value];
-    if (newProjects.value.length > 0) {
-        payload.projects = [...(p?.projects || []), ...newProjects.value.map(prj => ({
-            ...prj, technologies: typeof prj.techString === 'string' ? prj.techString.split(',').map((t: string) => t.trim()).filter(Boolean) : []
-        }))];
-    }
-    await candidateStore.updateMasterProfileStore(payload);
-};
-
-const handleGenerateAI = async () => {
-    isGeneratingAI.value = true;
-    try {
-        const finalData = getHybridDataObjects();
-        const summaryData = await useResume.generateAISummaryStore(finalData);
-        if (!useResume.error && summaryData) {
-            resumeForm.value.summary = summaryData; 
-            showToast('AI đã phân tích dữ liệu và viết xong tóm tắt!', true);
-        } else {
-            showToast(useResume.message || 'Lỗi AI', false);
-        }
-    } catch (error) { 
-        showToast('Hệ thống AI đang bận', false); 
-    } finally { isGeneratingAI.value = false; }
-};
-
-const handleSubmit = async () => {
-    // Chỉ đồng bộ Master Profile nếu là tạo mới (Để tránh nhân đôi dữ liệu khi edit)
-    if (!isEditMode.value) {
-        await syncNewDataToMasterProfile();
-    }
-
-    const finalData = getHybridDataObjects();
-    const processedProjects = finalData.projects.map((p: any) => ({
-        ...p, technologies: typeof p.techString === 'string' ? p.techString.split(',').map((t: string) => t.trim()).filter(Boolean) : (p.technologies || [])
-    }));
-
-    if (isEditMode.value) {
-        // === GỌI API UPDATE (PUT) BẰNG JSON ===
-        const updatePayload = {
-            title: resumeForm.value.title || '',
-            summary: resumeForm.value.summary || '',
-            templateId: selectedTemplateId.value,
-            skills: finalData.skills,
-            experience: finalData.experience,
-            education: finalData.education,
-            projects: processedProjects
-        };
-
-        // GỌI STORE UPDATE CỦA SẾP
-        await useResume.updateResumeStore(editResumeId.value, updatePayload); 
-        
-        if(!useResume.error) {
-            showToast('Cập nhật CV thành công!', true);
-            
-            setTimeout(() => router.push({ query: { tab: 'resumes_list' } }), 1000);
-        } else {
-            showToast(useResume.message || 'Lỗi cập nhật', false);
-        }
-
-    } else {
-        // === GỌI API CREATE (POST) BẰNG FORMDATA GỐC ===
-        const formData = new FormData();
-        if (avatarFile.value) formData.append('AvatarUrl', avatarFile.value); 
-        else if (candidateStore.profile?.AvatarUrl) formData.append('ExistingAvatarUrl', candidateStore.profile.AvatarUrl);
-        
-        formData.append('templateId', selectedTemplateId.value.toString());
-        formData.append('title', resumeForm.value.title || '');
-        formData.append('summary', resumeForm.value.summary || '');
-        
-        // THÊM LẠI 4 DÒNG NÀY ĐỂ KHÔNG BỊ NULL NÈ SẾP:
-        formData.append('FullName', candidateForm.value.FullName || '');
-        formData.append('Phone', candidateForm.value.Phone || '');
-        formData.append('DateOfBirth', candidateForm.value.DateOfBirth || '');
-        formData.append('Address', candidateForm.value.Address || '');
-        // -----------------------------------------
-        
-        formData.append('skills', JSON.stringify(finalData.skills));
-        formData.append('experience', JSON.stringify(finalData.experience));
-        formData.append('education', JSON.stringify(finalData.education));
-        formData.append('projects', JSON.stringify(processedProjects));
-        
-        await useResume.createResumeStore(formData);
-        if(!useResume.error) {
-                showToast('Tạo CV thành công!', true);
-                
-                // Tẩy não form ngay lập tức để không tạo trùng
-                resumeForm.value.title = '';
-                resumeForm.value.summary = '';
-                newExperiences.value = [];
-                newProjects.value = [];
-                newEducation.value = [];
-                newSkills.value = [];
-                avatarFile.value = null;
-                
-                // Trả lại 1.5 giây delay để user đọc kịp cái thông báo
-                setTimeout(() => {
-                    router.push({ query: { tab: 'resumes_list' } });
-                }, 1500); 
-            }
-        else showToast(useResume.message || 'Lỗi khi tạo CV!', false);
-    }
-};
-</script>

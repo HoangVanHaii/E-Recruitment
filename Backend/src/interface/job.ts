@@ -10,6 +10,7 @@ export interface IJob {
     SalaryMin?: number;
     SalaryMax?: number;
     JobType?: string;
+    ApplicationCount?: number;
 }
 export interface IListJob {
     JobID?: number;
@@ -20,6 +21,7 @@ export interface IListJob {
     CompanyLogo: string;
     Description: string;
     Status: string;
+    ExpiredDate?: Date;
     ApplicationCount: number;   
 }
 export interface IJobDetail {

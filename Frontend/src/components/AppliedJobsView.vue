@@ -7,6 +7,9 @@ import Template1 from './cv-templates/Template1.vue';
 import Template2 from './cv-templates/Template2.vue';
 import Template3 from './cv-templates/Template3.vue';
 
+import { formatDate } from '../utils/format';
+
+
 const appStore = useApplicationStore();
 const applications = computed(() => appStore.submittedApplications);
 const loading = computed(() => appStore.loading);
@@ -14,6 +17,7 @@ const loading = computed(() => appStore.loading);
 const showNotify = ref(false);
 const messageNotify = ref('');
 const isSuccessNotify = ref(true);
+
 const currentPage = ref(1);
 const limit = 6;
 
@@ -26,7 +30,14 @@ const fetchApplications = async () => {
 };
 
 const handleViewDetail = async (applicationID: number | undefined) => {
-    if (!applicationID) return;
+
+    if (!applicationID) {
+        showNotify.value = true;
+        isSuccessNotify.value = false;
+        messageNotify.value = "Mã đơn không hợp lệ (Undefined)!";
+        return;
+    }
+    
     const data = await appStore.getApplicationDetailStore(applicationID);
     if (data) {
         selectedApp.value = data;
@@ -66,11 +77,12 @@ onMounted(async () => {
     await fetchApplications();
 });
 
-const formatDate = (dateStr: string) => {
-    if (!dateStr) return '---';
-    const d = new Date(dateStr);
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
-};
+// const formatDate = (dateStr: string) => {
+//     if (!dateStr) return '---';
+//     const d = new Date(dateStr);
+//     return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+// };
+
 
 const getStatusColor = (status: string) => {
     switch(status) {
@@ -134,14 +146,14 @@ const handleCancelApplication = async (app: any) => {
 
         <div class="mb-6">
             <h2 class="text-[17px] font-black text-[#14205c] tracking-wide uppercase">
-                // Danh sách công việc đã ứng tuyển
+                Danh sách công việc đã ứng tuyển
             </h2>
         </div>
 
         <div v-if="!loading && applications.length === 0 && currentPage === 1" 
              class="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-300">
             <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
-            <p class="text-gray-500 font-medium">Sếp Đăng chưa ứng tuyển công việc nào cả!</p>
+            <p class="text-gray-500 font-medium">Bạn chưa ứng tuyển công việc nào cả!</p>
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -304,3 +316,4 @@ const handleCancelApplication = async (app: any) => {
   opacity: 0;
 }
 </style>
+

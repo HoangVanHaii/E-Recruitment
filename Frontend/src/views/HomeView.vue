@@ -1,29 +1,38 @@
 <script setup lang="ts">
-import Header from '../components/Header.vue';
 import SearchBar from '../components/SearchBar.vue';
 import Chat from '../components/Chat.vue';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+import SearchJob from '../components/SearchJob.vue';
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { formatSalary, formatDate } from '../utils/format';
 import { storeToRefs } from 'pinia';
 import { useJobStore } from '../stores/job'; 
+import { useEmployerStore } from '../stores/employer';
 import { useRouter } from 'vue-router';
 import { fetchProvinces } from '../services/province';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
 import { 
     MapPin, Calendar, CircleDollarSign, Filter, ChevronDown, 
     Briefcase, ChevronLeft, ChevronRight, 
-    LayoutGrid, Megaphone, Headset, Monitor, Home, Calculator // Đã import thêm các icon mới ở đây
+    LayoutGrid, Megaphone, Headset, Monitor, Home, Calculator, Building2 
 } from 'lucide-vue-next';
-
+import type { IJob } from '../types/job';
 const router = useRouter();
 const jobStore = useJobStore();
+const employerStore = useEmployerStore();
+
+const topEmployersLogos = ref<string[]>([]);
 const provinces = ref<{ name: string; code: number }[]>([]);
 const filterType = ref<'location' | 'category' | 'salary'>('location');
 const { jobs, totalPages, loading } = storeToRefs(jobStore);
 const showNotify = ref(false);
 const messageNotify = ref('');
 const isSuccessNotify = ref(true);
+
+const searchResults = ref<IJob[]>([]);
+const showSidebar = ref(false);
+const isSearching = ref(false);
+const currentKeyword = ref('');
 
 const filterState = reactive({
     page: 1,
@@ -106,9 +115,8 @@ onMounted(async () => {
      fetchProvinces(provinces.value);
     await jobStore.fetchJobs(filterState);
     jobStore.fetchCategories();
-    
+    topEmployersLogos.value = await employerStore.fetchLogoTopEmployers();
 });
-
 
 const isActiveOption = (opt: any) => {
     if (filterType.value === 'location') {
@@ -127,7 +135,6 @@ const viewJobDetail = (jobId: any) => {
     router.push({ name: 'job-detail', params: { id: jobId } });
 };
 
-// DATA DANH SÁCH NGÀNH NGHỀ MỚI THÊM
 const popularCategories = [
     { name: 'Việc làm Quản trị kinh doanh', icon: CircleDollarSign },
     { name: 'Việc làm Marketing - PR', icon: Megaphone },
@@ -136,6 +143,17 @@ const popularCategories = [
     { name: 'Việc làm KD bất động sản', icon: Home },
     { name: 'Việc làm Kế toán - Kiểm toán', icon: Calculator },
 ];
+const handleSearch = async (keywordToSearch?: string) => {
+    const query = typeof keywordToSearch === 'string' ? keywordToSearch : currentKeyword.value;
+    if (!query.trim()) return;
+
+    showSidebar.value = true;
+    isSearching.value = true;
+    currentKeyword.value = query;
+    await jobStore.fetchJobSearch(query);
+    searchResults.value = jobStore.listJobSearch;
+    isSearching.value = false;
+};
 </script>
 
 <template>
@@ -147,7 +165,15 @@ const popularCategories = [
     />
     <Loading v-if="jobStore.loading"/>
     <SearchBar />
-    
+    <SearchJob
+        v-if="showSidebar"
+        :jobs="searchResults"
+        :loading="isSearching"
+        :keyword="currentKeyword"
+        @close="showSidebar = false"
+        @search="handleSearch"
+        @view-job=""
+    />
     <div class="max-w-6xl mx-auto mt-4 px-4">
         <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-center gap-6 flex-wrap">   
             <div class="relative group border rounded-md px-3 py-1.5 flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-white transition-all">
@@ -295,6 +321,7 @@ const popularCategories = [
                 <p class="text-xs text-gray-400 mt-3">Trang {{ filterState.page }} / {{ totalPages }}</p>
             </div>
         </div>
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-8">
             <div class="flex items-center gap-2 border-b pb-4 mb-6">
                 <div class="bg-blue-100 p-1.5 rounded-full">
@@ -307,6 +334,7 @@ const popularCategories = [
                 <div 
                     v-for="(cat, index) in popularCategories" 
                     :key="index"
+                    @click="handleSearch(cat.name)"
                     class="bg-[#f8f9fa] border border-transparent hover:border-blue-200 hover:shadow-md transition-all cursor-pointer rounded-xl py-8 px-4 flex flex-col items-center justify-center gap-4 group"
                 >
                     <div class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
@@ -319,7 +347,110 @@ const popularCategories = [
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-8 overflow-hidden">
+            <div class="flex items-center gap-2 border-b pb-4 mb-8">
+                <div class="bg-blue-100 p-1.5 rounded-full">
+                    <Building2 class="w-5 h-5 text-blue-600" />
+                </div>
+                <h2 class="font-bold text-gray-800 uppercase">Nhà tuyển dụng tiêu biểu</h2>
+            </div>
+
+            <div class="marquee-container py-4">
+                <div class="marquee-content">
+                    <div v-for="(logo, index) in topEmployersLogos" :key="'set1-' + index" class="logo-bubble group">
+                        <img :src="logo" alt="Employer Logo" />
+                    </div>
+                    <div v-for="(logo, index) in topEmployersLogos" :key="'set2-' + index" class="logo-bubble group">
+                        <img :src="logo" alt="Employer Logo" />
+                    </div>
+                </div>
+            </div>
         </div>
+
+    </div>
     
     <Chat />
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.marquee-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 40px;
+    padding: 20px 0 40px 0;
+    animation: scrollLeftToRight 30s linear infinite;
+}
+
+.marquee-content:hover {
+    animation-play-state: paused;
+}
+
+@keyframes scrollLeftToRight {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0%); }
+}
+
+.logo-bubble {
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 6px 23px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #f1f5f9;
+    padding: 15px;
+}
+
+.logo-bubble:hover {
+    transform: scale(1.15) !important;
+    box-shadow: 0 8px 25px rgba(76, 91, 212, 0.25);
+    border-color: #4c5bd4;
+    z-index: 10;
+}
+
+.logo-bubble img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+.logo-bubble:nth-child(even) {
+    width: 130px;
+    height: 130px;
+    margin-top: -40px; 
+}
+
+.logo-bubble:nth-child(odd) {
+    width: 100px;
+    height: 100px;
+    margin-top: 50px; 
+}
+
+.logo-bubble:nth-child(3n) {
+    width: 160px;
+    height: 160px;
+    margin-top: 10px;
+}
+</style>

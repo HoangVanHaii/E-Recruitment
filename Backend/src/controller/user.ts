@@ -220,3 +220,18 @@ export const deleteAccount = async (req: Request, res: Response, next: NextFunct
         return res.status(200).json({ success: true, message: "Tài khoản đã được xóa mềm thành công" });
     } catch (error) { next(error); }
 };
+export const getCurrentRole = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = Number(req.user!.id);
+
+        const Role = await userService.getCurrentRole(userId);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy Role thành công",
+            data: Role
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+

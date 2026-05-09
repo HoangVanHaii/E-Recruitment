@@ -1,3 +1,115 @@
+
+<script setup lang="ts">
+import { ref, reactive, onMounted, computed } from 'vue'; 
+import { useCandidateStore } from '../stores/candidate';
+import type { IExperience, ICandidateDetail } from '../types/candidate';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+type LocalExperience = IExperience & { _isExpanded?: boolean; _markedForDeletion?: boolean; _isNew?: boolean };
+
+const candidateStore = useCandidateStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const form = reactive({
+    experiences: [] as LocalExperience[]
+});
+
+const isAddingActive = computed(() => {
+    return form.experiences.some(exp => exp._isNew && exp._isExpanded);
+});
+
+const getEmptyExperience = (): LocalExperience => ({
+    companyName: '',
+    position: '',
+    startDate: '',
+    endDate: '',
+    isCurrent: false,
+    description: '',
+    _isExpanded: true,
+    _markedForDeletion: false,
+    _isNew: true 
+});
+
+onMounted(async () => {
+    if (!candidateStore.profile) {
+        await candidateStore.getProfileStore();
+    }
+
+    const expData = candidateStore.profile?.experience;
+    
+    if (expData && expData.length > 0) {
+        form.experiences = expData.map(exp => ({
+            companyName: exp.companyName || '',
+            position: exp.position || '',
+            isCurrent: exp.isCurrent || false,
+            description: exp.description || '',
+            startDate: exp.startDate ? new Date(exp.startDate).toISOString().substring(0, 10) : '',
+            endDate: exp.endDate ? new Date(exp.endDate).toISOString().substring(0, 10) : '',
+            _isExpanded: false,
+            _markedForDeletion: false,
+            _isNew: false
+        }));
+    } else {
+        form.experiences.push(getEmptyExperience());
+    }
+});
+
+const addExperience = () => {
+    if (!isAddingActive.value) {
+        form.experiences.unshift(getEmptyExperience());
+    }
+};
+
+const toggleExpand = (exp: LocalExperience) => {
+    if (exp._markedForDeletion) return; 
+    exp._isExpanded = !exp._isExpanded;
+};
+
+const toggleDelete = (exp: LocalExperience) => {
+    exp._markedForDeletion = !exp._markedForDeletion;
+    if (exp._markedForDeletion) exp._isExpanded = false; 
+};
+
+const formatDate = (dateStr: string | Date) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return `${d.getMonth() + 1}/${d.getFullYear()}`;
+};
+
+const handleSave = async () => {
+    const cleanExperiences: IExperience[] = form.experiences
+        .filter(exp => !exp._markedForDeletion)
+        .map(exp => {
+            const { _isExpanded, _markedForDeletion, _isNew, ...cleanData } = exp;
+            return cleanData;
+        });
+
+    const payload: ICandidateDetail = {
+        experience: cleanExperiences
+    };
+    
+    await candidateStore.updateMasterProfileStore(payload);
+    
+    if (!candidateStore.error) {
+        form.experiences = form.experiences.filter(exp => !exp._markedForDeletion);
+        form.experiences.forEach(exp => {
+            exp._isExpanded = false;
+            exp._isNew = false;
+        });
+        
+        isSuccessNotify.value = true;
+        messageNotify.value = 'Lưu kinh nghiệm làm việc thành công!';
+    } else {
+        isSuccessNotify.value = false;
+        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi khi lưu!';
+    }
+    showNotify.value = true;
+};
+</script>
 <template>
     <div class="w-full">
         <Notify  
@@ -160,119 +272,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'; // Import thêm computed
-import { useCandidateStore } from '../stores/candidate';
-import type { IExperience, ICandidateDetail } from '../types/candidate';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-// Khai báo thêm cờ _isNew để nhận biết form vừa thêm chưa lưu
-type LocalExperience = IExperience & { _isExpanded?: boolean; _markedForDeletion?: boolean; _isNew?: boolean };
-
-const candidateStore = useCandidateStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const form = reactive({
-    experiences: [] as LocalExperience[]
-});
-
-// Hàm kiểm tra xem có ô MỚI nào đang MỞ BUNG ra không
-const isAddingActive = computed(() => {
-    return form.experiences.some(exp => exp._isNew && exp._isExpanded);
-});
-
-const getEmptyExperience = (): LocalExperience => ({
-    companyName: '',
-    position: '',
-    startDate: '',
-    endDate: '',
-    isCurrent: false,
-    description: '',
-    _isExpanded: true,
-    _markedForDeletion: false,
-    _isNew: true // Đánh dấu đây là hàng mới toanh
-});
-
-onMounted(async () => {
-    if (!candidateStore.profile) {
-        await candidateStore.getProfileStore();
-    }
-
-    const expData = candidateStore.profile?.experience;
-    
-    if (expData && expData.length > 0) {
-        form.experiences = expData.map(exp => ({
-            companyName: exp.companyName || '',
-            position: exp.position || '',
-            isCurrent: exp.isCurrent || false,
-            description: exp.description || '',
-            startDate: exp.startDate ? new Date(exp.startDate).toISOString().substring(0, 10) : '',
-            endDate: exp.endDate ? new Date(exp.endDate).toISOString().substring(0, 10) : '',
-            _isExpanded: false,
-            _markedForDeletion: false,
-            _isNew: false // Dữ liệu từ BE thì không phải là mới
-        }));
-    } else {
-        form.experiences.push(getEmptyExperience());
-    }
-});
-
-const addExperience = () => {
-    // Chỉ cho thêm nếu không có form mới nào đang mở
-    if (!isAddingActive.value) {
-        form.experiences.unshift(getEmptyExperience());
-    }
-};
-
-const toggleExpand = (exp: LocalExperience) => {
-    if (exp._markedForDeletion) return; 
-    exp._isExpanded = !exp._isExpanded;
-};
-
-const toggleDelete = (exp: LocalExperience) => {
-    exp._markedForDeletion = !exp._markedForDeletion;
-    if (exp._markedForDeletion) exp._isExpanded = false; 
-};
-
-const formatDate = (dateStr: string | Date) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return `${d.getMonth() + 1}/${d.getFullYear()}`;
-};
-
-const handleSave = async () => {
-    const cleanExperiences: IExperience[] = form.experiences
-        .filter(exp => !exp._markedForDeletion)
-        .map(exp => {
-            // Lột bỏ cả 3 cái cờ nội bộ trước khi gửi lên Backend
-            const { _isExpanded, _markedForDeletion, _isNew, ...cleanData } = exp;
-            return cleanData;
-        });
-
-    const payload: ICandidateDetail = {
-        experience: cleanExperiences
-    };
-    
-    await candidateStore.updateMasterProfileStore(payload);
-    
-    if (!candidateStore.error) {
-        form.experiences = form.experiences.filter(exp => !exp._markedForDeletion);
-        form.experiences.forEach(exp => {
-            exp._isExpanded = false;
-            exp._isNew = false; // Đã lưu thành công thì gỡ cờ "Mới" luôn
-        });
-        
-        isSuccessNotify.value = true;
-        messageNotify.value = 'Lưu kinh nghiệm làm việc thành công!';
-    } else {
-        isSuccessNotify.value = false;
-        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi khi lưu!';
-    }
-    showNotify.value = true;
-};
-</script>

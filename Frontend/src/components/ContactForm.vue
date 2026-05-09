@@ -1,3 +1,97 @@
+
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
+import { useCandidateStore } from '../stores/candidate';
+import { useAuthStore } from '../stores/auth';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+const candidateStore = useCandidateStore();
+const authStore = useAuthStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const avatarPreview = ref<string | null>(null);
+const selectedFile = ref<File | null>(null);
+
+const form = reactive({
+    FullName: '',
+    DateOfBirth: '',
+    Phone: '',
+    Email: '',
+    Address: '',
+    AvatarUrl: ''
+});
+
+onMounted(async () => {
+    await candidateStore.getProfileStore();
+    
+    if (candidateStore.profile) {
+        form.FullName = candidateStore.profile.FullName || '';
+        form.Phone = candidateStore.profile.Phone || '';
+        form.Address = candidateStore.profile.Address || '';
+        form.AvatarUrl = candidateStore.profile.AvatarUrl || '';
+        
+        if (candidateStore.profile.DateOfBirth) {
+            const rawDate = new Date(candidateStore.profile.DateOfBirth);
+            const y = rawDate.getFullYear();
+            const m = String(rawDate.getMonth() + 1).padStart(2, '0');
+            const d = String(rawDate.getDate()).padStart(2, '0');
+            form.DateOfBirth = `${y}-${m}-${d}`;
+        }
+    }
+    
+    if (authStore.user) {
+        form.Email = authStore.user.Email || '';
+    }
+});
+
+const triggerFileInput = () => fileInput.value?.click();
+
+const onFileChange = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        selectedFile.value = target.files[0];
+        avatarPreview.value = URL.createObjectURL(target.files[0]);
+    }
+};
+
+const handleSave = async () => {
+    const formData = new FormData();
+    formData.append('FullName', form.FullName);
+    formData.append('DateOfBirth', form.DateOfBirth);
+    formData.append('Phone', form.Phone);
+    formData.append('Address', form.Address);
+    
+    if (selectedFile.value) {
+        formData.append('AvatarUrl', selectedFile.value);
+    }
+
+    await candidateStore.upsertProfileStore(formData);
+    
+    if (!candidateStore.error) {
+        isSuccessNotify.value = true;
+        messageNotify.value = 'Lưu thông tin thành công!';
+        
+        if (authStore.user && candidateStore.profile?.AvatarUrl) {
+            authStore.user.ImgUrl = candidateStore.profile.AvatarUrl; 
+            
+            const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+            if (localUser.Email) {
+                localUser.AvatarUrl = candidateStore.profile.AvatarUrl;
+                localStorage.setItem('user', JSON.stringify(localUser));
+            }
+        }
+    } else {
+        isSuccessNotify.value = false;
+        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi khi lưu!';
+    }
+    showNotify.value = true;
+};
+</script>
 <template>
     <div class="w-full">
         <Notify  
@@ -70,98 +164,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
-import { useCandidateStore } from '../stores/candidate';
-import { useAuthStore } from '../stores/auth';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const candidateStore = useCandidateStore();
-const authStore = useAuthStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const fileInput = ref<HTMLInputElement | null>(null);
-const avatarPreview = ref<string | null>(null);
-const selectedFile = ref<File | null>(null);
-
-const form = reactive({
-    FullName: '',
-    DateOfBirth: '',
-    Phone: '',
-    Email: '',
-    Address: '',
-    AvatarUrl: ''
-});
-
-onMounted(async () => {
-    await candidateStore.getProfileStore();
-    
-    if (candidateStore.profile) {
-        form.FullName = candidateStore.profile.FullName || '';
-        form.Phone = candidateStore.profile.Phone || '';
-        form.Address = candidateStore.profile.Address || '';
-        form.AvatarUrl = candidateStore.profile.AvatarUrl || '';
-        
-        // Đoạn này giữ nguyên, vì input type="date" bắt buộc phải nhận chuỗi YYYY-MM-DD
-        if (candidateStore.profile.DateOfBirth) {
-            const rawDate = new Date(candidateStore.profile.DateOfBirth);
-            const y = rawDate.getFullYear();
-            const m = String(rawDate.getMonth() + 1).padStart(2, '0');
-            const d = String(rawDate.getDate()).padStart(2, '0');
-            form.DateOfBirth = `${y}-${m}-${d}`;
-        }
-    }
-    
-    if (authStore.user) {
-        form.Email = authStore.user.Email || '';
-    }
-});
-
-const triggerFileInput = () => fileInput.value?.click();
-
-const onFileChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-        selectedFile.value = target.files[0];
-        avatarPreview.value = URL.createObjectURL(target.files[0]);
-    }
-};
-
-const handleSave = async () => {
-    const formData = new FormData();
-    formData.append('FullName', form.FullName);
-    formData.append('DateOfBirth', form.DateOfBirth);
-    formData.append('Phone', form.Phone);
-    formData.append('Address', form.Address);
-    
-    if (selectedFile.value) {
-        formData.append('AvatarUrl', selectedFile.value);
-    }
-
-    await candidateStore.upsertProfileStore(formData);
-    
-    if (!candidateStore.error) {
-        isSuccessNotify.value = true;
-        messageNotify.value = 'Lưu thông tin thành công!';
-        
-        if (authStore.user && candidateStore.profile?.AvatarUrl) {
-            authStore.user.ImgUrl = candidateStore.profile.AvatarUrl; 
-            
-            const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-            if (localUser.Email) {
-                localUser.AvatarUrl = candidateStore.profile.AvatarUrl;
-                localStorage.setItem('user', JSON.stringify(localUser));
-            }
-        }
-    } else {
-        isSuccessNotify.value = false;
-        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi khi lưu!';
-    }
-    showNotify.value = true;
-};
-</script>

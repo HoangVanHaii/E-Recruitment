@@ -1,16 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import *as employerService from "../service/employer";
-import { IEmployer } from "../interface/employer";
 
-export const createEmployer = async (req: Request, res: Response, next: NextFunction) => {  
-    try {
-        const employer: IEmployer = req.body;
-        // const employerId = await employerService.createEmployer(employer);
-        // res.status(201).json({ employerId });
-    } catch (error) {
-        next(error);
-    }
-}
 export const UpdateStatusEmployer = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const EmployerID: number = Number(req.params.EmployerID);
@@ -26,11 +16,62 @@ export const UpdateStatusEmployer = async (req: Request, res: Response, next: Ne
 }
 export const GetPendingEmployers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await employerService.getPendingEmployers(req.user!.id);
+        const status = req.query.status as string || "all";
+        const data = await employerService.getPendingEmployers(req.user!.id, status);
         res.json({
             success: true,
             message: "Lấy danh sách yêu cầu nhân viên thành công",
             data
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const stats = await employerService.getDashboardStats(req.user!.id);
+        res.json({
+            success: true,
+            message: "Lấy thống kê dashboard thành công",
+            data: stats 
+          });
+    } catch (error) {
+        next(error);
+    }
+}
+export const getTopEmployers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const employers = await employerService.getTopEmployers();
+        res.json({
+            success: true,
+            message: "Lấy danh sách nhà tuyển dụng hàng đầu thành công",
+            data: employers
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+export const getLogoTopEmployers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const logos = await employerService.getLogoTopEmployers();
+        res.json({
+            success: true,
+            message: "Lấy danh sách logo nhà tuyển dụng hàng đầu thành công",
+            data: logos
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+export const getAllEmployers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const employers = await employerService.getAllEmployers(page, limit);
+        res.json({
+            success: true,
+            message: "Lấy danh sách nhà tuyển dụng thành công",
+            data: employers
         });
     } catch (error) {
         next(error);

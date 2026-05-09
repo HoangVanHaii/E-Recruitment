@@ -5,7 +5,7 @@ export interface IJobApplication {
     Phone: string;
     Email: string;
     ExperienceYears: number;
-  
+    AvatarUrl?: string;
     Status: string;
     CreatedAt: string;
     MatchScore: number;

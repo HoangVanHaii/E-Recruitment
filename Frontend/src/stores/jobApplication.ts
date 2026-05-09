@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications} from '../services/jobApplication';
+import { getApplicationDetail, getJobApplications, updateStatusApplication ,applyJob, getSubmittedApplications, getChartStats} from '../services/jobApplication';
 import type { IAppliedJob, IJobApplicationList } from '../types/jobApplication';
 
 export const useApplicationStore = defineStore('application',() => {
@@ -107,7 +107,35 @@ export const useApplicationStore = defineStore('application',() => {
             loading.value = false;
         }
     }
-
+    const getChartStatsStore = async (type: string) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await getChartStats(type);
+            const stats = data.data || null;
+            message.value = data.message || 'Lấy thống kê đơn ứng tuyển thành công';
+            return stats;
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error getChartStats', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => {
+                    map[e.path] = e.msg;
+                });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            }
+            else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
+            return null;
+        } finally {
+            loading.value = false;
+        }
+    }
     const getSubmittedApplicationsStore = async (page: number = 1, limit: number = 10) => {
         try {
             error.value = false;
@@ -174,7 +202,8 @@ export const useApplicationStore = defineStore('application',() => {
         getApplicationDetailStore,
         updateApplicationStatusStore,
         getSubmittedApplicationsStore, 
-        applyJobStore 
+        applyJobStore ,
+        getChartStatsStore,
     }
 
 })

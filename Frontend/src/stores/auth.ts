@@ -1,11 +1,9 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { IProfile } from '../types/user';
-import { getProfile, login, register, registerSendOtp, verifyOtp, changePassword, deleteAccount, requestOtpAuth,requestOtpForgotPassword, forgotPassword } from '../services/auth';
+import { getCurrentRole, getProfile, login, register, registerSendOtp, updateStatus, verifyOtp, changePassword, deleteAccount, requestOtpAuth,requestOtpForgotPassword, forgotPassword } from '../services/auth';
 import { useMessageStore } from './message';
 import { connectSocket, disconnectSocket } from '../services/socket';
-import type { IUser } from '../types/user';
-
 
 export const useAuthStore = defineStore('auth',() => {
     const loading = ref<boolean>(false);
@@ -18,7 +16,6 @@ export const useAuthStore = defineStore('auth',() => {
     const verifyToken = ref<string>('');
     const role = ref<string>('');
     const emailUser = ref<string>('');
-    
 
     const registerSendOtpStore = async (email: string) => {
         try {
@@ -37,8 +34,8 @@ export const useAuthStore = defineStore('auth',() => {
         } finally {
             loading.value = false;
         }
-
     }
+
     const verifyOtpStore = async (email: string, otp: string) => {
         try {
             error.value = false;
@@ -58,6 +55,7 @@ export const useAuthStore = defineStore('auth',() => {
             loading.value = false;
         }
     }
+
     const registerStore = async (verifyToken: string, password: string, role: string) => {
         try {
             error.value = false;
@@ -131,7 +129,40 @@ export const useAuthStore = defineStore('auth',() => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         disconnectSocket();
+        window.location.href = '/login-section';
     };
+    const updateStatusStore = async (userId: number, status: string) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await updateStatus(userId, status);
+            message.value = data.message || 'Cập nhật trạng thái người dùng thành công';
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi cập nhật trạng thái người dùng:", err.response?.data);
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật trạng thái người dùng';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const getCurrentRoleStore = async () => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await getCurrentRole();
+            isLogin.value = true;
+            role.value = data.data;
+
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi lấy role người dùng:", err.response?.data);  
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi role người dùng';
+        } finally {
+            loading.value = false;
+        }
+    }
 
     const changePasswordStore = async (old: string, newP: string) => {
         try {
@@ -225,6 +256,8 @@ export const useAuthStore = defineStore('auth',() => {
         loginStore,
         fetchProfile,
         handleLogout,
+        updateStatusStore,
+        getCurrentRoleStore,
         changePasswordStore,
         requestOtpAuthStore,
         deleteAccountStore,

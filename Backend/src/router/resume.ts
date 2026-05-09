@@ -10,6 +10,7 @@ const router = Router();
 
 router.post("/generate-summary", authMiddleware, resumeMiddleware.generateSummaryValidation, validateRequest, resumeController.generateSummaryWithAI);
 router.post("/build", authMiddleware, isCandidate, upload.single("AvatarUrl"), upsertProfileValidation, resumeMiddleware.buildResumeValidation, validateRequest, resumeController.createManualResume);
+router.get('/of-me', authMiddleware, resumeController.getListResumes);
 router.get("/", authMiddleware, resumeController.getMyResumes);
 
 router.get("/detail/:resumeId", authMiddleware, resumeMiddleware.ResumeIdValidation, validateRequest, resumeController.getResumeDetail);

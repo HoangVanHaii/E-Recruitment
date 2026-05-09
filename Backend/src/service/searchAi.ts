@@ -48,14 +48,20 @@ export const searchJobsByAI = async (searchQuery: string, topK: number = 10) => 
         vector: queryVector,
         topK,
         includeMetadata: true,
+        filter: {
+            type: { $eq: 'job' }
+        }
     });
 
     const MIN_SCORE = 0.65;
-    // console.log("Pinecone raw matches:", queryResponse.matches);
     return queryResponse.matches
-        .filter((m: any) => (m.score || 0) >= MIN_SCORE)
+        .filter((m: any) => {
+            const isValidScore = (m.score || 0) >= MIN_SCORE;
+            const isValidId = m.id !== null && m.id !== "" && !isNaN(Number(m.id));
+            return isValidScore && isValidId;
+        })
         .map((match: any) => ({
-            jobId: Number(match.id),
+            jobId: match.id !== undefined ? Number(match.id) : 999999999,
             score: match.score || 0,
             metadata: match.metadata || {}
         }));

@@ -1,3 +1,97 @@
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useCandidateStore } from '../stores/candidate';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+const candidateStore = useCandidateStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const educationList = ref<any[]>([]);
+
+const showForm = ref(false);
+const editingIndex = ref<number>(-1);
+const currentEdu = ref<any>({
+    institution: '', startDate: '', endDate: '', major: '', degree: '', gpa: ''
+});
+
+const formatDateToShow = (dateStr: string) => {
+    if (!dateStr) return 'Hiện tại';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+};
+
+onMounted(async () => {
+    if (!candidateStore.profile) {
+        await candidateStore.getProfileStore();
+    }
+    const eduData = candidateStore.profile?.education || [];
+    if (eduData.length > 0) {
+        educationList.value = eduData.map((edu: any) => ({
+            institution: edu.institution || '',
+            major: edu.major || '',
+            degree: edu.degree || '',
+            gpa: edu.gpa || '',
+            startDate: edu.startDate ? new Date(edu.startDate).toISOString().substring(0, 10) : '',
+            endDate: edu.endDate ? new Date(edu.endDate).toISOString().substring(0, 10) : ''
+        }));
+    }
+});
+
+const openAddForm = () => {
+    currentEdu.value = { institution: '', startDate: '', endDate: '', major: '', degree: '', gpa: '' };
+    editingIndex.value = -1;
+    showForm.value = true;
+};
+
+const openEditForm = (index: number) => {
+    currentEdu.value = { ...educationList.value[index] };
+    editingIndex.value = index;
+    showForm.value = true;
+};
+
+const saveFormToLocal = () => {
+    if (editingIndex.value === -1) {
+        educationList.value.unshift({ ...currentEdu.value }); 
+    } else {
+        educationList.value[editingIndex.value] = { ...currentEdu.value };
+    }
+    closeForm();
+};
+
+const closeForm = () => {
+    showForm.value = false;
+    editingIndex.value = -1;
+};
+
+const removeEducation = (index: number) => {
+    if (confirm('Bạn có chắc chắn muốn xóa học vấn này?')) {
+        educationList.value.splice(index, 1);
+    }
+};
+
+const handleSaveAPI = async () => {
+    const payload = {
+        education: educationList.value
+    };
+    
+    await candidateStore.updateMasterProfileStore(payload);
+    
+    if (!candidateStore.error) {
+        isSuccessNotify.value = true;
+        messageNotify.value = 'Đồng bộ toàn bộ Trình độ học vấn thành công!';
+    } else {
+        isSuccessNotify.value = false;
+        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi khi lưu!';
+    }
+    showNotify.value = true;
+};
+</script>
 <template>
     <div class="w-full">
         <Notify  
@@ -128,109 +222,6 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useCandidateStore } from '../stores/candidate';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const candidateStore = useCandidateStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-// Mảng chứa toàn bộ dữ liệu thật
-const educationList = ref<any[]>([]);
-
-// TRẠNG THÁI GIAO DIỆN
-const showForm = ref(false);
-const editingIndex = ref<number>(-1); // -1 là đang thêm mới, >= 0 là đang sửa
-const currentEdu = ref<any>({
-    institution: '', startDate: '', endDate: '', major: '', degree: '', gpa: ''
-});
-
-// Hàm format ngày lên thẻ cho đẹp (YYYY-MM-DD -> DD/MM/YYYY)
-const formatDateToShow = (dateStr: string) => {
-    if (!dateStr) return 'Hiện tại';
-    const parts = dateStr.split('-');
-    if (parts.length !== 3) return dateStr;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-};
-
-onMounted(async () => {
-    if (!candidateStore.profile) {
-        await candidateStore.getProfileStore();
-    }
-    const eduData = candidateStore.profile?.education || [];
-    if (eduData.length > 0) {
-        educationList.value = eduData.map((edu: any) => ({
-            institution: edu.institution || '',
-            major: edu.major || '',
-            degree: edu.degree || '',
-            gpa: edu.gpa || '',
-            startDate: edu.startDate ? new Date(edu.startDate).toISOString().substring(0, 10) : '',
-            endDate: edu.endDate ? new Date(edu.endDate).toISOString().substring(0, 10) : ''
-        }));
-    }
-});
-
-// Mở form thêm mới rỗng
-const openAddForm = () => {
-    currentEdu.value = { institution: '', startDate: '', endDate: '', major: '', degree: '', gpa: '' };
-    editingIndex.value = -1;
-    showForm.value = true;
-};
-
-// Mở form sửa (Copy data cũ đưa vào)
-const openEditForm = (index: number) => {
-    currentEdu.value = { ...educationList.value[index] };
-    editingIndex.value = index;
-    showForm.value = true;
-};
-
-// Lưu thông tin form vừa nhập vào mảng ở Frontend (CHƯA ĐẨY LÊN API)
-const saveFormToLocal = () => {
-    if (editingIndex.value === -1) {
-        educationList.value.unshift({ ...currentEdu.value }); // Thêm mới thì đẩy lên đầu
-    } else {
-        educationList.value[editingIndex.value] = { ...currentEdu.value }; // Cập nhật lại
-    }
-    closeForm();
-};
-
-// Đóng form trở về dạng danh sách thẻ
-const closeForm = () => {
-    showForm.value = false;
-    editingIndex.value = -1;
-};
-
-// Xóa 1 thẻ học vấn
-const removeEducation = (index: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa học vấn này?')) {
-        educationList.value.splice(index, 1);
-    }
-};
-
-// LƯU TOÀN BỘ DANH SÁCH LÊN BACKEND MỘT LÚC
-const handleSaveAPI = async () => {
-    const payload = {
-        education: educationList.value
-    };
-    
-    await candidateStore.updateMasterProfileStore(payload);
-    
-    if (!candidateStore.error) {
-        isSuccessNotify.value = true;
-        messageNotify.value = 'Đồng bộ toàn bộ Trình độ học vấn thành công!';
-    } else {
-        isSuccessNotify.value = false;
-        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi khi lưu!';
-    }
-    showNotify.value = true;
-};
-</script>
 
 <style scoped>
 .animate-in { animation: fadeIn 0.3s ease-out; }

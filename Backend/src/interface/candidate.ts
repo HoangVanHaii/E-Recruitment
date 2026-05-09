@@ -4,7 +4,12 @@ export interface Candidate {
     Phone?: string;
     DateOfBirth?: string;
     Address?: string;
+    ExperienceYears?: number;
+    Education?: string;
     AvatarUrl?: string;
+    CreatedAt?: string;
+    Email?: string;
+    Status?: string;
 }
 
 export interface iCandidateDetail extends Document {
@@ -12,4 +17,16 @@ export interface iCandidateDetail extends Document {
     experience: [];
     education: [];
     projects: [];
+    CreatedAt?: string;
+    Email?: string;
+    Status?: string;
+}
+export interface ICandidateInfo {
+    CandidateID: number;
+    FullName: string;
+    Phone: string;
+    DateOfBirth: string;
+    Address: string;
+    Email: string;
+    AvatarUrl?: string;
 }

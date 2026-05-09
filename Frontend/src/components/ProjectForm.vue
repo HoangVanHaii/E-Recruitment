@@ -1,3 +1,121 @@
+<script setup lang="ts">
+import { ref, reactive, onMounted, computed } from 'vue';
+import { useCandidateStore } from '../stores/candidate';
+import type { IProject, ICandidateDetail } from '../types/candidate';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+type LocalProject = Omit<IProject, 'technologies'> & { 
+    technologiesStr: string; 
+    _isExpanded?: boolean; 
+    _markedForDeletion?: boolean; 
+    _isNew?: boolean 
+};
+
+const candidateStore = useCandidateStore();
+
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(true);
+
+const form = reactive({
+    projects: [] as LocalProject[]
+});
+
+const isAddingActive = computed(() => {
+    return form.projects.some(p => p._isNew && p._isExpanded);
+});
+
+const getEmptyProject = (): LocalProject => ({
+    projectName: '',
+    role: '',
+    technologiesStr: '',
+    link: '',
+    description: '',
+    _isExpanded: true,
+    _markedForDeletion: false,
+    _isNew: true
+});
+
+onMounted(async () => {
+    if (!candidateStore.profile) {
+        await candidateStore.getProfileStore();
+    }
+
+    const projectData = candidateStore.profile?.projects;
+    
+    if (projectData && projectData.length > 0) {
+        form.projects = projectData.map(p => ({
+            projectName: p.projectName || '',
+            role: p.role || '',
+            link: p.link || '',
+            description: p.description || '',
+            technologiesStr: p.technologies ? p.technologies.join(', ') : '',
+            _isExpanded: false,
+            _markedForDeletion: false,
+            _isNew: false
+        }));
+    } else {
+        form.projects.push(getEmptyProject());
+    }
+});
+
+const addProject = () => {
+    if (!isAddingActive.value) {
+        form.projects.unshift(getEmptyProject());
+    }
+};
+
+const toggleExpand = (prj: LocalProject) => {
+    if (prj._markedForDeletion) return; 
+    prj._isExpanded = !prj._isExpanded;
+};
+
+const toggleDelete = (prj: LocalProject) => {
+    prj._markedForDeletion = !prj._markedForDeletion;
+    if (prj._markedForDeletion) prj._isExpanded = false; 
+};
+
+const splitTechs = (str: string) => {
+    if (!str) return [];
+    return str.split(',').map(s => s.trim()).filter(s => s !== '').slice(0, 3);
+};
+
+const handleSave = async () => {
+    const cleanProjects: IProject[] = form.projects
+        .filter(p => !p._markedForDeletion)
+        .map(p => {
+            const techs = p.technologiesStr.split(',').map(s => s.trim()).filter(s => s !== '');
+            
+            const { _isExpanded, _markedForDeletion, _isNew, technologiesStr, ...rest } = p;
+            return {
+                ...rest,
+                technologies: techs
+            };
+        });
+
+    const payload: ICandidateDetail = {
+        projects: cleanProjects
+    };
+    
+    await candidateStore.updateMasterProfileStore(payload);
+    
+    if (!candidateStore.error) {
+        form.projects = form.projects.filter(p => !p._markedForDeletion);
+        form.projects.forEach(p => {
+            p._isExpanded = false;
+            p._isNew = false;
+        });
+        
+        isSuccessNotify.value = true;
+        messageNotify.value = 'Lưu dự án thành công!';
+    } else {
+        isSuccessNotify.value = false;
+        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi!';
+    }
+    showNotify.value = true;
+};
+</script>
 <template>
     <div class="w-full">
         <Notify  
@@ -146,126 +264,3 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
-import { useCandidateStore } from '../stores/candidate';
-import type { IProject, ICandidateDetail } from '../types/candidate';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-// Tạo Type pha ke cho UI, đổi mảng technologies thành string để nhập liệu cho dễ
-type LocalProject = Omit<IProject, 'technologies'> & { 
-    technologiesStr: string; 
-    _isExpanded?: boolean; 
-    _markedForDeletion?: boolean; 
-    _isNew?: boolean 
-};
-
-const candidateStore = useCandidateStore();
-
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(true);
-
-const form = reactive({
-    projects: [] as LocalProject[]
-});
-
-const isAddingActive = computed(() => {
-    return form.projects.some(p => p._isNew && p._isExpanded);
-});
-
-const getEmptyProject = (): LocalProject => ({
-    projectName: '',
-    role: '',
-    technologiesStr: '',
-    link: '',
-    description: '',
-    _isExpanded: true,
-    _markedForDeletion: false,
-    _isNew: true
-});
-
-onMounted(async () => {
-    if (!candidateStore.profile) {
-        await candidateStore.getProfileStore();
-    }
-
-    const projectData = candidateStore.profile?.projects;
-    
-    if (projectData && projectData.length > 0) {
-        form.projects = projectData.map(p => ({
-            projectName: p.projectName || '',
-            role: p.role || '',
-            link: p.link || '',
-            description: p.description || '',
-            // Join mảng tech từ DB thành chuỗi ngăn cách bằng dấu phẩy để hiện lên ô nhập
-            technologiesStr: p.technologies ? p.technologies.join(', ') : '',
-            _isExpanded: false,
-            _markedForDeletion: false,
-            _isNew: false
-        }));
-    } else {
-        form.projects.push(getEmptyProject());
-    }
-});
-
-const addProject = () => {
-    if (!isAddingActive.value) {
-        form.projects.unshift(getEmptyProject());
-    }
-};
-
-const toggleExpand = (prj: LocalProject) => {
-    if (prj._markedForDeletion) return; 
-    prj._isExpanded = !prj._isExpanded;
-};
-
-const toggleDelete = (prj: LocalProject) => {
-    prj._markedForDeletion = !prj._markedForDeletion;
-    if (prj._markedForDeletion) prj._isExpanded = false; 
-};
-
-// Hàm bổ trợ để hiển thị tag ngoài card thu gọn
-const splitTechs = (str: string) => {
-    if (!str) return [];
-    return str.split(',').map(s => s.trim()).filter(s => s !== '').slice(0, 3); // Hiện tối đa 3 tag
-};
-
-const handleSave = async () => {
-    const cleanProjects: IProject[] = form.projects
-        .filter(p => !p._markedForDeletion)
-        .map(p => {
-            // Chuyển chuỗi technologiesStr ngược lại thành mảng array cho Mongoose
-            const techs = p.technologiesStr.split(',').map(s => s.trim()).filter(s => s !== '');
-            
-            const { _isExpanded, _markedForDeletion, _isNew, technologiesStr, ...rest } = p;
-            return {
-                ...rest,
-                technologies: techs
-            };
-        });
-
-    const payload: ICandidateDetail = {
-        projects: cleanProjects
-    };
-    
-    await candidateStore.updateMasterProfileStore(payload);
-    
-    if (!candidateStore.error) {
-        form.projects = form.projects.filter(p => !p._markedForDeletion);
-        form.projects.forEach(p => {
-            p._isExpanded = false;
-            p._isNew = false;
-        });
-        
-        isSuccessNotify.value = true;
-        messageNotify.value = 'Lưu dự án thành công!';
-    } else {
-        isSuccessNotify.value = false;
-        messageNotify.value = candidateStore.message || 'Đã xảy ra lỗi!';
-    }
-    showNotify.value = true;
-};
-</script>

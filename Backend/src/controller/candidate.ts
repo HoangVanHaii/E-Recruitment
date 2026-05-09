@@ -3,7 +3,6 @@ import * as candidateService from '../service/candidate';
 import { AppError } from "../utils/appError";
 import { uploadToCloudinary } from '../utils/uploadToCloudinary';
 import * as resumeService from '../service/resume';
-import pool from "../config/database";
 
 export const upsertProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -55,6 +54,22 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
     try {
         const userId = req.user!.id;
         const profile = await candidateService.getCandidateProfile(userId);
+        if (!profile) {
+            throw new AppError("Không tìm thấy thông tin hồ sơ ứng viên!", 404);
+        }
+        return res.status(200).json({
+            success: true,
+            message: "Lấy thông tin hồ sơ thành công",
+            data: profile
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+export const getCandidateInfo = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.id;
+        const profile = await candidateService.getCandidateInfo(userId);
         if (!profile) {
             throw new AppError("Không tìm thấy thông tin hồ sơ ứng viên!", 404);
         }
@@ -162,3 +177,19 @@ export const getCandidateDetailForEmployer = async (req: Request, res: Response,
         next(error);
     }
 };
+
+export const getAllCandidates = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const candidates = await candidateService.getAllCandidates(page, limit);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy danh sách ứng viên thành công!",
+            data: candidates
+        })
+    }
+    catch (error) {
+        next(error);
+    }
+}

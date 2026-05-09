@@ -6,7 +6,7 @@ export const generateSummaryWithAI = async (payload: any) => {
     return response.data;
 };
 
-export const createManualResume = async (formData: FormData) => {
+export const createResume = async (formData: FormData) => {
     const response = await api.post('/resumes/build', formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
@@ -38,4 +38,13 @@ export const deleteResume = async (resumeId: number) => {
 export const getResumeDetailByEmployer = async (resumeId: number) => {
     const response = await api.get(`/resumes/employer/${resumeId}`);
     return response.data;
-};
+}
+
+export const getListResumeOfMe = async () => {
+    const response = await api.get('/resumes/of-me');
+    return response.data;
+}
+export const getResumeDetailById = async (ResumeID: number) => {
+    const response = await api.get(`/resumes/detail/${ResumeID}`);
+    return response.data;
+}

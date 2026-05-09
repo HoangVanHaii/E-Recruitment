@@ -1,128 +1,3 @@
-<script setup lang="ts">
-import { reactive, ref, computed, onUnmounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import Notify from '../components/Notify.vue';
-import Loading from '../components/Loading.vue';
-
-const authStore = useAuthStore();
-
-const showChangeForm = ref(false);
-const step = ref(0);
-const loading = ref(false);
-const showNotify = ref(false);
-const messageNotify = ref('');
-const isSuccessNotify = ref(false);
-
-const triggerNotify = (msg: string, success: boolean) => {
-    messageNotify.value = msg;
-    isSuccessNotify.value = success;
-    showNotify.value = true;
-};
-
-const form = reactive({ old: '', new: '', confirm: '' });
-const formReset = reactive({ password: '', confirm: '' });
-
-const inputOtp = reactive<string[]>(['', '', '', '', '', '']);
-const inputRef = ref<HTMLInputElement[]>([]);
-const otpMessage = ref('');
-const isError = ref(false);
-const countdown = ref(0);
-let timer: any = null;
-
-const handleChangePassword = async () => {
-    if (!form.old || !form.new || !form.confirm) return triggerNotify("Vui lòng nhập đủ thông tin!", false);
-    if (form.new !== form.confirm) return triggerNotify("Mật khẩu xác nhận không khớp!", false);
-    
-    const ok = await authStore.changePasswordStore(form.old, form.new);
-    if (ok) {
-        triggerNotify("Đổi mật khẩu thành công!", true);
-        showChangeForm.value = false;
-        form.old = ''; form.new = ''; form.confirm = '';
-    } else {
-        triggerNotify(authStore.message, false);
-    }
-};
-
-const handleRequestForgot = async () => {
-    const email = authStore.user?.Email;
-    if (!email) return triggerNotify("Không tìm thấy email!", false);
-
-    loading.value = true;
-    const ok = await authStore.forgotPasswordSendOtpStore(email); 
-    if (ok) {
-        step.value = 1;
-        startTimer();
-        triggerNotify("Mã OTP đã gửi về email sếp!", true);
-    } else {
-        triggerNotify(authStore.message, false);
-    }
-    loading.value = false;
-};
-
-const handleVerifyOtpForgot = async () => {
-    const email = authStore.user?.Email;
-    if (!email) return;
-
-    const otp = inputOtp.join('');
-    loading.value = true;
-    const ok = await authStore.verifyOtpStore(email, otp);
-    
-    if (ok) {
-        otpMessage.value = "";
-        isError.value = false;
-        step.value = 2;
-    } else {
-        otpMessage.value = authStore.message;
-        isError.value = true;
-    }
-    loading.value = false;
-};
-
-const handleFinalReset = async () => {
-    if (formReset.password !== formReset.confirm) return triggerNotify("Mật khẩu xác nhận không khớp!", false);
-    if (formReset.password.length < 6) return triggerNotify("Mật khẩu quá ngắn!", false);
-
-    loading.value = true;
-    const ok = await authStore.forgotPasswordStore(formReset.password);
-    
-    if (ok) {
-        triggerNotify("Mật khẩu mới đã được cập nhật thành công!", true);
-        step.value = 0;
-        showChangeForm.value = false;
-        formReset.password = ''; formReset.confirm = '';
-    } else {
-        triggerNotify(authStore.message, false);
-    }
-    loading.value = false;
-};
-
-const handleInput = (index: number, event: Event) => {
-    const value = (event.target as HTMLInputElement).value;
-    if (!/^\d*$/.test(value)) { inputOtp[index] = ''; return; }
-    inputOtp[index] = value;
-    if (value && index < 5) inputRef.value[index + 1]?.focus();
-};
-const handleKeydown = (event: KeyboardEvent, index: number) => {
-    if (event.key === 'Backspace' && !inputOtp[index] && index > 0) inputRef.value[index - 1]?.focus();
-};
-const handleFocus = (index: number) => {
-    const firstEmpty = inputOtp.findIndex(d => d === '');
-    if (firstEmpty !== -1 && index > firstEmpty) inputRef.value[firstEmpty].focus();
-};
-const isOtpComplete = computed(() => inputOtp.every(d => d !== ''));
-
-const startTimer = () => {
-    countdown.value = 60;
-    if (timer) clearInterval(timer);
-    timer = setInterval(() => {
-        if (countdown.value > 0) countdown.value--;
-        else clearInterval(timer);
-    }, 1000);
-};
-
-onUnmounted(() => { if (timer) clearInterval(timer); });
-</script>
-
 <template>
   <div class="relative">
     
@@ -191,43 +66,46 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
         </div>
       </transition>
 
+      <div class="p-8 bg-white rounded-2xl shadow-sm border border-red-100 mt-8 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+        <h2 class="text-xl font-black text-red-600 mb-2 uppercase tracking-tight">
+          Vùng nguy hiểm
+        </h2>
+        <p class="text-sm text-gray-500 mb-4">
+          Xóa tài khoản sẽ gỡ bỏ toàn bộ hồ sơ, thông tin cá nhân và lịch sử ứng tuyển của sếp vĩnh viễn. Hành động này không thể hoàn tác.
+        </p>
+        <button @click="handleRequestDelete" :disabled="loading" class="px-6 py-3 bg-white border-2 border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm">
+          <i class="fas fa-trash-alt mr-2"></i> YÊU CẦU XÓA TÀI KHOẢN
+        </button>
+      </div>
+
       <div v-if="step > 0" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center items-center p-4">
         <div class="py-[30px] px-[50px] bg-white shadow-2xl rounded-[20px] flex flex-col gap-[6px] max-w-sm w-full animate-in zoom-in duration-300">
             
             <div v-if="step === 1">
-              <h2 class="text-2xl text-blue-700 font-black text-center mb-[10px] uppercase">Xác thực tài khoản</h2>
+              <h2 class="text-2xl font-black text-center mb-[10px] uppercase text-blue-700">
+                Xác thực tài khoản
+              </h2>
               <p class="text-center text-xs text-gray-500 mb-4">Mã OTP đã được gửi đến email của sếp</p>
               
               <div class="flex justify-center my-[15px]">
-                  <input
-                      v-for="(_, index) in inputOtp"
-                      :key="index"
-                      v-model="inputOtp[index]"
-                      ref="inputRef"
-                      type="text"
-                      maxlength="1"
-                      @focus="handleFocus(index)"
-                      @input="handleInput(index, $event)"
-                      @keydown.backspace="handleKeydown($event, index)"
-                      class="w-[45px] h-[55px] mx-1 text-center border-2 border-gray-100 rounded-xl text-xl font-black text-blue-700 focus:border-blue-500 outline-none transition-all"
-                  >
+                  <input v-for="(_, index) in inputOtp" :key="index" v-model="inputOtp[index]" ref="inputRef"
+                         type="text" maxlength="1" @focus="handleFocus(index)" @input="handleInput(index, $event)" @keydown.backspace="handleKeydown($event, index)"
+                         class="w-[45px] h-[55px] mx-1 text-center border-2 border-gray-100 rounded-xl text-xl font-black focus:border-blue-500 outline-none transition-all text-blue-700">
               </div>
               
               <p :class="isError ? 'text-red-500' : 'text-green-500'" class="text-sm text-center font-bold">{{ otpMessage }}</p>
               
               <div class="text-center mt-2">
                 <span v-if="countdown > 0" class="text-gray-400 text-xs font-bold uppercase">Gửi lại sau {{ countdown }}s</span>
-                <span v-else @click="handleRequestForgot" class="text-blue-700 underline cursor-pointer text-xs font-bold uppercase">Gửi lại mã</span>
+                <span v-else @click="handleRequestForgot" class="underline cursor-pointer text-xs font-bold uppercase text-blue-700">Gửi lại mã</span>
               </div>
 
               <div class="flex gap-3 mt-6">
-                  <button @click="step = 0" class="flex-1 py-3 text-gray-500 font-bold rounded-xl bg-gray-100">HỦY</button>
-                  <button
-                      :disabled="!isOtpComplete || loading"
-                      @click="handleVerifyOtpForgot"
-                      class="flex-1 py-3 text-white rounded-xl font-black transition-all"
-                      :class="[!isOtpComplete ? 'bg-gray-300' : 'bg-blue-600 shadow-blue-200 shadow-lg']"
-                  >   
+                  <button @click="closeModal" class="flex-1 py-3 text-gray-500 font-bold rounded-xl bg-gray-100">HỦY</button>
+                  <button :disabled="!isOtpComplete || loading" @click="handleVerifyOtpForgot"
+                          class="flex-1 py-3 text-white rounded-xl font-black transition-all shadow-lg"
+                          :class="!isOtpComplete ? 'bg-gray-300 shadow-none' : 'bg-blue-600 shadow-blue-200'">   
                       <i v-if="loading" class="fa fa-spinner fa-spin"></i>
                       <span>XÁC THỰC</span>
                   </button>
@@ -250,10 +128,49 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
                          class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 outline-none shadow-sm">
                 </div>
 
-                <button @click="handleFinalReset" :disabled="loading"
-                        class="w-full py-4 bg-green-600 text-white font-black rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100 mt-4">
-                  {{ loading ? 'ĐANG CẬP NHẬT...' : 'HOÀN TẤT ĐẶT LẠI' }}
-                </button>
+                <div class="flex gap-3 mt-4">
+                  <button @click="closeModal" class="flex-1 py-3 text-gray-500 font-bold rounded-xl bg-gray-100">HỦY</button>
+                  <button @click="handleFinalReset" :disabled="loading"
+                          class="flex-[2] py-4 bg-green-600 text-white font-black rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100">
+                    {{ loading ? 'ĐANG CẬP NHẬT...' : 'HOÀN TẤT ĐẶT LẠI' }}
+                  </button>
+                </div>
+            </div>
+
+            <div v-if="step === 3" class="space-y-3">
+                <h2 class="text-2xl text-red-600 font-black text-center mb-[5px] uppercase">Xác nhận xóa</h2>
+                <p class="text-center text-xs text-gray-500 mb-2">Mã OTP đã được gửi đến email. Vui lòng nhập mật khẩu và mã OTP để hoàn tất.</p>
+
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">Mật khẩu hiện tại</label>
+                  <input type="password" v-model="deletePassword" placeholder="Nhập mật khẩu để xác nhận" 
+                         class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-red-500 outline-none shadow-sm">
+                </div>
+
+                <div class="mt-2">
+                  <label class="block text-xs font-bold text-gray-600 mb-2 uppercase text-center">Mã OTP (6 số)</label>
+                  <div class="flex justify-center mb-[10px]">
+                      <input v-for="(_, index) in inputOtp" :key="index" v-model="inputOtp[index]" ref="inputRef"
+                             type="text" maxlength="1" @focus="handleFocus(index)" @input="handleInput(index, $event)" @keydown.backspace="handleKeydown($event, index)"
+                             class="w-[45px] h-[55px] mx-1 text-center border-2 border-gray-100 rounded-xl text-xl font-black text-red-600 focus:border-red-500 outline-none transition-all">
+                  </div>
+                </div>
+
+                <p :class="isError ? 'text-red-500' : 'text-green-500'" class="text-sm text-center font-bold">{{ otpMessage }}</p>
+
+                <div class="text-center mt-1">
+                  <span v-if="countdown > 0" class="text-gray-400 text-xs font-bold uppercase">Gửi lại OTP sau {{ countdown }}s</span>
+                  <span v-else @click="handleRequestDelete" class="underline cursor-pointer text-xs font-bold uppercase text-red-600">Gửi lại mã OTP</span>
+                </div>
+
+                <div class="flex gap-3 mt-4">
+                    <button @click="closeModal" class="flex-1 py-3 text-gray-500 font-bold rounded-xl bg-gray-100">HỦY</button>
+                    <button @click="handleVerifyDelete" :disabled="loading || !isOtpComplete || !deletePassword"
+                            class="flex-1 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:shadow-none">
+                      <i v-if="loading" class="fa fa-spinner fa-spin"></i>
+                      <span v-else>XÓA VĨNH VIỄN</span>
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -261,6 +178,174 @@ onUnmounted(() => { if (timer) clearInterval(timer); });
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { reactive, ref, computed, onUnmounted } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import Notify from '../components/Notify.vue';
+import Loading from '../components/Loading.vue';
+
+const authStore = useAuthStore();
+
+const showChangeForm = ref(false);
+const step = ref(0); 
+const loading = ref(false);
+const showNotify = ref(false);
+const messageNotify = ref('');
+const isSuccessNotify = ref(false);
+
+const triggerNotify = (msg: string, success: boolean) => {
+    messageNotify.value = msg;
+    isSuccessNotify.value = success;
+    showNotify.value = true;
+};
+
+const form = reactive({ old: '', new: '', confirm: '' });
+const formReset = reactive({ password: '', confirm: '' });
+const deletePassword = ref('');
+
+const inputOtp = reactive<string[]>(['', '', '', '', '', '']);
+const inputRef = ref<HTMLInputElement[]>([]);
+const otpMessage = ref('');
+const isError = ref(false);
+const countdown = ref(0);
+let timer: any = null;
+
+const closeModal = () => {
+    step.value = 0;
+    inputOtp.splice(0, 6, '', '', '', '', '', '');
+    otpMessage.value = '';
+    isError.value = false;
+    deletePassword.value = '';
+    formReset.password = '';
+    formReset.confirm = '';
+    if (timer) clearInterval(timer);
+};
+
+const handleChangePassword = async () => {
+    if (!form.old || !form.new || !form.confirm) return triggerNotify("Vui lòng nhập đủ thông tin!", false);
+    if (form.new !== form.confirm) return triggerNotify("Mật khẩu xác nhận không khớp!", false);
+    
+    const ok = await authStore.changePasswordStore(form.old, form.new);
+    if (ok) {
+        triggerNotify("Đổi mật khẩu thành công!", true);
+        showChangeForm.value = false;
+        form.old = ''; form.new = ''; form.confirm = '';
+    } else {
+        triggerNotify(authStore.message, false);
+    }
+};
+
+const handleRequestForgot = async () => {
+    const email = authStore.user?.Email;
+    if (!email) return triggerNotify("Không tìm thấy email!", false);
+
+    loading.value = true;
+    const ok = await authStore.forgotPasswordSendOtpStore(email); 
+    if (ok) {
+        closeModal();
+        step.value = 1;
+        startTimer();
+        triggerNotify("Mã OTP đã gửi về email sếp!", true);
+    } else {
+        triggerNotify(authStore.message, false);
+    }
+    loading.value = false;
+};
+
+const handleVerifyOtpForgot = async () => {
+    const email = authStore.user?.Email;
+    if (!email) return;
+
+    const otp = inputOtp.join('');
+    loading.value = true;
+    const ok = await authStore.verifyOtpStore(email, otp);
+    
+    if (ok) {
+        otpMessage.value = "";
+        isError.value = false;
+        step.value = 2; 
+    } else {
+        otpMessage.value = authStore.message;
+        isError.value = true;
+    }
+    loading.value = false;
+};
+
+const handleFinalReset = async () => {
+    if (formReset.password !== formReset.confirm) return triggerNotify("Mật khẩu xác nhận không khớp!", false);
+    if (formReset.password.length < 6) return triggerNotify("Mật khẩu quá ngắn!", false);
+
+    loading.value = true;
+    const ok = await authStore.forgotPasswordStore(formReset.password);
+    
+    if (ok) {
+        triggerNotify("Mật khẩu mới đã được cập nhật thành công!", true);
+        closeModal();
+        showChangeForm.value = false;
+    } else {
+        triggerNotify(authStore.message, false);
+    }
+    loading.value = false;
+};
+
+// --- GỘP LUỒNG XÓA TÀI KHOẢN VÀO LÀM MỘT ---
+const handleRequestDelete = async () => {
+    loading.value = true;
+    const ok = await authStore.requestOtpAuthStore(); // Gửi thẳng OTP luôn
+    if (ok) {
+        step.value = 3; // Mở luôn form có cả nhập Pass và OTP
+        startTimer();
+        triggerNotify("Đã gửi mã xác nhận xóa tài khoản!", true);
+    } else {
+        triggerNotify(authStore.message, false);
+    }
+    loading.value = false;
+};
+
+const handleVerifyDelete = async () => {
+    if (!deletePassword.value) return triggerNotify("Sếp phải nhập mật khẩu để xác nhận!", false);
+    const otp = inputOtp.join('');
+    
+    loading.value = true;
+    const ok = await authStore.deleteAccountStore(deletePassword.value, otp); // Chốt sổ tại đây
+    
+    if (ok) {
+        triggerNotify("Đã xóa tài khoản thành công! Tạm biệt sếp.", true);
+        closeModal();
+    } else {
+        otpMessage.value = authStore.message;
+        isError.value = true;
+    }
+    loading.value = false;
+};
+
+const handleInput = (index: number, event: Event) => {
+    const value = (event.target as HTMLInputElement).value;
+    if (!/^\d*$/.test(value)) { inputOtp[index] = ''; return; }
+    inputOtp[index] = value;
+    if (value && index < 5) inputRef.value[index + 1]?.focus();
+};
+const handleKeydown = (event: KeyboardEvent, index: number) => {
+    if (event.key === 'Backspace' && !inputOtp[index] && index > 0) inputRef.value[index - 1]?.focus();
+};
+const handleFocus = (index: number) => {
+    const firstEmpty = inputOtp.findIndex(d => d === '');
+    if (firstEmpty !== -1 && index > firstEmpty) inputRef.value[firstEmpty].focus();
+};
+const isOtpComplete = computed(() => inputOtp.every(d => d !== ''));
+
+const startTimer = () => {
+    countdown.value = 60;
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => {
+        if (countdown.value > 0) countdown.value--;
+        else clearInterval(timer);
+    }, 1000);
+};
+
+onUnmounted(() => { if (timer) clearInterval(timer); });
+</script>
 
 <style scoped>
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }

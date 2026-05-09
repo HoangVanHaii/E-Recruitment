@@ -127,11 +127,11 @@ export const getApplicationDetail = async (req: Request, res: Response, next: Ne
         const cacheKey = `applications:detail:${ApplicationID}`;
         const cached = await redisClient.get(cacheKey);
         if (cached) {
-            return res.status(200).json({
-                success: true,
-                message: "Lấy đơn ứng tuyển thành công (redis)",
-                data: JSON.parse(cached)
-            });
+            // return res.status(200).json({
+            //     success: true,
+            //     message: "Lấy đơn ứng tuyển thành công (redis)",
+            //     data: JSON.parse(cached)
+            // });
         }
         const data = await JobApplicationService.getApplicationDetail(ApplicationID);
         await redisClient.set(cacheKey, JSON.stringify(data), { EX: 60 * 5 });
@@ -148,3 +148,19 @@ export const getApplicationDetail = async (req: Request, res: Response, next: Ne
         next(error);
     }
 }
+
+export const getChartStatsController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.id;
+        const type = req.query.type as string || 'week';
+        const data = await JobApplicationService.getChartStats(userId, type);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy thống kê ứng tuyển thành công",
+            data: data
+        });
+  
+    } catch (err) {
+        next(err);
+    }
+};

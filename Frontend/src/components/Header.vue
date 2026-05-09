@@ -1,48 +1,58 @@
 <script setup lang="ts">
 import ChatConversation from './ChatConversation.vue';
 import ChatWindow from './ChatWindow.vue';
-import ProfileSideBar from './ProfileSideBar.vue';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { useMessageStore } from '../stores/message';
 
+import logoImg from '../assets/logoWebsite.png'
+
 const messageStore = useMessageStore();
 const authStore = useAuthStore();
 const router = useRouter();
 const activeChat = ref<any>(null);
+
 const openChatWindow = (chatData: any) => {
     messageStore.markAsRead(chatData.userId);
     activeChat.value = chatData;
 };
+
 const closeChatWindow = () => {
     activeChat.value = null;
 };
+
 const showChat = ref<boolean>(false);
-const showProfile = ref<boolean>(false);
+
 const toggleChat = () => {
     showChat.value = !showChat.value;
 };
+
 const toggleProfile = () => {
-    showProfile.value = !showProfile.value;
+    router.push({ path: 'candidate-profile' });
 };
 
-// ---- Scroll shrink logic ----
 const isScrolled = ref(false);
-let lastScrollY = 0;
+let ticking = false;
 
 const handleScroll = () => {
-    const currentY = window.scrollY;
-    
-    if (currentY > lastScrollY && currentY > 10) {
-        // Đang cuộn xuống → shrink
-        isScrolled.value = true;
-    } else {
-        // Đang cuộn lên → full size
-        isScrolled.value = false;
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const scrollY = window.scrollY;
+
+            if (!isScrolled.value && scrollY > 80) {
+                isScrolled.value = true;
+            }
+            else if (isScrolled.value && scrollY < 20) {
+                isScrolled.value = false;
+            }
+
+            ticking = false;
+        });
+        ticking = true;
     }
-    lastScrollY = currentY;
 };
+
 onMounted(async () => {
     await authStore.fetchProfile();
     if (authStore.isLogin) {
@@ -55,11 +65,11 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
 });
 
-const handleLogin = () => router.push({ name: 'login' });
-const handleRegister = () => router.push({ name: 'register' });
+const handleLogin = () => router.push({ name: 'login-section' });
+const handleRegister = () => router.push({ name: 'register-section' });
 const handleCreateJob = () => {
     if (!authStore.isLogin) {
-        router.push({ name: 'login' });
+        router.push({ name: 'login-section' });
         return;
     }
     router.push({ name: 'CreateJob' });
@@ -73,43 +83,33 @@ const handleCreateJob = () => {
     >
         <div
             class="max-w-7xl mx-auto flex items-center justify-between px-6 transition-all duration-300 ease-in-out"
-            :class="isScrolled ? 'py-1.5' : 'py-3'"
+            :class="isScrolled ? 'py-1.5' : 'py-1.5'"
         >
-            <!-- Left: Logo + Menu -->
             <div class="flex justify-start gap-12 items-center">
 
-                <!-- Logo -->
-                <div class="flex items-center gap-2">
-                    <div
-                        class="bg-white text-blue-600 font-bold rounded-full flex items-center justify-center transition-all duration-300 ease-in-out"
-                        :class="isScrolled ? 'w-8 h-8 text-sm' : 'w-10 h-10 text-base'"
-                    >
-                        365
-                    </div>
-                    <span
-                        class="font-semibold transition-all duration-300 ease-in-out overflow-hidden"
-                        :class="isScrolled ? 'text-base' : 'text-lg'"
-                    >
-                        Tìm việc
-                    </span>
+                <div class="flex items-center cursor-pointer select-none mt-[-3px] ">
+                    <img
+                        :src="logoImg"
+                        alt="Logo"
+                        class="object-contain transition-all duration-300 ease-in-out"
+                        :class="isScrolled ? 'h-10' : 'h-14'"
+                    />
                 </div>
 
-                <!-- Menu -->
                 <nav
                     class="hidden md:flex items-center gap-10 font-semibold transition-all duration-300 ease-in-out"
                     :class="isScrolled ? 'text-xs' : 'text-sm'"
                 >
-                    <a href="#" class="hover:text-gray-200">CV xin việc</a>
+                    <a href="\home" class="hover:text-gray-200">Trang chủ</a>
+                    <a href="\candidate-profile?tab=resumes_list" class="hover:text-gray-200">CV của tôi</a>
+                    <a href="\candidate-profile?tab=create_cv" class="hover:text-gray-200">Tạo CV</a>
                     <a href="#" class="hover:text-gray-200">Khám phá</a>
                     <a href="#" class="hover:text-gray-200">Tiện ích</a>
-                    <a href="#" class="hover:text-gray-200">CV đã tạo</a>
                 </nav>
             </div>
 
-            <!-- Right actions -->
             <div class="flex items-center gap-8">
 
-                <!-- Chat -->
                 <div class="relative" @click="toggleChat">
                     <div
                         class="flex gap-3 items-center cursor-pointer select-none transition-colors"
@@ -142,7 +142,6 @@ const handleCreateJob = () => {
                     />
                 </div>
 
-                <!-- Buttons -->
                 <div v-if="!authStore.isLogin" class="flex gap-8">
                     <button
                         class="bg-blue-900 text-white px-3 rounded text-sm transition-all duration-300"
@@ -201,9 +200,5 @@ const handleCreateJob = () => {
         :targetName="activeChat.name"
         :targetAvatar="activeChat.avatar"
         @close="closeChatWindow"
-    />
-    <ProfileSideBar
-        v-if="showProfile"
-        @close="showProfile = false"
     />
 </template>
