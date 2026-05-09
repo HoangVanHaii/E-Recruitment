@@ -119,20 +119,20 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, _, next) => {
+    const allowedRoles = to.meta.roles as string[] | undefined
+    if (!allowedRoles) {
+        return next()
+    }
     const authStore = useAuthStore()
     if (!authStore.role) {
         await authStore.getCurrentRoleStore()
     }
-    const role = authStore.role;
-    
-    if (to.meta.roles) {
-        if (!role) {
-            return next('/login-section')
-        }
-        const allowedRoles = to.meta.roles as string[]
-        if (!allowedRoles.includes(role!)) {
-            return next('/403')
-        }
+    const role = authStore.role
+    if (!role) {
+        return next('/login-section')
+    }
+    if (!allowedRoles.includes(role)) {
+        return next('/403')
     }
     next()
 })
