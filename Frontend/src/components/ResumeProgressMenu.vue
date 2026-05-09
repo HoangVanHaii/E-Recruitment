@@ -40,7 +40,6 @@ import { computed } from 'vue';
 import { useCandidateStore } from '../stores/candidate';
 import { 
     Contact, 
-    Settings, 
     GraduationCap, 
     Briefcase, 
     Target, 

@@ -93,9 +93,6 @@
     }
   });
   
-  const avatarSrc = computed(() => {
-    return typeof candidate.value?.AvatarUrl === 'string' ? candidate.value.AvatarUrl : '/default-avatar.png';
-  });
   
   const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';

@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router';
 import CandidateSidebar from '../components/CandidateSidebar.vue';
 import ResumeProgressMenu from '../components/ResumeProgressMenu.vue';
 import ContactForm from '../components/ContactForm.vue'; 
-import AccountForm from '../components/AccountForm.vue';
 import EducationForm from '../components/EducationForm.vue';
 import ExperienceForm from '../components/ExperienceForm.vue';
 import ProjectForm from '../components/ProjectForm.vue';
