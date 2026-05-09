@@ -23,6 +23,15 @@ export interface ICompanyResponse{
     City?: string;
     LogoUrl?: string;
 }
+export interface ICompanyBasic {
+    CompanyID: number;
+    CompanyName: string;
+    Industry: string;
+    LogoUrl?: string;
+    TaxCode: string;
+    City?: string;
+    Status: string;
+}
 export interface ICompanyDetailResponse {
     CompanyID: number;
     CompanyName: string;
@@ -35,7 +44,7 @@ export interface ICompanyDetailResponse {
     ContactEmail?: string;
     City?: string;
     Position?: string;
-    Status: boolean;
+    Status: string;
     CreatedAt: Date;
     UpdatedAt: Date;
 }
@@ -62,4 +71,20 @@ export interface IUpdateCompany{
     ContactEmail?: string;
     City?: string;
     BusinessLicenseUrl?: File | string;
+}
+export interface ICompanyDetail {
+    CompanyID: number;
+    CompanyName: string;
+    CompanyDescription?: string;
+    Industry: string;
+    Website?: string;
+    LogoUrl?: string;
+    TaxCode: string;
+    BusinessLicenseUrl: string;
+    ContactEmail?: string;
+    City?: string;
+    Position?: string;
+    Status: string;
+    CreatedAt: Date;
+    UpdatedAt: Date;
 }

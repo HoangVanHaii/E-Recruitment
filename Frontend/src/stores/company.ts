@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { CreateCompany, GetAllCompany, GetCompanyDetailOfMe, getCompanyOfMe, requestCompany, UpdateCompany } from '../services/company';
-import type { ICompanyOfMe, ICompanyResponse } from '../types/company';
+import { CreateCompany, GetAllCompany, getAllCompanyForAdmin, getCompanyByIdForAdmin, GetCompanyDetailOfMe, getCompanyOfMe, requestCompany, UpdateCompany, updateCompanyStatus } from '../services/company';
+import type { ICompanyBasic, ICompanyDetail, ICompanyResponse, ICompanyOfMe } from '../types/company';
 
 export const useCompanyStore = defineStore('company',() => {
     const loading = ref<boolean>(false);
@@ -9,6 +9,9 @@ export const useCompanyStore = defineStore('company',() => {
     const error = ref<boolean>(false);
     const listCompany = ref<ICompanyResponse[]>([]);
     const errors = ref<Record<string, string>>({});
+    const totalPages = ref<number>(0);
+    const listCompanyForAdmin = ref<ICompanyBasic[]>([]);
+    const companyDetailForAdmin = ref<ICompanyDetail | null>(null);
     const CompanyOfMe = ref<ICompanyOfMe | null>(null);
 
     
@@ -128,18 +131,74 @@ export const useCompanyStore = defineStore('company',() => {
             loading.value = false;
         }
     }
+    const getAllCompanyForAdminStore = async (page: number, limit: number) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const response = await getAllCompanyForAdmin(page, limit);
+            listCompanyForAdmin.value = response.data.items || [];
+            if(response.data.totalPages !== undefined){
+                totalPages.value = response.data.totalPages;
+            }
+            message.value = response.message || 'Lấy danh sách công ty thành công';
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi lấy danh sách công ty:", err.response?.data);
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy ds công ty';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const getCompanyDetailForAdminStore = async (companyId: number) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const response = await getCompanyByIdForAdmin(companyId);
+            companyDetailForAdmin.value = response.data || null;
+            message.value = response.message || 'Lấy thông tin công ty thành công';
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi lấy thông tin công ty:", err.response?.data);
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi lấy thông tin công ty';
+        } finally {
+            loading.value = false;
+        }
+    }
+    const updateCompanyStatusStore = async (companyId: number, status: string) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const response = await updateCompanyStatus(companyId, status);
+            message.value = response.message || 'Cập nhật trạng thái công ty thành công';
+        } catch (err: any) {
+            error.value = true;
+            console.error("Lỗi khi cập nhật trạng thái công ty:", err.response?.data);
+            message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi cập nhật trạng thái công ty';
+        } finally {
+            loading.value = false;
+        }
+    }
     return {
         loading,
         message,
         error,
         listCompany,
+        totalPages,
+        companyDetailForAdmin,
+        listCompanyForAdmin,
         CompanyOfMe,
         createCompanyStore,
         getAllCompanyStore,
         requestCompanyStore,
         getCompanyOfMeStore,
         getCompanyDetailOfMeStore,
-        UpdateCompanyStore
+        UpdateCompanyStore,
+        getAllCompanyForAdminStore,
+        getCompanyDetailForAdminStore,
+        updateCompanyStatusStore
     }
 
 })

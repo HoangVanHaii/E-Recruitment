@@ -124,7 +124,7 @@ const submitJoinRequest = async () => {
         loading.value = false;
     }
 };
-
+  
 onMounted(fetchCompanyData);
 
 const handleFileChange = (event: Event, field: 'LogoUrl' | 'BusinessLicenseUrl') => {

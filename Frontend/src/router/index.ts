@@ -33,6 +33,7 @@ import EmployerManagement from '../views/admin/EmployerManagement.vue'
 import AllJobManagement from '../views/admin/AllJobManagement.vue'
 import AdminProfile from '../views/admin/AdminProfile.vue'
 import ChangePassAdmin from '../views/admin/ChangePassAdmin.vue'
+import CompanyManagement from '../views/admin/CompanyManagement.vue'
 
 // 403 & 404
 import Forbidden from '../views/Forbidden.vue'
@@ -97,6 +98,7 @@ const routes: Array<RouteRecordRaw> = [
             { path: 'all-job-reported', name: 'all-job-reported', component: AllJobManagement, props: { status: 'Reported' } },
             { path: 'admin-profile', name: 'admin-profile', component: AdminProfile },
             { path: 'change-password', name: 'admin-change-password', component: ChangePassAdmin },
+            { path: 'company-management', name: 'company-management', component: CompanyManagement }
         ]
     },
 

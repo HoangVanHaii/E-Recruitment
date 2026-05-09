@@ -10,6 +10,15 @@ export interface ICreateCompany{
     CreatedBy: number;
     BusinessLicenseUrl: string | Express.Multer.File;
 }
+export interface ICompanyBasic {
+    CompanyID: number;
+    CompanyName: string;
+    Industry: string;
+    LogoUrl?: string;
+    TaxCode: string;
+    City?: string;
+    Status: string;
+}
 export interface IUpdateCompany{
     CompanyName?: string;
     CompanyDescription?: string;
@@ -41,10 +50,27 @@ export interface ICompanyDetailResponse {
     ContactEmail?: string;
     City?: string;
     Position?: string;  
-    Status: boolean;
+    Status: string;
     CreatedAt: Date;
     UpdatedAt: Date;
 }
+export interface ICompanyDetail {
+    CompanyID: number;
+    CompanyName: string;
+    CompanyDescription?: string;
+    Industry: string;
+    Website?: string;
+    LogoUrl?: string;
+    TaxCode: string;
+    BusinessLicenseUrl: string;
+    ContactEmail?: string;
+    City?: string;
+    Position?: string;
+    Status: string;
+    CreatedAt: Date;
+    UpdatedAt: Date;
+}
+
 
 
 
