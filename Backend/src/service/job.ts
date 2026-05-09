@@ -565,6 +565,7 @@ export const getMonthlyJobStatsPending = async () => {
             COUNT(CASE 
                 WHEN YEAR(CreatedAt) = YEAR(CURDATE())
                 AND MONTH(CreatedAt) = MONTH(CURDATE())
+                AND Status = 'Pending'
                 THEN 1 END) AS currentMonth,
 
             COUNT(CASE 
@@ -600,7 +601,7 @@ export const getMonthlyEmployerStats = async () => {
                 WHEN YEAR(e.CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
                 AND MONTH(e.CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
                 THEN 1 END) AS lastMonth
-        FROM Employers e
+        FROM Users e WHERE e.Role = 'Employer'
     `;
 
     const [rows]: any = await pool.query(query);

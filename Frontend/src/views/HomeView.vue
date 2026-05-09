@@ -36,7 +36,7 @@ const currentKeyword = ref('');
 
 const filterState = reactive({
     page: 1,
-    limit: 18,
+    limit: 27,
     categoryId: undefined as number | undefined,
     location: '',
     minSalary: undefined as number | undefined,

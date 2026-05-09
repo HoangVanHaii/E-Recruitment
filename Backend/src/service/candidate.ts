@@ -246,7 +246,7 @@ export const getMonthlyNewCandidates = async () => {
                     WHEN YEAR(CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
                     AND MONTH(CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
                     THEN 1 END) As lastCount 
-        FROM Candidates
+        FROM Users WHERE Role = 'Candidate'
     `;
     const [rows]: any = await pool.query(query);
     const { currentMonth = 0, lastMonth = 0 } = rows[0];
