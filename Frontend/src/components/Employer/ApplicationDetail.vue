@@ -2,7 +2,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useApplicationStore } from '../../stores/jobApplication';
-import Loading from '../Loading.vue';
 import type { IJobApplication } from '../../types/jobApplication';
 
 const useApplication = useApplicationStore();
@@ -66,9 +65,6 @@ const formatDate = (dateStr: string) => {
 
 </script>
 <template>
-    <loading
-        v-if="useApplication.loading"
-    />
     <div class="relative z-50">
         
         <transition name="fade" appear>

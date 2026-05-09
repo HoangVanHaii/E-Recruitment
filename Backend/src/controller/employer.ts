@@ -14,7 +14,7 @@ export const UpdateStatusEmployer = async (req: Request, res: Response, next: Ne
         next(error);
     }
 }
-export const GetPendingEmployers = async (req: Request, res: Response, next: NextFunction) => {
+export const getPendingEmployers = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const status = req.query.status as string || "all";
         const data = await employerService.getPendingEmployers(req.user!.id, status);
