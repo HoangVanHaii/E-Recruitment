@@ -199,7 +199,7 @@ export const updateCompanyStatusForAdmin = async (CompanyID: number, Status: boo
 export const getCompanyIdOfMe = async (userID: number): Promise<number | null> => {
     const sql = `
         SELECT CompanyID
-        FROM employers
+        FROM Employers
         WHERE EmployerID = ?
         LIMIT 1
     `;

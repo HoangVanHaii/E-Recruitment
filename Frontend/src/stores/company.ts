@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { CreateCompany, GetAllCompany, getAllCompanyForAdmin, getCompanyByIdForAdmin, GetCompanyDetailOfMe, getCompanyOfMe, requestCompany, UpdateCompany, updateCompanyStatus } from '../services/company';
-import type { ICompanyBasic, ICompanyDetail, ICompanyResponse } from '../types/company';
+import type { ICompanyBasic, ICompanyDetail, ICompanyResponse, ICompanyOfMe } from '../types/company';
 
 export const useCompanyStore = defineStore('company',() => {
     const loading = ref<boolean>(false);
@@ -12,6 +12,9 @@ export const useCompanyStore = defineStore('company',() => {
     const totalPages = ref<number>(0);
     const listCompanyForAdmin = ref<ICompanyBasic[]>([]);
     const companyDetailForAdmin = ref<ICompanyDetail | null>(null);
+    const CompanyOfMe = ref<ICompanyOfMe | null>(null);
+
+    
 
     const createCompanyStore = async (formData: FormData) => {
         try {
@@ -77,7 +80,7 @@ export const useCompanyStore = defineStore('company',() => {
             message.value = '';
             const data = await getCompanyOfMe();
             message.value = data.message || 'Lấy thông tin công ty thành công';
-            return data.data || null;
+            CompanyOfMe.value = data.data || null;
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi lấy danh sách công ty của tôi:", err.response?.data);
@@ -186,6 +189,7 @@ export const useCompanyStore = defineStore('company',() => {
         totalPages,
         companyDetailForAdmin,
         listCompanyForAdmin,
+        CompanyOfMe,
         createCompanyStore,
         getAllCompanyStore,
         requestCompanyStore,

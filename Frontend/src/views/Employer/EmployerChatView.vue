@@ -65,7 +65,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="flex h-screen w-full bg-[#f0f2f8] overflow-hidden font-sans">
+    <div class="flex flex-col lg:flex-row h-screen w-full bg-slate-50 font-sans text-slate-800 overflow-hidden">
 
         <SidebarEmployer />
 

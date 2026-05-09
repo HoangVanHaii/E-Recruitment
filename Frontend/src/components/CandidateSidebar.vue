@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { Settings, ClipboardList, ChevronDown, Briefcase, Mail, MessageCircle } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/auth';
-
+import { useMessageStore } from '../stores/message';
+const messageStore = useMessageStore();
 defineProps<{
     activeMainTab: string
 }>();
@@ -78,7 +79,14 @@ const isFolderOpen = ref(true);
             <button @click="$emit('changeTab', 'chat')" 
                     :class="activeMainTab === 'chat' ? 'bg-white/10 border-l-4 border-white' : ''"
                     class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/10 transition-colors text-left">
-                <MessageCircle class="w-5 h-5" /> Tin nhắn
+                    <!-- <span
+                        v-if="messageStore.unreadCount > 0"
+                        class="absolute -top-2 -right-2 bg-red-500 text-xs px-1.5 rounded-full text-white"
+                    >
+                        {{ messageStore.unreadCount > 9 ? '9+' : messageStore.unreadCount }}
+                    </span> -->
+                    
+                <MessageCircle class="w-5 h-5" /> Tin nhắn <span class="text-red-500">{{ messageStore.unreadCount > 0 ? ` (${messageStore.unreadCount})` : '' }}</span>
             </button>
         </div>
     </div>

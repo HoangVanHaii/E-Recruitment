@@ -3,6 +3,7 @@ import * as candidateService from '../service/candidate';
 import { AppError } from "../utils/appError";
 import { uploadToCloudinary } from '../utils/uploadToCloudinary';
 import * as resumeService from '../service/resume';
+import redisClient from "../config/redisClient";
 
 export const upsertProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -12,6 +13,7 @@ export const upsertProfile = async (req: Request, res: Response, next: NextFunct
         if (req.file) {
             const uploaded = await uploadToCloudinary('Candidates', req.file as Express.Multer.File);
             avatarUrl = uploaded.url;
+            await redisClient.del(`profile:u${userId}`);
         }
 
         const profileData = {
