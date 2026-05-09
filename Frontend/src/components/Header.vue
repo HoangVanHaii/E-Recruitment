@@ -150,7 +150,7 @@ const handleCreateJob = () => {
 
                 <div v-if="!authStore.isLogin" class="flex gap-8">
                     <button
-                        class="bg-blue-900 text-white px-3 rounded text-sm transition-all duration-300"
+                        class="bg-blue-900 text-white px-3 rounded text-sm transition-all duration-300 hidden md:block"
                         :class="isScrolled ? 'py-0.5' : 'py-1'"
                         @click="handleCreateJob"
                     >
@@ -164,7 +164,7 @@ const handleCreateJob = () => {
                         Đăng nhập
                     </button>
                     <button
-                        class="bg-blue border border-white text-white px-3 rounded text-sm transition-all duration-300"
+                        class="bg-blue border border-white text-white px-3 rounded text-sm transition-all duration-300 hidden md:block"
                         :class="isScrolled ? 'py-0.5' : 'py-1'"
                         @click="handleRegister"
                     >
