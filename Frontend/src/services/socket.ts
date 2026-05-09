@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 
-const URL = 'http://localhost:3000'; 
+const URL = 'https://jobportal-rs7w.onrender.com/api'; 
 
 export const socket: Socket = io(URL, {
     autoConnect: false,
