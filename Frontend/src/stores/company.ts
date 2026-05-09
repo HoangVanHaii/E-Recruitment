@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { CreateCompany, GetAllCompany, GetCompanyDetailOfMe, getCompanyOfMe, requestCompany, UpdateCompany } from '../services/company';
-import type { ICompanyResponse } from '../types/company';
+import type { ICompanyOfMe, ICompanyResponse } from '../types/company';
 
 export const useCompanyStore = defineStore('company',() => {
     const loading = ref<boolean>(false);
@@ -9,6 +9,7 @@ export const useCompanyStore = defineStore('company',() => {
     const error = ref<boolean>(false);
     const listCompany = ref<ICompanyResponse[]>([]);
     const errors = ref<Record<string, string>>({});
+    const CompanyOfMe = ref<ICompanyOfMe | null>(null);
 
     
 
@@ -76,7 +77,7 @@ export const useCompanyStore = defineStore('company',() => {
             message.value = '';
             const data = await getCompanyOfMe();
             message.value = data.message || 'Lấy thông tin công ty thành công';
-            return data.data || null;
+            CompanyOfMe.value = data.data || null;
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi lấy danh sách công ty của tôi:", err.response?.data);
@@ -132,6 +133,7 @@ export const useCompanyStore = defineStore('company',() => {
         message,
         error,
         listCompany,
+        CompanyOfMe,
         createCompanyStore,
         getAllCompanyStore,
         requestCompanyStore,

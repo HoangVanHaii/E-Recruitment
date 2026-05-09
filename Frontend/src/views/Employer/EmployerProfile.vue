@@ -185,9 +185,9 @@ const handleSubmit = async () => {
     if (useCompany.error) {
         triggerNotify(useCompany.message || 'Đã xảy ra lỗi!', false);
     } else {
+        await useCompany.getCompanyOfMeStore();
         originalData.value = { ...formData };
         triggerNotify(useCompany.message || 'Lưu thông tin thành công!', true);
-        window.location.reload();
     }
     loading.value = false;
 };
