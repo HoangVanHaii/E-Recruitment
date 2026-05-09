@@ -114,12 +114,12 @@ const handleLogout = () => {
     <div class="lg:hidden flex items-center justify-between bg-[#243093] text-white p-4 w-full sticky top-0 z-40 shadow-md">
         <div class="flex items-center gap-3">
             <img
-                :src="CompanyOfMe?.LogoUrl || '/default-logo.png'"
+                :src="CompanyOfMe?.LogoUrl || 'https://res.cloudinary.com/duxdpc100/image/upload/v1778353606/cpp_zlutbw.jpg'"
                 class="w-8 h-8 rounded-full object-cover bg-white"
                 alt="Logo"
             />
             <span class="font-semibold text-sm truncate max-w-[200px]">
-                {{ CompanyOfMe?.CompanyName || 'ABC Company' }}
+                {{ CompanyOfMe?.CompanyName || 'Company' }}
             </span>
         </div>
         <button @click="isMobileMenuOpen = true" class="text-2xl focus:outline-none p-2">
@@ -151,10 +151,12 @@ const handleLogout = () => {
             <div class="bg-white/20 rounded-xl p-4 flex flex-col items-center border border-white/10">
                 <div class="flex items-center gap-3 w-full mb-4">
                     <div class="w-12 h-12 bg-slate-200 rounded-full overflow-hidden shrink-0">
-                        <img :src="CompanyOfMe?.LogoUrl || '/default-logo.png'" class="w-full h-full object-cover" />
+                        <img :src="CompanyOfMe?.LogoUrl || 'https://res.cloudinary.com/duxdpc100/image/upload/v1778353606/cpp_zlutbw.jpg'"
+                            class="w-full h-full object-cover"
+                         />
                     </div>
                     <span class="font-semibold text-sm truncate" :title="CompanyOfMe?.CompanyName">
-                        {{ CompanyOfMe?.CompanyName || 'ABC Company' }}
+                        {{ CompanyOfMe?.CompanyName || 'Company' }}
                     </span>
                 </div>
                 <button @click="handleLogout" class="w-full bg-[#d6555b] hover:bg-red-600 transition-colors text-white text-sm font-semibold py-2 rounded-lg">
