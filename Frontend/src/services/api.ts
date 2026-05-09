@@ -1,7 +1,7 @@
 import axios from "axios";
 import { disconnectSocket } from "./socket";
 const api = axios.create({
-    baseURL: import.meta.env.REACT_APP_API_BASE_URL || 'http://localhost:3000/api',
+    baseURL: import.meta.env.REACT_APP_API_BASE_URL || 'https://jobportal-rs7w.onrender.com/api',
 });
 
 api.interceptors.request.use((config) => {
