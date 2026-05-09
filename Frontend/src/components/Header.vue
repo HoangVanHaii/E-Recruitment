@@ -29,7 +29,7 @@ const toggleChat = () => {
 };
 
 const toggleProfile = () => {
-    router.push({ path: 'candidate-profile' });
+    router.push({ name: 'candidate-profile' });
 };
 
 const isScrolled = ref(false);
