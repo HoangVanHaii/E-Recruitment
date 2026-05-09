@@ -305,8 +305,6 @@ export const getAllCandidates = async (page: number, limit: number) => {
             c.CreatedAt,
             c.DateOfBirth,
             c.Address,
-            c.ExperienceYears,
-            c.Education,
             u.Email, 
             u.Status
         FROM Candidates c

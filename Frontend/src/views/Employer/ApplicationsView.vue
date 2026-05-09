@@ -60,14 +60,15 @@ const updateStatus = async (appId: number, newStatus: string) => {
     if(useApplication.error) {
         messageNotify.value = 'Cập nhật trạng thái thất bại';
         isSuccessNotify.value = false;
-        showNotify.value = true;
+        newStatus === 'Reviewed' ? showNotify.value = false : showNotify.value = true;
+
         return;
     }
     const app = applications.value.find(a => a.ApplicationID === appId);
     if (app) app.Status = newStatus;
     messageNotify.value = 'Cập nhật trạng thái thành công';
     isSuccessNotify.value = true;
-    showNotify.value = true;
+    newStatus === 'Reviewed' ? showNotify.value = false : showNotify.value = true;
 };
 
 const formatDate = (date: string) => {

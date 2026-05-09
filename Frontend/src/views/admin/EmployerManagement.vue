@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch , onMounted} from 'vue';
 import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
-import Loading from '../../components/Loading.vue';
 import { useEmployerStore } from '../../stores/employer';
 import { useAuthStore } from '../../stores/auth';
 import type { IEmployerForAdmin } from '../../types/employer';
@@ -34,7 +33,7 @@ const fetchEmployers = async () => {
                             e.CompanyName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
                             e.Position.toLowerCase().includes(searchQuery.value.toLowerCase());
         const matchStatus = statusFilter.value === 'All' || e.UserStatus === statusFilter.value;
-        const matchApproval = approvalFilter.value === 'All' || e.CompanyStatus === approvalFilter.value;
+        const matchApproval = approvalFilter.value === 'All' || e.EmployerStatus === approvalFilter.value;
         
         return matchSearch && matchStatus && matchApproval;
     });
@@ -101,7 +100,7 @@ const toggleAccountStatus = async () => {
     closeConfirmModal();
 };
 
-// Config màu cho Company Status
+
 const approvalStatusMap: Record<string, { label: string; class: string; icon: string }> = {
     Approved: { label: 'Đã duyệt', class: 'bg-blue-50 text-[#4c5bd4] border-blue-200', icon: 'fas fa-check-circle' },
     Pending:  { label: 'Chờ duyệt', class: 'bg-amber-50 text-amber-600 border-amber-200', icon: 'fas fa-hourglass-half' },
@@ -110,7 +109,6 @@ const approvalStatusMap: Record<string, { label: string; class: string; icon: st
 </script>
 
 <template>
-    <Loading v-if="employerStore.loading" />
     <Notify  
         v-if="showNotify" 
         :message="messageNotify" 
@@ -252,10 +250,10 @@ const approvalStatusMap: Record<string, { label: string; class: string; icon: st
                                     <td class="px-6 py-4 text-center">
                                         <span 
                                             class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border"
-                                            :class="approvalStatusMap[emp.CompanyStatus].class"
+                                            :class="approvalStatusMap[emp.EmployerStatus].class"
                                         >
-                                            <i :class="[approvalStatusMap[emp.CompanyStatus].icon, 'mr-1']"></i>
-                                            {{ approvalStatusMap[emp.CompanyStatus].label }}
+                                            <i :class="[approvalStatusMap[emp.EmployerStatus].icon, 'mr-1']"></i>
+                                            {{ approvalStatusMap[emp.EmployerStatus].label }}
                                         </span>
                                     </td>
 
@@ -391,8 +389,8 @@ const approvalStatusMap: Record<string, { label: string; class: string; icon: st
                                 <div>
                                     <p class="font-bold text-slate-800 text-base">{{ selectedEmployer.CompanyName }}</p>
                                     <div class="mt-1">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border" :class="approvalStatusMap[selectedEmployer.CompanyStatus].class">
-                                            {{ approvalStatusMap[selectedEmployer.CompanyStatus].label }}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border" :class="approvalStatusMap[selectedEmployer.EmployerStatus].class">
+                                            {{ approvalStatusMap[selectedEmployer.EmployerStatus].label }}
                                         </span>
                                     </div>
                                 </div>

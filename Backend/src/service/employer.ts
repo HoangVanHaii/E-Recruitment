@@ -89,10 +89,10 @@ export const getPendingEmployers = async (userId: number, status: string) => {
             e.ApprovalStatus
         FROM Employers e
         JOIN Users u ON u.UserID = e.EmployerID
-        WHERE e.CompanyID = ?
+        WHERE e.CompanyID = ? AND e.EmployerID != ?
     `;
 
-    const params: any[] = [company.CompanyID];
+    const params: any[] = [company.CompanyID, userId];
 
     if (status !== "all") {
         query += " AND e.ApprovalStatus = ?";
@@ -303,7 +303,7 @@ export const getAllEmployers = async (page: number, limit: number) => {
             c.CompanyName,
             c.LogoUrl,
             c.Industry,
-            c.Status AS CompanyStatus
+            e.ApprovalStatus AS EmployerStatus
         FROM Users u
         JOIN Employers e ON u.UserID = e.EmployerID
         LEFT JOIN Companies c ON e.CompanyID = c.CompanyID

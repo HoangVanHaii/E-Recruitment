@@ -97,14 +97,20 @@ const handleCreateJob = () => {
                 </div>
 
                 <nav
-                    class="hidden md:flex items-center gap-10 font-semibold transition-all duration-300 ease-in-out"
+                    class="flex items-center gap-4 font-semibold transition-all duration-300 ease-in-out"
                     :class="isScrolled ? 'text-xs' : 'text-sm'"
                 >
-                    <a href="\home" class="hover:text-gray-200">Trang chủ</a>
-                    <a href="\candidate-profile?tab=resumes_list" class="hover:text-gray-200">CV của tôi</a>
-                    <a href="\candidate-profile?tab=create_cv" class="hover:text-gray-200">Tạo CV</a>
-                    <a href="#" class="hover:text-gray-200">Khám phá</a>
-                    <a href="#" class="hover:text-gray-200">Tiện ích</a>
+                    <a href="\home" class="hover:text-gray-200 flex items-center">
+                        <span class="hidden md:block">Trang chủ</span>
+                        <i class="fa-solid fa-house md:hidden"></i>
+                    </a>
+
+                    <div class="hidden md:flex items-center gap-10">
+                        <a href="\candidate-profile?tab=resumes_list" class="hover:text-gray-200">CV của tôi</a>
+                        <a href="\candidate-profile?tab=create_cv" class="hover:text-gray-200">Tạo CV</a>
+                        <a href="#" class="hover:text-gray-200">Khám phá</a>
+                        <a href="#" class="hover:text-gray-200">Tiện ích</a>
+                    </div>
                 </nav>
             </div>
 
@@ -128,7 +134,7 @@ const handleCreateJob = () => {
                             ></i>
                         </div>
                         <span
-                            class="font-semibold transition-all duration-300"
+                            class="hidden md:block font-semibold transition-all duration-300"
                             :class="[showChat ? 'text-green-500' : '', isScrolled ? 'text-xs' : 'text-sm']"
                         >
                             Chat
@@ -144,7 +150,7 @@ const handleCreateJob = () => {
 
                 <div v-if="!authStore.isLogin" class="flex gap-8">
                     <button
-                        class="bg-blue-900 text-white px-3 rounded text-sm transition-all duration-300"
+                        class="bg-blue-900 text-white px-3 rounded text-sm transition-all duration-300 hidden md:block"
                         :class="isScrolled ? 'py-0.5' : 'py-1'"
                         @click="handleCreateJob"
                     >
@@ -158,7 +164,7 @@ const handleCreateJob = () => {
                         Đăng nhập
                     </button>
                     <button
-                        class="bg-blue border border-white text-white px-3 rounded text-sm transition-all duration-300"
+                        class="bg-blue border border-white text-white px-3 rounded text-sm transition-all duration-300 hidden md:block"
                         :class="isScrolled ? 'py-0.5' : 'py-1'"
                         @click="handleRegister"
                     >

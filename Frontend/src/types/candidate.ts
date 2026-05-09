@@ -45,8 +45,6 @@ export interface ICandidate {
     Phone?: string;
     DateOfBirth?: string;
     Address?: string;
-    ExperienceYears?: number;
-    Education?: string;
     AvatarUrl?: string;
     CreatedAt?: string;
     Email?: string;

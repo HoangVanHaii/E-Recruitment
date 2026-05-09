@@ -24,3 +24,19 @@ export const UpdateCompany = async (companyID: number, formData: FormData) => {
     const response = await api.put(`/company/${companyID}`, formData);
     return response.data;
 }
+export const getAllCompanyForAdmin = async (page?: number, limit?: number) => {
+    const params: any = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+
+    const response = await api.get('/company/admin/all', { params });
+    return response.data;
+}
+export const getCompanyByIdForAdmin = async (companyID: number) => {
+    const response = await api.get(`/company/admin/${companyID}`);
+    return response.data;
+}
+export const updateCompanyStatus = async (companyID: number, status: string) => {
+    const response = await api.put(`/company/admin/${companyID}/status`, { status });
+    return response.data;
+}

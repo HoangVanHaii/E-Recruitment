@@ -14,5 +14,5 @@ export interface IEmployerForAdmin {
     CompanyName: string;
     LogoUrl: string;
     Industry: string;
-    CompanyStatus: string;
+    EmployerStatus: string;
 }

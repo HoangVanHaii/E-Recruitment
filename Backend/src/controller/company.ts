@@ -7,7 +7,6 @@ import pool from "../config/database";
 import { AppError } from '../utils/appError';
 import redisClient from '../config/redisClient';
 
-
 export const CreateCompany = async (req: Request, res: Response, next: NextFunction) => {
     const connection = await pool.getConnection();
     const uploadedAssets: string[] = [];
@@ -226,6 +225,62 @@ export const GetAllCompany = async (req: Request, res: Response, next: NextFunct
             data: companies
         });
 
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getAllCompanyForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const data = await CompanyService.getAllCompanyForAdmin(page, limit);
+        return res.status(200).json({
+            success: true,
+            message: "Lấy danh sách công ty cho admin thành công",
+            data: data
+        });
+    } catch (error) {
+        next(error);
+    }   
+}
+export const getCompanyByIdForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const companyId: number = Number(req.params.CompanyID);
+        const cacheKey = `company:admin:${companyId}`;
+        const cachedData = await redisClient.get(cacheKey);
+        if (cachedData) {
+            return res.status(200).json({
+                success: true,
+                message: "Lấy thông tin công ty cho admin thành công (từ cache)",
+                data: JSON.parse(cachedData)
+            });
+        }
+        const company = await CompanyService.getCompanyDetailForAdmin(companyId);
+        await redisClient.set(cacheKey, JSON.stringify(company), { EX: 300 });
+        return res.status(200).json({
+            success: true,
+            message: "Lấy thông tin công ty cho admin thành công",
+            data: company
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+export const updateCompanyStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const companyId: number = Number(req.params.CompanyID);
+        const { status } = req.body;
+        await CompanyService.updateCompanyStatusForAdmin(companyId, status.toString());
+
+        const cacheKey = `company:admin:${companyId}`;
+        await redisClient.unlink(cacheKey);
+        
+        return res.status(200).json({
+            success: true,
+            message: "Cập nhật trạng thái công ty cho admin thành công",
+        });
     } catch (error) {
         next(error);
     }

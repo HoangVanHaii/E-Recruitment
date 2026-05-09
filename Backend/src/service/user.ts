@@ -79,8 +79,31 @@ export const getProfile = async (userId: number) => {
     return rows[0] as IProfile;
 };
 export const updateUserStatus = async (userId: number, status: string) => {
-    const query = "UPDATE Users SET Status = ? WHERE UserID = ?";
-    await pool.query(query, [status, userId]);
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+        const updateUserQuery = `
+            UPDATE Users
+            SET Status = ?
+            WHERE UserID = ?
+        `;
+        await connection.query(updateUserQuery, [status, userId]);
+        const updateEmployerQuery = `
+            UPDATE Employers
+            SET ApprovalStatus = ?
+            WHERE EmployerID = ?
+        `;
+        await connection.query(updateEmployerQuery, [
+            status === 'Banned' ? 'Rejected' : 'Approved',
+            userId
+        ]);
+        await connection.commit();
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 }
 
 export const updatePassword = async (userId: number, newPasswordHash: string) => {
