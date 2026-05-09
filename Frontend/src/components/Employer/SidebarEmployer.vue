@@ -99,7 +99,7 @@ onMounted(async () => {
 const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    router.push({ name: 'home' });
+    router.push({ name: 'login-section' });
 };
 </script>
 
