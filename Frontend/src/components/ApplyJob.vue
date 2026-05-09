@@ -1,5 +1,5 @@
   <script setup lang="ts">
-  import { onMounted, ref, computed, watch } from 'vue';
+  import { onMounted, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import { useResumeStore } from '../stores/resume';
   import type { iResumeList, iResumeDetail } from '../types/resume';
