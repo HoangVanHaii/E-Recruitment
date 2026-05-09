@@ -2,7 +2,6 @@
 import { ref, onMounted, watch } from 'vue';
 import { useResumeStore } from '../stores/resume';
 import { useCandidateStore } from '../stores/candidate';
-import Loading from './Loading.vue';
 import type { ICandidateInfo } from '../types/candidate';
 import type { iResumeDetail } from '../types/resume';
 const props = defineProps<{
@@ -45,8 +44,12 @@ watch(() => props.id, fetchResumeData);
 </script>
 
 <template>
-    <Loading v-if="isLoading" />
-    <div v-if="resume">
+    <div v-if="isLoading" class="absolute inset-0 bg-[#F8FAFC]/80 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
+        <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+        <span class="text-slate-500 font-bold uppercase tracking-widest text-sm">Đang phân tích hồ sơ...</span>
+    </div>
+    <div v-else-if="resume">
+        
         <div v-if="resume.templateId === 1" id="cv-document" class="max-w-[210mm] mx-auto bg-white shadow-2xl flex flex-col md:flex-row print:flex-row overflow-hidden print:shadow-none print:m-0">
             <div class="w-full md:w-[35%] print:w-[35%] bg-[#14205c] text-white p-8 md:p-10 flex flex-col gap-10 print:bg-[#14205c]">
                 <div class="flex flex-col items-center text-center">

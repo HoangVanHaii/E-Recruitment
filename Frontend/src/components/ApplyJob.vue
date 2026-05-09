@@ -1,8 +1,8 @@
   <script setup lang="ts">
-  import { onMounted, ref, watch } from 'vue';
+  import { onMounted, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { useResumeStore } from '../stores/resume';
-  import type { iResumeList, iResumeDetail } from '../types/resume';
+  import type { iResumeList } from '../types/resume';
   import Notify from '../components/Notify.vue';
   import Loading from '../components/Loading.vue';
   
@@ -37,7 +37,6 @@
   const selectedCvId = ref<number | null>(1);
   
   const isOpenResume = ref(false);
-  const candidate = ref<iResumeDetail | null>(null);
   
   onMounted(async () => {
       loading.value = true;
@@ -69,30 +68,11 @@
     router.push('/create-resume'); 
   };
   
-  const fetchResumeDetail = async (id: number) => {
-    loading.value = true;
-      candidate.value = await useResume.getResumeDetailByIdStore(id);
-    console.log(candidate.value)
-    
-    if (useResume.error) {
-      showNotify.value = true;
-      isSuccessNotify.value = false;
-      messageNotify.value = useResume.message || 'Có lỗi xảy ra khi tải hồ sơ';
-    }
-    loading.value = false;
-  };
   
   const handleViewCv = (id: number) => {
     selectedCvId.value = id;
     isOpenResume.value = true;
   };
-  
-  watch([() => selectedCvId.value, () => isOpenResume.value], ([newId, isOpen]) => {
-    if (newId && isOpen) {
-      fetchResumeDetail(newId);
-    }
-  });
-  
   
   const formatDate = (date?: Date | string) => {
     if (!date) return 'N/A';

@@ -7,6 +7,7 @@ import { formatDate } from '../../utils/format';
 import type { ChartItem } from '../../types/chart';
 import type { ITopEmployer } from '../../types/employer';
 import type { IJob } from '../../types/job';
+import router from '../../router';
 
 const job = useJobStore();
 const employer = useEmployerStore();
@@ -213,7 +214,7 @@ const statusConfig: Record<string, { label: string; class: string }> = {
                     <div class="lg:col-span-2 bg-white rounded-2xl md:rounded-[20px] border border-slate-100 shadow-sm pt-4 md:pt-5 flex flex-col overflow-hidden fade-up">
                         <div class="flex items-start justify-between mb-4 gap-3 flex-wrap px-4 md:px-5">
                             <h2 class="text-sm md:text-[15px] font-extrabold text-slate-800">Tin tuyển dụng gần đây</h2>
-                            <button class="text-[11px] text-[#4c5bd4] font-semibold whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity">Xem tất cả</button>
+                            <button @click="router.push({name: 'all-job-management'})" class="text-[11px] text-[#4c5bd4] font-semibold whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity">Xem tất cả</button>
                         </div>
                         <div class="w-full overflow-x-auto custom-scrollbar">
                             <table class="w-full text-xs min-w-[520px] border-collapse">
@@ -251,7 +252,7 @@ const statusConfig: Record<string, { label: string; class: string }> = {
                     <div class="lg:col-span-1 bg-white rounded-2xl md:rounded-[20px] border border-slate-100 shadow-sm p-4 md:p-5 flex flex-col fade-up">
                         <div class="flex items-start justify-between mb-4 gap-3 flex-wrap">
                             <h2 class="text-sm md:text-[15px] font-extrabold text-slate-800">Top nhà tuyển dụng</h2>
-                            <button class="text-[11px] text-[#4c5bd4] font-semibold whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity">Xem tất cả</button>
+                            <button @click="router.push({name: 'employer-management'})" class="text-[11px] text-[#4c5bd4] font-semibold whitespace-nowrap shrink-0 hover:opacity-70 transition-opacity">Xem tất cả</button>
                         </div>
                         <div class="flex flex-col gap-1.5 md:gap-2">
                             <div
