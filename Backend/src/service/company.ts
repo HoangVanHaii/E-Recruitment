@@ -17,7 +17,7 @@ export const CreateCompany = async (connection: PoolConnection, company: ICreate
         throw new AppError("Mã số thuế đã tồn tại", 409);
     }
     const query = `
-        INSERT INTO companies 
+        INSERT INTO Companies 
         (CompanyName, CompanyDescription, Industry, Website, LogoUrl, ContactEmail, City, TaxCode, CreatedBy, BusinessLicenseUrl)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -73,7 +73,7 @@ export const UpdateCompany = async (CompanyID: number, CompanyData: IUpdateCompa
     }
 }
 export const checkEmployer = async (EmployerID: number)=>{
-    const query = `SELECT * FROM employers WHERE EmployerID = ?`;
+    const query = `SELECT * FROM Employers WHERE EmployerID = ?`;
     const values = [EmployerID];
     const [result]: any = await pool.query(query, values);
     if (result.length === 0) {
@@ -88,7 +88,7 @@ export const checkEmployer = async (EmployerID: number)=>{
 
 }   
 const updateEmployer = async (connection: PoolConnection, CompanyID: number, Position: string) => {
-    const query = `UPDATE employers SET Position = ? WHERE CompanyID = ?`
+    const query = `UPDATE Employers SET Position = ? WHERE CompanyID = ?`
     const values = [Position, CompanyID];
 
     const [result]: any = await connection.query(query, values);
@@ -99,7 +99,7 @@ const updateEmployer = async (connection: PoolConnection, CompanyID: number, Pos
     return true;
 }
 export const UpdateCompanyStatus = async (CompanyID: number, status: string) => {
-    const query = `UPDATE companies SET Status = ? WHERE CompanyID = ?`
+    const query = `UPDATE Companies SET Status = ? WHERE CompanyID = ?`
     const values = [status, CompanyID];
 
     const [result]: any = await pool.query(query, values);
@@ -114,8 +114,8 @@ export const GetCompanyDetail = async (Role: string, CompanyID: number) => {
         SELECT 
             c.*, 
             e.Position
-        FROM companies c
-        JOIN employers e ON c.CompanyID = e.CompanyID
+        FROM Companies c
+        JOIN Employers e ON c.CompanyID = e.CompanyID
         WHERE c.CompanyID = ?
     `;
     const values: any = [CompanyID];
@@ -165,8 +165,8 @@ export const getCompanyIdOfMe = async (userID: number): Promise<number | null> =
 export const getCompanyOfMe = async (userId: number) => {
     const query = `
         SELECT c.CompanyID, c.CompanyName, c.LogoUrl
-            FROM employers e
-            JOIN companies c ON c.CompanyID = e.CompanyID
+            FROM Employers e
+            JOIN Companies c ON c.CompanyID = e.CompanyID
         WHERE e.EmployerID = ? AND e.ApprovalStatus = ? `;
     const [rows]: any = await pool.query(query, [userId, "Approved"]);
     return rows[0];
@@ -188,7 +188,7 @@ export const checkUserCreatedCompany = async (connection: PoolConnection, userId
 
     const query = `
         SELECT CompanyID
-        FROM companies
+        FROM Companies
         WHERE CreatedBy = ?
         LIMIT 1
     `;

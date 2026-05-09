@@ -7,7 +7,7 @@ import { JobDetailModel } from "../model/job";
 import { generateAndStoreVector } from '../utils/ai';
 
 export const insertJobToMySQL = async (pool: PoolConnection, job: IJobPayload) => {
-    const jobQuery = "INSERT INTO jobs (EmployerID, CategoryID, Title, Quantity, SalaryMin, SalaryMax, Location, JobType, ExperienceRequired, ExpiredDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const jobQuery = "INSERT INTO Jobs (EmployerID, CategoryID, Title, Quantity, SalaryMin, SalaryMax, Location, JobType, ExperienceRequired, ExpiredDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     const jobValues = [job.EmployerID, job.CategoryID, job.Title, job.Quantity, job.SalaryMin, job.SalaryMax, job.Location, job.JobType, job.ExperienceRequired, job.ExpiredDate];
     const [jobResult]: any = await pool.query(jobQuery, jobValues);
     return jobResult.insertId;
@@ -34,7 +34,7 @@ export const createJob = async (job: IJobPayload, jobDetail: IJobDetailPayload) 
        
         if (jobDetail.RawTextForAi) {
             const vectorId = await generateAndStoreVector(jobDetail.RawTextForAi, 'job', newMysqlId);
-            await connection.query("UPDATE jobs SET VectorID = ? WHERE JobID = ?", [vectorId, newMysqlId]);
+            await connection.query("UPDATE Jobs SET VectorID = ? WHERE JobID = ?", [vectorId, newMysqlId]);
         }
 
         await connection.commit();
@@ -113,9 +113,9 @@ export const getAllJobs = async (filters: IJobFilters) => {
     if (Page === 1) {
         const countQuery = `
             SELECT COUNT(*) as totalItems
-            FROM jobs j
-            JOIN employers e ON j.EmployerID = e.EmployerID
-            JOIN companies c ON e.CompanyID = c.CompanyID
+            FROM Jobs j
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            JOIN Companies c ON e.CompanyID = c.CompanyID
             lEFT JOIN JobRecommendations r ON j.JobID = r.JobID
             ${whereClause}
         `;
@@ -126,9 +126,9 @@ export const getAllJobs = async (filters: IJobFilters) => {
 
     const dataQuery = `
         SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status, r.Score
-        FROM jobs j
-        JOIN employers e ON j.EmployerID = e.EmployerID
-        JOIN companies c ON e.CompanyID = c.CompanyID
+        FROM Jobs j
+        JOIN Employers e ON j.EmployerID = e.EmployerID
+        JOIN Companies c ON e.CompanyID = c.CompanyID
         LEFT JOIN JobRecommendations r ON j.JobID = r.JobID
         ${whereClause}
         ORDER BY CASE WHEN r.Score IS NOT NULL THEN r.Score END DESC, j.CreatedAt DESC
@@ -152,9 +152,9 @@ export const searchJobByCategory = async (categoryId: number, page: number, limi
     if (page === 1) {
         const countQuery = `
             SELECT COUNT(*) as totalItems
-            FROM jobs j
-            JOIN employers e ON j.EmployerID = e.EmployerID
-            JOIN companies c ON e.CompanyID = c.CompanyID
+            FROM Jobs j
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            JOIN Companies c ON e.CompanyID = c.CompanyID
             WHERE j.CategoryID = ? AND j.ExpiredDate > NOW() AND j.Status = 'Approved'
         `;
         const [countResult]: any = await pool.query(countQuery, [categoryId]);
@@ -163,9 +163,9 @@ export const searchJobByCategory = async (categoryId: number, page: number, limi
     }
     const dataQuery = `
         SELECT j.JobID, j.Title, j.Location, j.CreatedAt, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status
-        FROM jobs j
-        JOIN employers e ON j.EmployerID = e.EmployerID
-        JOIN companies c ON e.CompanyID = c.CompanyID
+        FROM Jobs j
+        JOIN Employers e ON j.EmployerID = e.EmployerID
+        JOIN Companies c ON e.CompanyID = c.CompanyID
         WHERE j.CategoryID = ? AND j.ExpiredDate > NOW() AND j.Status = 'Approved'
         ORDER BY j.CreatedAt DESC
         LIMIT ? OFFSET ?
@@ -193,9 +193,9 @@ export const getRecommendedJobs = async (candidateId: number, page: number, limi
             c.LogoUrl AS CompanyLogo,
             r.Score
         FROM JobRecommendations r
-        JOIN jobs j ON r.JobID = j.JobID
-        JOIN employers e ON j.EmployerID = e.EmployerID
-        JOIN companies c ON e.CompanyID = c.CompanyID
+        JOIN Jobs j ON r.JobID = j.JobID
+        JOIN Employers e ON j.EmployerID = e.EmployerID
+        JOIN Companies c ON e.CompanyID = c.CompanyID
         WHERE r.CandidateID = ?
         ORDER BY r.Score DESC
         LIMIT ? OFFSET ?
@@ -210,7 +210,7 @@ export const getRecommendedJobs = async (candidateId: number, page: number, limi
 };
 export const getJobDetail = async (jobId: number) => {
     const query = `SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status, j.Quantity, e.EmployerID
-        FROM jobs j
+        FROM Jobs j
         JOIN Employers e ON j.EmployerID = e.EmployerID
         JOIN Companies c ON e.CompanyID = c.CompanyID
         WHERE j.JobID = ?`;
@@ -247,7 +247,7 @@ export const getJobDetail = async (jobId: number) => {
     return jobDetail;
 }
 export const closeJob = async (jobId: number) => {
-    const query = `UPDATE jobs set ExpiredDate = NOW() WHERE JobID = ?`
+    const query = `UPDATE Jobs set ExpiredDate = NOW() WHERE JobID = ?`
     await pool.query(query, [jobId]);
     return true;
 }
@@ -283,7 +283,7 @@ export const updateJob = async (payload: any) => {
     const currentJobId = payload.JobID || payload.JobId;
 
     if (mysqlSetFields.length > 0) {
-        const mysqlQuery = `UPDATE jobs SET ${mysqlSetFields.join(', ')} WHERE JobID = ?`;
+        const mysqlQuery = `UPDATE Jobs SET ${mysqlSetFields.join(', ')} WHERE JobID = ?`;
         mysqlValues.push(payload.JobID);
 
         const [mysqlResult]: any = await pool.query(mysqlQuery, mysqlValues);
@@ -337,10 +337,10 @@ export const getJobOfMe = async (userId: number, page: number, limit: number, st
             j.Status,
             j.ExpiredDate,
             COUNT(ja.ApplicationID) AS ApplicationCount
-        FROM jobs j
-        JOIN employers e ON j.EmployerID = e.EmployerID
-        JOIN companies c ON e.CompanyID = c.CompanyID
-        LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+        FROM Jobs j
+        JOIN Employers e ON j.EmployerID = e.EmployerID
+        JOIN Companies c ON e.CompanyID = c.CompanyID
+        LEFT JOIN JobApplications ja ON j.JobID = ja.JobID
         WHERE e.EmployerID = ?
     `;
 
@@ -377,7 +377,7 @@ export const getJobOfMe = async (userId: number, page: number, limit: number, st
     return finalJobList as IListJob[];
 };
 export const isJobOwner = async (employerId: number, jobId: number) => {
-    const query = `SELECT EmployerID FROM jobs WHERE JobID = ? AND EmployerID = ?`;
+    const query = `SELECT EmployerID FROM Jobs WHERE JobID = ? AND EmployerID = ?`;
     const value = [jobId, employerId]
     const [rows]: any = await pool.query(query, value);
     return rows.length > 0;
@@ -388,7 +388,7 @@ export const getAllJobVectors = async () => {
         SELECT 
             JobID, 
             vectorID
-        FROM jobs 
+        FROM Jobs 
         WHERE ExpiredDate > NOW() 
           AND vectorId IS NOT NULL
     `;
@@ -400,9 +400,9 @@ export const getJobsByIds = async (jobIds: number[], placeholders: string) => {
     const [mysqlResult, mongoDetails] = await Promise.all([
         pool.query(`
             SELECT j.JobID, j.Title, j.Location, j.CreatedAt, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status
-            FROM jobs j
-            JOIN employers e ON j.EmployerID = e.EmployerID
-            JOIN companies c ON e.CompanyID = c.CompanyID
+            FROM Jobs j
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            JOIN Companies c ON e.CompanyID = c.CompanyID
             WHERE j.JobID IN (${placeholders})
             ORDER BY FIELD(j.JobID, ${placeholders})
             LIMIT 20
@@ -435,7 +435,7 @@ export const getRowTextForAI = async (jobId: number) => {
     return jobDetail?.rowTextForAi || "";
 }
 export const isJobPending = async (jobId: number) => {
-    const query = `SELECT Status FROM jobs WHERE JobID = ?`;
+    const query = `SELECT Status FROM Jobs WHERE JobID = ?`;
     const [rows]: any = await pool.query(query, [jobId]);
     if (rows.length === 0) {
         throw new Error("Không tìm thấy công việc!");
@@ -443,19 +443,19 @@ export const isJobPending = async (jobId: number) => {
     return rows[0].Status === 'Pending';
 }
 export const changeStatusJob = async (jobId: number, newStatus: string) => {
-    const query = `UPDATE jobs set Status = ? WHERE JobID = ?`
+    const query = `UPDATE Jobs set Status = ? WHERE JobID = ?`
     await pool.query(query, [newStatus, jobId]);
     return true;
 }
 export const getAllCatagories = async () => {
-    const query = `SELECT CategoryID, CategoryName FROM jobcategories`;
+    const query = `SELECT CategoryID, CategoryName FROM JobCategories`;
     const [rows]: any = await pool.query(query);
     return rows;
 }   
 export const searchJobsByKeyword = async (q: string) => {
     const sql = `
         SELECT JobID
-        FROM jobs
+        FROM Jobs
         WHERE Title LIKE ?
            OR Location LIKE ?
         LIMIT 20
@@ -468,10 +468,10 @@ export const getJobForAdmin = async () => {
     const dataQuery = `
         SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status,
             COUNT(ja.ApplicationID) AS ApplicationCount
-        FROM jobs j
-        JOIN employers e ON j.EmployerID = e.EmployerID
-        JOIN companies c ON e.CompanyID = c.CompanyID
-        LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+        FROM Jobs j
+        JOIN Employers e ON j.EmployerID = e.EmployerID
+        JOIN Companies c ON e.CompanyID = c.CompanyID
+        LEFT JOIN JobApplications ja ON j.JobID = ja.JobID
         GROUP BY j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl, j.Status
         ORDER BY j.CreatedAt DESC
         LIMIT 5
@@ -499,10 +499,10 @@ export const getJobForAdminByStatus = async (page: number, limit: number, status
     if (page === 1) {
         const countQuery = `
             SELECT COUNT(*) as totalItems
-            FROM jobs j
-            JOIN employers e ON j.EmployerID = e.EmployerID
-            JOIN companies c ON e.CompanyID = c.CompanyID
-            LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+            FROM Jobs j
+            JOIN Employers e ON j.EmployerID = e.EmployerID
+            JOIN Companies c ON e.CompanyID = c.CompanyID
+            LEFT JOIN JobApplications ja ON j.JobID = ja.JobID
             ${whereClause}
         `;
         const [countResult]: any = await pool.query(countQuery, baseParams);
@@ -512,10 +512,10 @@ export const getJobForAdminByStatus = async (page: number, limit: number, status
     const dataQuery = `
         SELECT j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl AS CompanyLogo, j.Status,
             COUNT(ja.ApplicationID) AS ApplicationCount
-        FROM jobs j
-        JOIN employers e ON j.EmployerID = e.EmployerID
-        JOIN companies c ON e.CompanyID = c.CompanyID
-        LEFT JOIN jobApplications ja ON j.JobID = ja.JobID
+        FROM Jobs j
+        JOIN Employers e ON j.EmployerID = e.EmployerID
+        JOIN Companies c ON e.CompanyID = c.CompanyID
+        LEFT JOIN JobApplications ja ON j.JobID = ja.JobID
         ${whereClause}
         GROUP BY j.JobID, j.Title, j.Location, j.CreatedAt, j.SalaryMin, j.SalaryMax, j.JobType, c.CompanyName, c.LogoUrl, j.Status
         ORDER BY j.CreatedAt DESC
@@ -542,7 +542,7 @@ export const getMonthlyJobStats = async () => {
                 WHEN YEAR(CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
                 AND MONTH(CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
                 THEN 1 END) AS lastMonth
-        FROM jobs
+        FROM Jobs
     `;
 
     const [rows]: any = await pool.query(query);
@@ -572,7 +572,7 @@ export const getMonthlyJobStatsPending = async () => {
                 AND MONTH(CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
                 AND Status = 'Pending'
                 THEN 1 END) AS lastMonth
-        FROM jobs
+        FROM Jobs
     `;
     const [rows]: any = await pool.query(query);
     const { currentMonth = 0, lastMonth = 0 } = rows[0];
@@ -600,7 +600,7 @@ export const getMonthlyEmployerStats = async () => {
                 WHEN YEAR(e.CreatedAt) = YEAR(CURDATE() - INTERVAL 1 MONTH)
                 AND MONTH(e.CreatedAt) = MONTH(CURDATE() - INTERVAL 1 MONTH)
                 THEN 1 END) AS lastMonth
-        FROM employers e
+        FROM Employers e
     `;
 
     const [rows]: any = await pool.query(query);
@@ -622,7 +622,7 @@ export const get7DayJobStats = async () => {
         SELECT
             DATE(CreatedAt) AS date,
             COUNT(*) AS count
-        FROM jobs
+        FROM Jobs
         WHERE CreatedAt >= CURDATE() - INTERVAL 6 DAY
         GROUP BY DATE(CreatedAt)
         ORDER BY DATE(CreatedAt) ASC      

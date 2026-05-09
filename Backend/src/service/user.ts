@@ -3,23 +3,23 @@ import redisClient from "../config/redisClient";
 import { IProfile } from "../interface/user";
 
 export const searchUserByEmail = async (email: string) => {
-    const query = "SELECT * FROM users WHERE Email = ?";
+    const query = "SELECT * FROM Users WHERE Email = ?";
     const [rows]: any = await pool.query(query, [email]);
     return rows[0];
 }
 export const searchUserById = async (userId: number) => {
-    const query = "SELECT * FROM users WHERE UserID = ?";
+    const query = "SELECT * FROM Users WHERE UserID = ?";
     const [rows]: any = await pool.query(query, [userId]);
     return rows[0];
 }
 export const createUser = async (email: string, password: string, role: string) => {
-    const query = "INSERT INTO users (Email, PasswordHash, Role) VALUES (?, ?, ?)";
+    const query = "INSERT INTO Users (Email, PasswordHash, Role) VALUES (?, ?, ?)";
     const values = [email, password, role ?? 'Candidate'];
     const [result]: any = await pool.query(query, values);
     return result.insertId;
 }
 export const getAllUsers = async () => {
-    const query = "SELECT UserID, Email, Role, Status FROM users";
+    const query = "SELECT UserID, Email, Role, Status FROM Users";
     const [rows]: any = await pool.query(query);
     return rows;
 }
@@ -56,39 +56,41 @@ export const getProfileWithCache = async (userId: number) => {
     }
 
     const profile = await getProfile(userId);
-
-    await redisClient.set(cacheKey, JSON.stringify(profile), { EX: 3600 });
+    if (profile) {
+        await redisClient.set(cacheKey, JSON.stringify(profile), { EX: 3600 });
+    }
 
     return profile;
 };
 export const getProfile = async (userId: number) => {
     const query = `
         SELECT c.CandidateId as ProfileID, c.FullName as Name, c.AvatarUrl as ImgUrl, u.Email 
-        FROM candidates c
-        JOIN users u ON c.CandidateID = u.UserID
+        FROM Candidates c
+        JOIN Users u ON c.CandidateID = u.UserID
         WHERE c.CandidateID = ?
         UNION
         SELECT e.EmployerID as ProfileID, comp.CompanyName as Name, comp.LogoUrl as ImgUrl, u.Email
-        FROM employers e 
-        JOIN companies comp ON e.CompanyID = comp.CompanyID
-        JOIN users u ON e.EmployerID = u.UserID
+        FROM Employers e 
+        JOIN Companies comp ON e.CompanyID = comp.CompanyID
+        JOIN Users u ON e.EmployerID = u.UserID
         WHERE e.EmployerID = ?
     `;
     const [rows]: any = await pool.query(query, [userId, userId]);
     return rows[0] as IProfile;
 };
 export const updateUserStatus = async (userId: number, status: string) => {
-    const query = "UPDATE users SET Status = ? WHERE UserID = ?";
+    const query = "UPDATE Users SET Status = ? WHERE UserID = ?";
     await pool.query(query, [status, userId]);
 }
 
 export const updatePassword = async (userId: number, newPasswordHash: string) => {
-    const query = "UPDATE users SET PasswordHash = ? WHERE UserID = ?";
+    const query = "UPDATE Users SET PasswordHash = ? WHERE UserID = ?";
     await pool.query(query, [newPasswordHash, userId]);
 }
 
 export const getCurrentRole = async (userId: number) => {
-    const query = `SELECT Role FROM users WHERE UserID = ?`
+    const query = `SELECT Role FROM Users WHERE UserID = ?`
     const [rows]: any = await pool.query(query, [userId]);
     return rows[0].Role
+
 }

@@ -3,7 +3,6 @@ import { IEmployer, ITopEmployer } from "../interface/employer";
 import { AppError } from "../utils/appError";
 import { CheckCompanyId } from "./company";
 import pool from "../config/database";
-import { pid } from "process";
 
 export const createEmployer = async (connection: PoolConnection, employer: IEmployer) => {
     
@@ -12,7 +11,7 @@ export const createEmployer = async (connection: PoolConnection, employer: IEmpl
         throw new AppError("Bạn đã gửi yêu cầu rồi!", 409);
     }
 
-    const query = "INSERT INTO employers (EmployerID, CompanyID, Position, ApprovalStatus) VALUES (?, ?, ?, ?)";
+    const query = "INSERT INTO Employers (EmployerID, CompanyID, Position, ApprovalStatus) VALUES (?, ?, ?, ?)";
     const values = [employer.EmployerID, employer.CompanyID, employer.Position, employer.ApprovalStatus];
     await connection.query(query, values);
     return employer.EmployerID;
@@ -24,7 +23,7 @@ export const checkEmployerID = async (connection: PoolConnection, EmployerID: Nu
     return result.length > 0
 }
 export const checkEmployerProfile = async (employerID: number) => {
-    const query = "SELECT * FROM employers WHERE EmployerID = ?";
+    const query = "SELECT * FROM Employers WHERE EmployerID = ?";
     const [rows]: any = await pool.query(query, [employerID]);
     return rows.length > 0 ? rows[0] as IEmployer : null;
 }
@@ -58,8 +57,8 @@ export const CheckCompanyStatus = async (employerID: number) => {
 }
 export const UpdateStatusEmployer = async (EmployerID: number, UserID: number, ApprovalStatus: string) => {
     const query = `
-        UPDATE employers e
-        JOIN companies c ON e.CompanyID = c.CompanyID
+        UPDATE Employers e
+        JOIN Companies c ON e.CompanyID = c.CompanyID
         SET e.ApprovalStatus = ?
         WHERE e.EmployerID = ? 
         AND c.CreatedBy = ?
@@ -88,8 +87,8 @@ export const getPendingEmployers = async (userId: number, status: string) => {
             u.Email,
             e.Position,
             e.ApprovalStatus
-        FROM employers e
-        JOIN users u ON u.UserID = e.EmployerID
+        FROM Employers e
+        JOIN Users u ON u.UserID = e.EmployerID
         WHERE e.CompanyID = ?
     `;
 
@@ -106,7 +105,7 @@ export const getPendingEmployers = async (userId: number, status: string) => {
 };
 export const getCompanyByUser = async (userId: number) => {
     const [rows]: any = await pool.query(
-        "SELECT CompanyID FROM companies WHERE CreatedBy = ?",
+        "SELECT CompanyID FROM Companies WHERE CreatedBy = ?",
         [userId]
     );
     return rows[0] || null;

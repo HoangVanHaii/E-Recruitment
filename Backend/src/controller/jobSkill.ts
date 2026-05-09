@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import * as jobSkillService from '../service/jobSkill';
-import { AppError } from "../utils/appError";
 
 export const getJobSkills = async (req: Request, res: Response, next: NextFunction) => {
     try {

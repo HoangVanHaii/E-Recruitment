@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { getChatHistory, getConversations, getCountUnreadMessages } from "../services/message";
 import { ref } from "vue";
 import { socket } from "../services/socket";
-import type { n } from "vue-router/dist/index-C3eYkdSl.js";
 
 export const useMessageStore = defineStore('message', () => {
     const conversations = ref<any[]>([]);

@@ -120,11 +120,11 @@ const router = createRouter({
 
 router.beforeEach(async (to, _, next) => {
     const authStore = useAuthStore()
-    if (!authStore.user) {
+    if (!authStore.role) {
         await authStore.getCurrentRoleStore()
     }
     const role = authStore.role;
-    // 
+    
     if (to.meta.roles) {
         if (!role) {
             return next('/login-section')
