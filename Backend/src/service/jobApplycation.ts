@@ -284,9 +284,12 @@ const applicationDetailQuery = `
     `;
     
 export const getApplicationDetail = async (ApplicationID: number): Promise<IJobApplication | null> => {
+
     const [rows]: any = await pool.query( applicationDetailQuery, [ApplicationID]);
+
     if (rows.length === 0) return null;
-    const app = rows[0];
+    
+    const app = rows[0]; 
     const result: IJobApplication = {
         ApplicationID: app.ApplicationID,
         FullName: app.FullName,
@@ -298,8 +301,15 @@ export const getApplicationDetail = async (ApplicationID: number): Promise<IJobA
         MatchScore: app.MatchScore,
         AI_Summary_Review: app.AI_Summary_Review,
         ResumeID: app.ResumeID,
-        ResumeDetail: await getResumeDetailByResumeID(app.ResumeID)
+        ResumeDetail: await getResumeDetailByResumeID(app.ResumeID),
+
+        JobTitle: app.JobTitle,
+        CompanyName: app.CompanyName,
+        Description: app.Description,
+        SalaryMin: app.SalaryMin,
+        SalaryMax: app.SalaryMax
     };
+    
     return result;
 };
   

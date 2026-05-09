@@ -61,7 +61,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     try {
         const { email, password } = req.body;
         const user :IUser = await userService.searchUserByEmail(email);
-        if (!user) {
+        if (!user || user.Status === 'Deleted') {
             throw new AppError('Tài khoản không tồn tại', 404);
         }
         const isPasswordValid = await bcrypt.compare(password, user.PasswordHash);
@@ -139,6 +139,87 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 }
+        
+export const requestOtpForgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { email } = req.body;
+        const user = await userService.searchUserByEmail(email);
+        
+        if (!user || user.Status === 'Deleted') {
+            throw new AppError('Email này không tồn tại trong hệ thống hoặc đã bị xóa', 404);
+        }
+
+        const result = await sendEmail(email);
+        res.status(200).json({ success: true, message: "Mã OTP đã gửi vào Email của sếp!", data: result });
+    } catch (error) { next(error); }
+};
+
+export const requestOtpAuth = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = Number(req.user!.id);
+        const user = await userService.searchUserById(userId);
+        if (!user) throw new AppError('Tài khoản không tồn tại', 404);
+
+        const result = await sendEmail(user.Email);
+        res.status(200).json({ success: true, message: "Mã OTP xác thực hành động đã được gửi", data: result });
+    } catch (error) { next(error); }
+};
+
+export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = Number(req.user!.id);
+        const { oldPassword, newPassword } = req.body;
+
+        const user = await userService.searchUserById(userId);
+        if (!user) throw new AppError('Tài khoản không tồn tại', 404);
+
+        const isMatch = await bcrypt.compare(oldPassword, user.PasswordHash);
+        if (!isMatch) throw new AppError('Mật khẩu cũ không chính xác', 400);
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await userService.updatePassword(userId, hashedNewPassword);
+
+        return res.status(200).json({ success: true, message: "Đổi mật khẩu thành công" });
+    } catch (error) { next(error); }
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { verifyToken, newPassword } = req.body;
+        
+        const email = await redisClient.get(`verifyToken:${verifyToken}`);
+        
+        if (!email) {
+            throw new AppError('Phiên làm việc đã hết hạn. Sếp vui lòng xác thực lại OTP nhé!', 400);
+        }
+
+        const user = await userService.searchUserByEmail(email);
+        if (!user) throw new AppError('Email không tồn tại', 404);
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await userService.updatePassword(user.UserID, hashedNewPassword);
+        await redisClient.del(`verifyToken:${verifyToken}`);
+
+        return res.status(200).json({ success: true, message: "Đặt lại mật khẩu thành công!" });
+    } catch (error) { next(error); }
+};
+
+export const deleteAccount = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = Number(req.user!.id);
+        const { password, otp } = req.body;
+
+        const user = await userService.searchUserById(userId);
+        if (!user) throw new AppError('Tài khoản không tồn tại', 404);
+
+        await verify(user.Email, otp);
+        const isMatch = await bcrypt.compare(password, user.PasswordHash);
+        if (!isMatch) throw new AppError('Mật khẩu không đúng để xác nhận xóa', 400);
+
+        await userService.updateUserStatus(userId, 'Deleted');
+
+        return res.status(200).json({ success: true, message: "Tài khoản đã được xóa mềm thành công" });
+    } catch (error) { next(error); }
+};
 export const getCurrentRole = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = Number(req.user!.id);

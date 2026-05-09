@@ -81,6 +81,12 @@ export const updateUserStatus = async (userId: number, status: string) => {
     const query = "UPDATE users SET Status = ? WHERE UserID = ?";
     await pool.query(query, [status, userId]);
 }
+
+export const updatePassword = async (userId: number, newPasswordHash: string) => {
+    const query = "UPDATE users SET PasswordHash = ? WHERE UserID = ?";
+    await pool.query(query, [newPasswordHash, userId]);
+}
+
 export const getCurrentRole = async (userId: number) => {
     const query = `SELECT Role FROM users WHERE UserID = ?`
     const [rows]: any = await pool.query(query, [userId]);

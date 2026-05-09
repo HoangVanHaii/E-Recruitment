@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Settings, ClipboardList, ChevronDown, Briefcase, Mail, MessageCircle } from 'lucide-vue-next';

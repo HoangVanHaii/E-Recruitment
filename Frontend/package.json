@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@vuepic/vue-datepicker": "^12.1.0",
-    "apexcharts": "^5.10.6",
+    "apexcharts": "^5.11.0",
     "axios": "^1.14.0",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
