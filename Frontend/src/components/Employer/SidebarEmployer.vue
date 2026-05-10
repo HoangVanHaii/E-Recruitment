@@ -2,13 +2,14 @@
 import { ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useCompanyStore } from '../../stores/company';
+import { useAuthStore } from '../../stores/auth';
 
 import Notify from '../Notify.vue';
 
 const router = useRouter();
 const route = useRoute();
 const useCompany = useCompanyStore();
-
+const authStore = useAuthStore();
 const loading = ref(false);
 const showNotify = ref(false);
 const messageNotify = ref('');
@@ -96,11 +97,6 @@ onMounted(async () => {
     loading.value = false;
 });
 
-const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    router.push({ name: 'login-section' });
-};
 </script>
 
 <template>
@@ -159,7 +155,7 @@ const handleLogout = () => {
                         {{ useCompany.CompanyOfMe?.CompanyName || 'Company' }}
                     </span>
                 </div>
-                <button @click="handleLogout" class="w-full bg-[#d6555b] hover:bg-red-600 transition-colors text-white text-sm font-semibold py-2 rounded-lg">
+                <button @click="authStore.handleLogout" class="w-full bg-[#d6555b] hover:bg-red-600 transition-colors text-white text-sm font-semibold py-2 rounded-lg">
                     Đăng xuất
                 </button>
             </div>

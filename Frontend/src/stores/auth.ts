@@ -1,11 +1,11 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import type { IProfile } from '../types/user';
-import { getCurrentRole, getProfile, login, register, registerSendOtp, updateStatus, verifyOtp, changePassword, deleteAccount, requestOtpAuth,requestOtpForgotPassword, forgotPassword } from '../services/auth';
+import { getCurrentRole, getProfile, login, register, registerSendOtp, updateStatus, verifyOtp, changePassword, deleteAccount, requestOtpAuth, requestOtpForgotPassword, forgotPassword } from '../services/auth';
 import { useMessageStore } from './message';
 import { connectSocket, disconnectSocket } from '../services/socket';
 
-export const useAuthStore = defineStore('auth',() => {
+export const useAuthStore = defineStore('auth', () => {
     const loading = ref<boolean>(false);
     const message = ref<string>('');
     const user = ref<IProfile | null>(null);
@@ -63,13 +63,13 @@ export const useAuthStore = defineStore('auth',() => {
             message.value = '';
             const data = await register(verifyToken, password, role);
             message.value = data.message || 'Đăng ký thành công';
-            
+
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi đăng ký:", err.response?.data);
             message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi đăng ký';
 
-        }finally {
+        } finally {
             loading.value = false;
         }
     }
@@ -94,7 +94,7 @@ export const useAuthStore = defineStore('auth',() => {
             localStorage.setItem("accessToken", data.data.accessToken);
             localStorage.setItem("refreshToken", data.data.refreshToken);
             localStorage.setItem("role", data.data.role);
-            
+
         } catch (err: any) {
             error.value = true;
             console.error("Lỗi khi đăng nhập:", err.response?.data);
@@ -126,8 +126,14 @@ export const useAuthStore = defineStore('auth',() => {
         }
     }
     const handleLogout = () => {
+        isLogin.value = false;
+        user.value = null;
+        accessToken.value = '';
+        refreshToken.value = '';
+        role.value = '';
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('role');
         disconnectSocket();
         window.location.href = '/login-section';
     };
@@ -157,7 +163,7 @@ export const useAuthStore = defineStore('auth',() => {
 
         } catch (err: any) {
             error.value = true;
-            console.error("Lỗi khi lấy role người dùng:", err.response?.data);  
+            console.error("Lỗi khi lấy role người dùng:", err.response?.data);
             message.value = err.response?.data?.message || 'Đã xảy ra lỗi khi role người dùng';
         } finally {
             loading.value = false;
@@ -195,7 +201,7 @@ export const useAuthStore = defineStore('auth',() => {
             loading.value = true;
             const data = await deleteAccount(password, otp);
             message.value = data.message;
-            handleLogout(); 
+            handleLogout();
             return true;
         } catch (err: any) {
             error.value = true;
@@ -208,8 +214,8 @@ export const useAuthStore = defineStore('auth',() => {
         try {
             error.value = false;
             loading.value = true;
-            await requestOtpForgotPassword(email); 
-            return true; 
+            await requestOtpForgotPassword(email);
+            return true;
         } catch (err: any) {
             error.value = true;
             message.value = err.response?.data?.message || 'Lỗi gửi OTP quên mật khẩu';
@@ -224,9 +230,9 @@ export const useAuthStore = defineStore('auth',() => {
             error.value = false;
             loading.value = true;
             message.value = '';
-            
-            const data = await forgotPassword(verifyToken.value, newPassword); 
-            
+
+            const data = await forgotPassword(verifyToken.value, newPassword);
+
             message.value = data.message || 'Đổi mật khẩu thành công!';
             return true;
         } catch (err: any) {

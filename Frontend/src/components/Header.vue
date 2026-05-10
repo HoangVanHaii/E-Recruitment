@@ -28,8 +28,18 @@ const toggleChat = () => {
     showChat.value = !showChat.value;
 };
 
-const toggleProfile = () => {
+const goToProfile = () => {
     router.push({ name: 'candidate-profile' });
+};
+
+const handleLogout = () => {
+    if (authStore.handleLogout) {
+        authStore.handleLogout();
+    } else {
+        authStore.isLogin = false;
+        authStore.user = null;
+    }
+    router.push({ name: 'login-section' }); 
 };
 
 const isScrolled = ref(false);
@@ -177,18 +187,44 @@ const handleCreateJob = () => {
                         class="fa-solid fa-bell hover:text-gray-200 cursor-pointer transition-all duration-300"
                         :class="isScrolled ? 'fa-md' : 'fa-lg'"
                     ></i>
-                    <div
-                        class="border-white flex items-center gap-4 border-[1px] rounded-full bg-[#9AA0D0] cursor-pointer hover:bg-blue-700 transition-all duration-300"
-                        :class="isScrolled ? 'px-0.5 py-0.5' : 'px-1 py-0.5'"
-                        @click="toggleProfile"
-                    >
-                        <img
-                            :src="authStore.user?.ImgUrl || '/src/assets/default-avatar.png'"
-                            alt=""
-                            class="rounded-full border-[1px] border-blue-800 transition-all duration-300"
-                            :class="isScrolled ? 'w-6 h-6' : 'w-8 h-8'"
+                    
+                    <div class="relative group">
+                        <div
+                            class="border-white flex items-center gap-4 border-[1px] rounded-full bg-[#9AA0D0] cursor-pointer group-hover:bg-blue-700 transition-all duration-300"
+                            :class="isScrolled ? 'px-0.5 py-0.5' : 'px-1 py-0.5'"
                         >
-                        <i class="fa-solid fa-sort-down text-white mr-2 mb-1 transition-all duration-300"></i>
+                            <img
+                                :src="authStore.user?.ImgUrl || '/src/assets/default-avatar.png'"
+                                alt="Avatar"
+                                class="rounded-full border-[1px] border-blue-800 transition-all duration-300"
+                                :class="isScrolled ? 'w-6 h-6' : 'w-8 h-8'"
+                            >
+                            <i class="fa-solid fa-sort-down text-white mr-2 mb-1 transition-all duration-300"></i>
+                        </div>
+
+                        <div class="absolute right-0 top-full w-full h-3"></div>
+
+                        <div 
+                            class="absolute right-0 top-[calc(100%+0.5rem)] w-40 bg-white rounded-lg shadow-xl py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200"
+                        >
+                            <div
+                                @click="goToProfile"
+                                class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition-colors"
+                            >
+                                <i class="fa-regular fa-user w-6"></i>
+                                <span class="font-medium">Hồ sơ</span>
+                            </div>
+                            
+                            <hr class="my-1 border-gray-100">
+                            
+                            <div
+                                @click="handleLogout"
+                                class="flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                            >
+                                <i class="fa-solid fa-arrow-right-from-bracket w-6"></i>
+                                <span class="font-medium">Đăng xuất</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
