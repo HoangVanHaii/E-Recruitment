@@ -145,24 +145,53 @@ onMounted(async () => {
             selectedTemplateId.value = cv.templateId || 1;
             if (cv.AvatarUrl) avatarPreview.value = cv.AvatarUrl as string;
 
-            newExperiences.value = (cv.experience || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
-            newEducation.value = (cv.education || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
-            
-            newProjects.value = (cv.projects || []).map((prj: any) => ({
-                ...prj,
-                techString: Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies
-            }));
+            // 1. Phục hồi Học vấn (Tách riêng Checkbox và Form nhập tay)
+            const mEdu: number[] = []; const uEdu: any[] = [];
+            (cv.education || []).forEach((edu: any) => {
+                // So sánh xem có khớp với kho gốc không
+                const idx = p?.education?.findIndex((pe: any) => pe.institution === edu.institution && pe.degree === edu.degree);
+                if (idx !== undefined && idx !== -1 && !mEdu.includes(idx)) mEdu.push(idx); // Nếu khớp -> Tick checkbox
+                else uEdu.push({...edu, startDate: formatDateForInput(edu.startDate), endDate: formatDateForInput(edu.endDate)}); // Không khớp -> Đẩy xuống form
+            });
+            selectedEducation.value = mEdu;
+            newEducation.value = uEdu;
 
-            newSkills.value = (cv.skills || []).map((s: any) => ({
-                skillId: s.skillId || 'old',
-                skillName: s.skillName || s,
-                level: s.level || 'Khá'
-            }));
+            // 2. Phục hồi Kinh nghiệm
+            const mExp: number[] = []; const uExp: any[] = [];
+            (cv.experience || []).forEach((exp: any) => {
+                const idx = p?.experience?.findIndex((pe: any) => pe.companyName === exp.companyName && pe.position === exp.position);
+                if (idx !== undefined && idx !== -1 && !mExp.includes(idx)) mExp.push(idx);
+                else uExp.push({...exp, startDate: formatDateForInput(exp.startDate), endDate: formatDateForInput(exp.endDate)});
+            });
+            selectedExperiences.value = mExp;
+            newExperiences.value = uExp;
 
-            selectedExperiences.value = [];
-            selectedProjects.value = [];
-            selectedEducation.value = [];
-            selectedSkills.value = [];
+            // 3. Phục hồi Dự án
+            const mPrj: number[] = []; const uPrj: any[] = [];
+            (cv.projects || []).forEach((prj: any) => {
+                const idx = p?.projects?.findIndex((pp: any) => pp.projectName === prj.projectName);
+                if (idx !== undefined && idx !== -1 && !mPrj.includes(idx)) mPrj.push(idx);
+                else uPrj.push({
+                    ...prj, 
+                    techString: Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies
+                });
+            });
+            selectedProjects.value = mPrj;
+            newProjects.value = uPrj;
+
+            // 4. Phục hồi Kỹ năng
+            const mSkill: number[] = []; const uSkill: any[] = [];
+            (cv.skills || []).forEach((sk: any) => {
+                const idx = masterSkillsArray.value.findIndex((ms: any) => (ms.SkillID || ms.skillId) === sk.skillId);
+                if (idx !== -1 && !mSkill.includes(idx)) mSkill.push(idx);
+                else {
+                    const mappedSkill: any = { skillName: sk.skillName || sk, level: sk.level || 'Khá' };
+                    if (sk.skillId) mappedSkill.skillId = sk.skillId;
+                    uSkill.push(mappedSkill);
+                }
+            });
+            selectedSkills.value = mSkill;
+            newSkills.value = uSkill;
         }
     } else {
         if (p) {
