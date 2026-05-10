@@ -27,7 +27,8 @@ export interface iResumeDetail extends Document {
     skills?: {
         skillId?: number;    
         skillName: string;
-        level?: string;      
+        level?: string;  
+        isNew?: boolean;    
     }[];    
     
     experience?: {         

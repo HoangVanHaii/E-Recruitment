@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import pool from "../config/database"; 
 import { AppError } from '../utils/appError';
 import { iResumeDetail,iResume, iResumeList } from '../interface/resume';
-import { updateCandidateSkills, upsertCandidateProfile } from './candidate';
+import { updateCandidateSkills, upsertCandidateProfile,appendSkillsFromResume } from './candidate';
 import ResumeDetail from '../model/resumeDetail';
 import { generateAndStoreVector } from '../utils/ai';
 import { Candidate } from '../interface/candidate';
@@ -100,7 +100,7 @@ export const buildManualResume = async (candidateId: number, resumeData: iResume
             title: resumeData.title || 'CV Chưa Đặt Tên',
             AvatarUrl: resumeData.AvatarUrl || null,
             summary: resumeData.summary,
-            skills: resumeData.skills || [],
+            skills: resumeData.skills || [], 
             experience: resumeData.experience || [],
             education: resumeData.education || [],
             projects: resumeData.projects || []
@@ -108,12 +108,15 @@ export const buildManualResume = async (candidateId: number, resumeData: iResume
         await newResumeDetail.save();
 
         if (resumeData.skills && resumeData.skills.length > 0) {
-            await updateCandidateSkills(connection, candidateId, resumeData.skills);
+            await appendSkillsFromResume(connection, candidateId, resumeData.skills);
         }
+        
         await connection.commit();
+        
         processResumeAI(newResumeId, resumeData).catch(err => {
             console.error("AI background error:", err);
         });
+        
         return { resumeId: newResumeId };
     } catch (error) {
         await connection.rollback();
