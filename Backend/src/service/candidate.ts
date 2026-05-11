@@ -338,3 +338,20 @@ export const getCandidateInfo = async (candidateId: number) => {
     const [rows]: any = await pool.query(query, [candidateId]);
     return rows[0] as ICandidateInfo;
 }
+
+const mergeCandidateSkills = async (connection: any, userId: number, finalSkillIdsToSave: any[]) => {
+    if (finalSkillIdsToSave.length > 0) {
+        const valuesToUpsert = finalSkillIdsToSave.map(item => [userId, item.id, item.level]);
+        await connection.query(
+            `INSERT INTO CandidateSkills (CandidateID, SkillID, SkillLevel) 
+             VALUES ? 
+             ON DUPLICATE KEY UPDATE SkillLevel = VALUES(SkillLevel)`,
+            [valuesToUpsert]
+        );
+    }
+};
+
+export const appendSkillsFromResume = async (connection: PoolConnection, userId: number, skillsToSave: any[]) => {
+    const finalSkills = await ensureSkillsExist(connection, skillsToSave);
+    await mergeCandidateSkills(connection, userId, finalSkills);
+};

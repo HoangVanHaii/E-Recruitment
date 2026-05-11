@@ -53,19 +53,28 @@ const searchQuery = ref('');
 const showDropdown = ref(false);
 
 const filteredDictionary = computed(() => {
-    if (!searchQuery.value.trim()) return [];
-    
     const pickedMasterIds = selectedSkills.value.map(i => {
         const item = masterSkillsArray.value[i] as any;
-        return item?.skillId || item?.SkillID;
+        return item?.SkillID || item?.skillId;
     });
-    const pickedNewIds = newSkills.value.map(s => s.skillId);
-    const allPickedIds = [...pickedMasterIds, ...pickedNewIds];
+    
+    const pickedNewNames = newSkills.value.map(s => (s.skillName || '').toLowerCase());
+    
+    let availableSkills = skillStore.dictionary.filter(s => {
+        const id = s.SkillID;
+        const name = s.SkillName || '';
+        return !pickedMasterIds.includes(id) && !pickedNewNames.includes(name.toLowerCase());
+    });
 
-    return skillStore.dictionary.filter(s => 
-        s.SkillName.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-        !allPickedIds.includes(s.SkillID)
-    ).slice(0, 10);
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase().trim();
+        availableSkills = availableSkills.filter(s => {
+            const name = s.SkillName || '';
+            return name.toLowerCase().includes(query);
+        });
+    }
+
+    return availableSkills.slice(0, 10);
 });
 
 const selectManualSkill = (item: any) => {
@@ -75,11 +84,22 @@ const selectManualSkill = (item: any) => {
 
 const addCustomSkill = () => {
     if (!searchQuery.value.trim()) return;
-    newSkills.value.unshift({ skillId: 'new', skillName: searchQuery.value.trim(), level: 'Khá' });
+    newSkills.value.unshift({ 
+        skillName: searchQuery.value.trim(), 
+        level: 'Khá',
+        isNew: true 
+    });
     searchQuery.value = ''; showDropdown.value = false;
 };
 
-watch(searchQuery, (newVal) => { if(!newVal) showDropdown.value = false; });
+watch(searchQuery, () => { 
+    showDropdown.value = true; 
+});
+const handleBlurDropdown = () => {
+    setTimeout(() => {
+        showDropdown.value = false;
+    }, 200);
+};
 
 const showToast = (message: string, isSuccess: boolean) => {
     messageNotify.value = message; 
@@ -125,24 +145,53 @@ onMounted(async () => {
             selectedTemplateId.value = cv.templateId || 1;
             if (cv.AvatarUrl) avatarPreview.value = cv.AvatarUrl as string;
 
-            newExperiences.value = (cv.experience || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
-            newEducation.value = (cv.education || []).map((e: any) => ({...e, startDate: formatDateForInput(e.startDate), endDate: formatDateForInput(e.endDate)}));
-            
-            newProjects.value = (cv.projects || []).map((prj: any) => ({
-                ...prj,
-                techString: Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies
-            }));
+            // 1. Phục hồi Học vấn (Tách riêng Checkbox và Form nhập tay)
+            const mEdu: number[] = []; const uEdu: any[] = [];
+            (cv.education || []).forEach((edu: any) => {
+                // So sánh xem có khớp với kho gốc không
+                const idx = p?.education?.findIndex((pe: any) => pe.institution === edu.institution && pe.degree === edu.degree);
+                if (idx !== undefined && idx !== -1 && !mEdu.includes(idx)) mEdu.push(idx); // Nếu khớp -> Tick checkbox
+                else uEdu.push({...edu, startDate: formatDateForInput(edu.startDate), endDate: formatDateForInput(edu.endDate)}); // Không khớp -> Đẩy xuống form
+            });
+            selectedEducation.value = mEdu;
+            newEducation.value = uEdu;
 
-            newSkills.value = (cv.skills || []).map((s: any) => ({
-                skillId: s.skillId || 'old',
-                skillName: s.skillName || s,
-                level: s.level || 'Khá'
-            }));
+            // 2. Phục hồi Kinh nghiệm
+            const mExp: number[] = []; const uExp: any[] = [];
+            (cv.experience || []).forEach((exp: any) => {
+                const idx = p?.experience?.findIndex((pe: any) => pe.companyName === exp.companyName && pe.position === exp.position);
+                if (idx !== undefined && idx !== -1 && !mExp.includes(idx)) mExp.push(idx);
+                else uExp.push({...exp, startDate: formatDateForInput(exp.startDate), endDate: formatDateForInput(exp.endDate)});
+            });
+            selectedExperiences.value = mExp;
+            newExperiences.value = uExp;
 
-            selectedExperiences.value = [];
-            selectedProjects.value = [];
-            selectedEducation.value = [];
-            selectedSkills.value = [];
+            // 3. Phục hồi Dự án
+            const mPrj: number[] = []; const uPrj: any[] = [];
+            (cv.projects || []).forEach((prj: any) => {
+                const idx = p?.projects?.findIndex((pp: any) => pp.projectName === prj.projectName);
+                if (idx !== undefined && idx !== -1 && !mPrj.includes(idx)) mPrj.push(idx);
+                else uPrj.push({
+                    ...prj, 
+                    techString: Array.isArray(prj.technologies) ? prj.technologies.join(', ') : prj.technologies
+                });
+            });
+            selectedProjects.value = mPrj;
+            newProjects.value = uPrj;
+
+            // 4. Phục hồi Kỹ năng
+            const mSkill: number[] = []; const uSkill: any[] = [];
+            (cv.skills || []).forEach((sk: any) => {
+                const idx = masterSkillsArray.value.findIndex((ms: any) => (ms.SkillID || ms.skillId) === sk.skillId);
+                if (idx !== -1 && !mSkill.includes(idx)) mSkill.push(idx);
+                else {
+                    const mappedSkill: any = { skillName: sk.skillName || sk, level: sk.level || 'Khá' };
+                    if (sk.skillId) mappedSkill.skillId = sk.skillId;
+                    uSkill.push(mappedSkill);
+                }
+            });
+            selectedSkills.value = mSkill;
+            newSkills.value = uSkill;
         }
     } else {
         if (p) {
@@ -516,11 +565,11 @@ const handleSubmit = async () => {
                             <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Bổ sung thêm kỹ năng cho CV này</label>
                             <div class="relative max-w-md">
                                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                <input type="text" v-model="searchQuery" @focus="showDropdown = true"
+                                <input type="text" v-model="searchQuery" @focus="showDropdown = true" @blur="handleBlurDropdown"
                                     class="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 focus:border-rose-400 outline-none transition-all text-sm bg-white"
                                     placeholder="Gõ để tìm hoặc thêm mới kỹ năng...">
                                 
-                                <div v-if="showDropdown" class="absolute z-20 w-full mt-2 bg-white border border-gray-100 shadow-xl rounded-xl max-h-60 overflow-y-auto py-2">
+                                <div v-if="showDropdown && (filteredDictionary.length > 0 || searchQuery.trim())" class="absolute z-20 w-full mt-2 bg-white border border-gray-100 shadow-xl rounded-xl max-h-60 overflow-y-auto py-2">
                                     <button v-for="item in filteredDictionary" :key="item.SkillID" type="button"
                                         @click="selectManualSkill(item)"
                                         class="w-full text-left px-4 py-2.5 text-sm hover:bg-rose-50 transition-colors flex items-center justify-between group">

@@ -9,6 +9,7 @@ export interface iResumeDetail {
         skillId?: number;    
         skillName: string;
         level?: string;      
+        isNew?: boolean;
     }[];    
     
     experience?: {         
