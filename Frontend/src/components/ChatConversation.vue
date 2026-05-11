@@ -31,8 +31,7 @@ const filteredChats = computed(() => {
 </script>
 
 <template>
-    <div class="absolute left-[-30px] top-full mt-5 w-[310px] bg-white rounded-sm shadow-[0_5px_25px_rgba(0,0,0,0.15)] border border-gray-100 z-50 text-gray-800 animate-in fade-in zoom-in duration-200">
-        
+    <div class="fixed top-[70px] right-2 w-[95vw] max-w-[310px] bg-white rounded-sm shadow-[0_5px_25px_rgba(0,0,0,0.15)] border border-gray-100 z-[9999] text-gray-800 animate-in fade-in zoom-in duration-200"> 
         <div class="p-4 border-b">
             <div class="flex justify-between items-center mb-3">
                 <h3 class="font-bold text-2xl text-gray-900">Đoạn chat</h3>

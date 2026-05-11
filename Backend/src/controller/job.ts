@@ -27,7 +27,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
                 data: JSON.parse(cachedJobs)
             });
         }
-        const jobs = await jobService.getAllJobs(filters);
+        const jobs = await jobService.getAllJobs(filters, req.user?.id);
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobs));
         res.status(200).json({
             success: true,

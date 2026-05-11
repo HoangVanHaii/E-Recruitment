@@ -83,7 +83,7 @@ export const mergeJob = async(jobIds: number[], rows: any) => {
     })
     return finalJobList;
 }
-export const getAllJobs = async (filters: IJobFilters) => {
+export const getAllJobs = async (filters: IJobFilters, userId: any) => {
     const { Page, Limit, CategoryId, Location, MinSalary, MaxSalary } = filters;
     const offset = (Page - 1) * Limit;
 
@@ -125,12 +125,13 @@ export const getAllJobs = async (filters: IJobFilters) => {
         FROM Jobs j
         JOIN Employers e ON j.EmployerID = e.EmployerID
         JOIN Companies c ON e.CompanyID = c.CompanyID
-        LEFT JOIN JobRecommendations r ON j.JobID = r.JobID
+        LEFT JOIN JobRecommendations r ON j.JobID = r.JobID AND r.CandidateID = ?
         ${whereClause}
         ORDER BY CASE WHEN r.Score IS NOT NULL THEN r.Score END DESC, j.CreatedAt DESC
         LIMIT ? OFFSET ?
     `;
-    const dataParams = [...baseParams, Limit, offset];
+    const safeUserId = userId ?? null;
+    const dataParams = [safeUserId, ...baseParams, Limit, offset];
     const [rows]: any = await pool.query(dataQuery, dataParams);
 
     const jobIds = rows.map((job: any) => job.JobID);
