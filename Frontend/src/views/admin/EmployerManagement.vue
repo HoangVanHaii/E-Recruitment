@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch , onMounted} from 'vue';
+import { ref, watch , onMounted} from 'vue';
 import SidebarAdmin from '../../components/admin/SidebarAdmin.vue';
 import { useEmployerStore } from '../../stores/employer';
 import { useAuthStore } from '../../stores/auth';
