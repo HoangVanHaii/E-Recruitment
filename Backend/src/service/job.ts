@@ -5,6 +5,7 @@ import { pineconeIndex } from "../config/pinecone";
 import { IJobPayload, IListJob, IJob, IJobFilters, IJobDetailPayload, IJobDetail, IInterviewRound } from "../interface/job";
 import { JobDetailModel } from "../model/job";
 import { generateAndStoreVector } from '../utils/ai';
+import redisClient from "../config/redisClient";
 
 export const insertJobToMySQL = async (pool: PoolConnection, job: IJobPayload) => {
     const jobQuery = "INSERT INTO Jobs (EmployerID, CategoryID, Title, Quantity, SalaryMin, SalaryMax, Location, JobType, ExperienceRequired, ExpiredDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -336,6 +337,7 @@ export const getJobOfMe = async (userId: number, page: number, limit: number, st
             c.LogoUrl AS CompanyLogo, 
             j.Status,
             j.ExpiredDate,
+            j.Views,
             COUNT(ja.ApplicationID) AS ApplicationCount
         FROM Jobs j
         JOIN Employers e ON j.EmployerID = e.EmployerID
@@ -362,7 +364,8 @@ export const getJobOfMe = async (userId: number, page: number, limit: number, st
             c.CompanyName, 
             c.LogoUrl, 
             j.Status,
-            j.ExpiredDate
+            j.ExpiredDate,
+            j.Views
         ORDER BY j.CreatedAt DESC 
         LIMIT ? OFFSET ?
     `;
@@ -376,6 +379,25 @@ export const getJobOfMe = async (userId: number, page: number, limit: number, st
 
     return finalJobList as IListJob[];
 };
+export const incrementJobViews = async (jobId: number, userId?: number, ip?: string) => {
+    const viewerKey = userId ? `job_view_usser_${userId}_${jobId}` : `job_view_ips_${ip}_${jobId}`;
+    const isViewed = await redisClient.get(viewerKey);
+
+    if (isViewed) return;
+
+    const query = `UPDATE Jobs SET Views = Views + 1 WHERE JobID = ?`;
+    await pool.query(query, [jobId]);
+    
+    const [jobData]: any = await pool.query("SELECT EmployerID FROM Jobs WHERE JobID = ?", [jobId]);
+    const employerId = jobData[0]?.EmployerID;
+
+    const pattern = `employer_jobs_list:${employerId ? `u${employerId}:*` : '*'}`;
+    const keys = await redisClient.keys(pattern);
+    if (keys.length > 0) {
+        await redisClient.del(keys);
+    }
+    await redisClient.set(viewerKey, "1", { EX: 24 * 60 * 60 });
+}
 export const isJobOwner = async (employerId: number, jobId: number) => {
     const query = `SELECT EmployerID FROM Jobs WHERE JobID = ? AND EmployerID = ?`;
     const value = [jobId, employerId]

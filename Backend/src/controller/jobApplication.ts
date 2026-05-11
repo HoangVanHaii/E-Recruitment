@@ -8,13 +8,13 @@ export const ApplyJob = async (req: Request,res: Response, next: NextFunction) =
         const { JobID, ResumeID } = req.body;
         const CandidateID = req.user!.id;
         const applicationID = await JobApplicationService.createJobApplication(JobID, CandidateID, ResumeID);
+
         const keySubmitteds = await redisClient.keys(`application:submitted:candidate:${CandidateID}:*`);
         if (keySubmitteds.length > 0) {
             await redisClient.del(keySubmitteds); 
         }
 
         const keys = await redisClient.keys(`application:job:${JobID}:*`);
-        
         if (keys.length > 0) {
             await redisClient.unlink(keys);
         }

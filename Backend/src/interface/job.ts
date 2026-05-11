@@ -23,6 +23,7 @@ export interface IListJob {
     Status: string;
     ExpiredDate?: Date;
     ApplicationCount: number;   
+    Views: number;
 }
 export interface IJobDetail {
     JobID: number;

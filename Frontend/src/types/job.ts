@@ -83,4 +83,5 @@ export interface IListJob {
     Status: string;
     ExpiredDate?: Date | string | null;
     ApplicationCount: number;   
+    Views: number;
 }

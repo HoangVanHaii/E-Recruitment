@@ -6,7 +6,7 @@ import JobDetail from '../../components/Employer/JobDetail.vue';
 import EditJobDetail from '../../components/Employer/EditJobDetail.vue';
 import Notify from '../../components/Notify.vue';
 import Loading from '../../components/Loading.vue';
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useJobStore } from '../../stores/job';
 import { useRouter } from 'vue-router';
 import type { IListJob } from '../../types/job';
@@ -25,20 +25,7 @@ const currentPage = ref(1);
 onMounted(() => { fetchJobs(); });
 
 const jobs = computed<IListJob[]>(() => useJob.listJobMe || []);
-const jobStats = ref<Record<number, number>>({}); 
-
-watch(jobs, (newJobs) => {
-    newJobs.forEach(job => {
-        if (job.JobID && !jobStats.value[job.JobID]) {
-            if(job.Status === 'Pending') {
-                jobStats.value[job.JobID] = 0;
-            } else
-            {
-                jobStats.value[job.JobID] = (job.ApplicationCount || 0) + Math.floor(Math.random() * 50);
-            }
-        }
-    });
-}, { immediate: true, deep: true });
+ 
 
 const checkIsExpired = (job: IListJob): boolean => {
     if (!job.ExpiredDate) return false;
@@ -261,7 +248,7 @@ const handleSave = async () => {
                                         <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-0.5">Ứng tuyển</div>
                                     </div>
                                     <div class="text-center sm:text-left group/stat">
-                                        <div class="text-base font-black text-emerald-500 group-hover/stat:scale-110 transition-transform origin-left">{{ jobStats[job.JobID!] || 0 }}</div>
+                                        <div class="text-base font-black text-emerald-500 group-hover/stat:scale-110 transition-transform origin-left">{{ job.Views || 0 }}</div>
                                         <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-0.5">Lượt xem</div>
                                     </div>
                                 </div>
