@@ -119,23 +119,28 @@ export const generateJobInsights = async (searchQuery: string, jobText: string) 
 
 
 ///////////////////////////////////////
-export const RecommendJobsByAI = async (resume: iResumeDetail) => {
-    await deleteJobRecommentCandidate(1);
-
+export const RecommendJobsByAI = async (resume: iResumeDetail, candidateId: number) => {
     const resumeText = buildResumeText(resume);
     const resumeVector = await generateEmbedding(resumeText);
     const queryResponse = await pineconeIndex.query({
         vector: resumeVector,
         topK: 20,
         includeMetadata: true, 
+        filter: {
+            type: { $eq: 'job' }
+        }
     });
-    const candidateId = 1;
     saveJobRecommendations(candidateId, queryResponse.matches);
 
 }
-export const saveJobRecommendations = async ( candidateId: number, matches: any[]) => {
+export const saveJobRecommendations = async (candidateId: number, matches: any[]) => {
+    const validMatches = matches.filter(
+        (item) =>
+            item.metadata?.jobId &&
+            !isNaN(Number(item.metadata.jobId))
+    );
     await Promise.all(
-        matches.map(item =>
+        validMatches.map((item) =>
             pool.query(
                 `INSERT INTO JobRecommendations (CandidateID, JobID, Score)
                  VALUES (?, ?, ?)
@@ -144,7 +149,7 @@ export const saveJobRecommendations = async ( candidateId: number, matches: any[
                  RecommendedAt = CURRENT_TIMESTAMP`,
                 [
                     candidateId,
-                    Number(item.id),
+                    Number(item.metadata.jobId),
                     item.score
                 ]
             )

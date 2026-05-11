@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { changeStatusJob, createJob, deleteJob, get7DayStartsForAdmin, getJobForAdminByStatus, getJobOfMe, getJobStatsForAdmin, getTopJobsForAdmin, searchJobByCategory } from '../services/job';
+import { changeStatusJob, createJob, deleteJob, get7DayStartsForAdmin, getJobForAdminByStatus, getJobOfMe, getJobStatsForAdmin, getTopJobsForAdmin, searchJobByCategory, updateJob } from '../services/job';
 import type{ IListJob, IJob, IJobDetail } from '../types/job';
 import { getAllCategories, getAllJobs, getJobDetail, getMySavedJobs, isSavedJob, savedJob, searchJobs, unsaveJob } from '../services/job';
 
@@ -70,7 +70,32 @@ export const useJobStore = defineStore('job',() => {
             loading.value = false;
         }
     };
-
+    const updateJobStore = async (jobId: number, jobData: FormData) => {
+        try {
+            error.value = false;
+            loading.value = true;
+            message.value = '';
+            const data = await updateJob(jobId, jobData);
+            message.value = data.message || 'Cập nhật công việc thành công';
+        } catch (err: any) {
+            error.value = true;
+            const res = err.response?.data;
+            console.error('Error response from updateJob:', res);
+            if (res?.errors && Array.isArray(res.errors)) {
+                const map: Record<string, string> = {};
+                res.errors.forEach((e: any) => {
+                    map[e.path] = e.msg;
+                });
+                errors.value = map;
+                message.value = res.errors[0]?.msg;
+            }
+            else {
+                message.value = res?.message || 'Đã xảy ra lỗi';
+            }
+        } finally {
+            loading.value = false;
+        }
+    }
 
     const handleSavedJob = async (jobId: number) => {
         try {
@@ -369,7 +394,8 @@ export const useJobStore = defineStore('job',() => {
         fetchTopJobsForAdminStore,
         fetchJobForAdminByStatusStore,
         changeStatusJobStore,
-        fetchJobSearchByCategory
+        fetchJobSearchByCategory,
+        updateJobStore
     }
 
 })

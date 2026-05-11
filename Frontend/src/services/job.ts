@@ -43,6 +43,10 @@ export const createJob = async (jobData: any) => {
     const response = await api.post('/jobs/create-job', jobData);
     return response.data;
 }
+export const updateJob = async (jobId: number, jobData: FormData) => {   
+    const response = await api.put(`/jobs/update-job/${jobId}`, jobData);
+    return response.data;
+}
 export const getJobOfMe = async (page: number = 1, limit: number = 6, status: string = "All") => {
     const response = await api.get('/jobs/job-of-me', {
         params: { page, limit, status }

@@ -32,11 +32,6 @@ export const createJob = async (job: IJobPayload, jobDetail: IJobDetailPayload) 
 
         const newMysqlId = await insertJobToMySQL(connection, job);
         await insertJobDetailToMongoDB(jobDetail, newMysqlId);     
-       
-        if (jobDetail.RawTextForAi) {
-            const vectorId = await generateAndStoreVector(jobDetail.RawTextForAi, 'job', newMysqlId);
-            await connection.query("UPDATE Jobs SET VectorID = ? WHERE JobID = ?", [vectorId, newMysqlId]);
-        }
 
         await connection.commit();
         connection.release();
@@ -285,7 +280,7 @@ export const updateJob = async (payload: any) => {
 
     if (mysqlSetFields.length > 0) {
         const mysqlQuery = `UPDATE Jobs SET ${mysqlSetFields.join(', ')} WHERE JobID = ?`;
-        mysqlValues.push(payload.JobID);
+        mysqlValues.push(currentJobId);
 
         const [mysqlResult]: any = await pool.query(mysqlQuery, mysqlValues);
         if (mysqlResult.affectedRows === 0) {
@@ -304,21 +299,9 @@ export const updateJob = async (payload: any) => {
 
     if (Object.keys(mongoUpdateData).length > 0) {
         await JobDetailModel.findOneAndUpdate(
-            { mysqlJobID: payload.JobID },
+            { mysqlJobID: currentJobId },
             { $set: mongoUpdateData }
         );
-    }
-
-    const titleText = payload.Title || '';
-    const descText = payload.Description || '';
-    const reqText = payload.Requirements || '';
-    const benefitsText = payload.Benefits ? payload.Benefits.join(" ") : '';
-    const tagsText = payload.Tags ? payload.Tags.join(" ") : '';
-    
-    const rawTextForAi = `${titleText} ${descText} ${reqText} ${benefitsText} ${tagsText}`.trim();
-
-    if (rawTextForAi) {
-        await generateAndStoreVector(rawTextForAi, 'job', currentJobId);
     }
 
     return true;

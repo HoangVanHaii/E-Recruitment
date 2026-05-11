@@ -133,11 +133,17 @@ const handleConfirmDelete = async () => {
 };
 
 const handleSave = async () => {
+    await fetchJobs();
     showNotify.value = true;
     isSuccessNotify.value = true;
     messageNotify.value = "Cập nhật thành công!";
     isEditModalOpen.value = false;
-    await fetchJobs();
+};
+const handleError = async () => {
+    showNotify.value = true;
+    isSuccessNotify.value = false;
+    messageNotify.value = "Đã có lỗi xảy ra!";
+    isEditModalOpen.value = false;
 };
 </script>
 <template>
@@ -158,7 +164,8 @@ const handleSave = async () => {
         :isOpen="isEditModalOpen" 
         :jobId="selectedEditJobId" 
         @close="isEditModalOpen = false" 
-        @save="handleSave"
+        @success="handleSave"
+        @failed="handleError"
     />
     
     <div class="flex flex-col lg:flex-row h-screen w-full bg-[#F4F7F9] font-sans text-slate-800 overflow-hidden">

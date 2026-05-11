@@ -177,7 +177,7 @@ const formatDate = (date?: Date | string) => {
                                 <div class="h-1.5 w-full bg-gradient-to-r from-[#3B5BFA] to-[#748ffc]"></div>
 
                                 <div class="p-4 flex flex-col gap-2 flex-1">
-                                    <div class="flex items-center gap-3" @click="openJobDetail(job.JobID || null)"
+                                    <div class="flex items-center gap-3 cursor-pointer " @click="openJobDetail(job.JobID || null)"
                                     >
                                         <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                                             <i class="fas fa-building text-blue-500 text-sm"></i>

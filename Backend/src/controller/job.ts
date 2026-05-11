@@ -188,10 +188,10 @@ export const closeJob = async (req: Request, res: Response, next: NextFunction) 
 export const updateJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const jobId = Number(req.params.id);
-        const employerId = parseInt(req.user!.id.toString());
+        const employerId = Number(req.user!.id);
         const isOwner = await jobService.isJobOwner(employerId, jobId);
         if (!isOwner) {
-            throw new AppError('Bạn không phải là người tạo là công việc này', 403)
+            throw new AppError('Bạn không phải là người tạo công việc này', 403)
         }
         const isPending = await jobService.isJobPending(jobId);
         if (!isPending) {

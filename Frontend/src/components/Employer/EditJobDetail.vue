@@ -9,7 +9,7 @@ const props = defineProps<{
     jobId: number | null;
 }>();
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'success', 'failed']);
 const useJob = useJobStore();
 
 const isLoading = ref<boolean>(false);
@@ -58,22 +58,10 @@ const getStatusBadgeClass = (status: string) => {
     return 'bg-slate-50 text-slate-600 border-slate-200';
 };
 
-// Logo Logic
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const fileToUpload = ref<File | null>(null);
 const triggerFileInput = () => fileInputRef.value?.click();
-const handleFileUpload = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (file) {
-        fileToUpload.value = file;
-        const reader = new FileReader();
-        reader.onload = (e) => { formData.value.CompanyLogo = e.target?.result as string; };
-        reader.readAsDataURL(file);
-    }
-};
 
-// Interview Process Logic
 const addInterviewRound = () => {
     const nextOrder = (formData.value.InterviewProcess?.length || 0) + 1;
     if (!formData.value.InterviewProcess) formData.value.InterviewProcess = [];
@@ -86,37 +74,111 @@ const addInterviewRound = () => {
 const removeInterviewRound = (index: number) => {
     formData.value.InterviewProcess?.splice(index, 1);
 };
-
-// Watcher tải dữ liệu
-watch(() => props.isOpen, async (newVal) => {
-    if (newVal && props.jobId) {
-        isLoading.value = true;
-        error.value = '';
-        fileToUpload.value = null;
-        try {
-            const jobDetail = await useJob.getJobDetailStore(props.jobId);
-            if (jobDetail) {
-                formData.value = { 
-                    ...JSON.parse(JSON.stringify(jobDetail)),
-                    InterviewProcess: jobDetail.InterviewProcess || []
-                };
+const originalData = ref<IJobDetail | null>(null);
+watch(() => [props.isOpen, props.jobId], async ([isOpen, jobId]) => {
+        if (isOpen && jobId) {
+            isLoading.value = true;
+            error.value = '';
+            fileToUpload.value = null;
+            if(props.jobId === null) {
+                isLoading.value = false;
+                return;
             }
-        } catch (err) {
-            error.value = "Không thể tải dữ liệu chi tiết!";
-        } finally {
+            const jobDetail = await useJob.getJobDetailStore(props.jobId);
+
+            if (jobDetail) {
+                const cloned = JSON.parse(JSON.stringify(jobDetail));
+                formData.value = cloned;
+                originalData.value = JSON.parse(JSON.stringify(cloned));
+            }
             isLoading.value = false;
         }
+    },
+    { immediate: true }
+);
+const isSaving = ref(false);
+const buildUpdatePayload = () => {
+    const payload: any = {};
+
+    if (formData.value.Title !== originalData.value?.Title) {
+        payload.title = formData.value.Title;
     }
-});
+
+    if (formData.value.Location !== originalData.value?.Location) {
+        payload.location = formData.value.Location;
+    }
+
+    if (formData.value.SalaryMin !== originalData.value?.SalaryMin) {
+        payload.salaryMin = formData.value.SalaryMin;
+    }
+
+    if (formData.value.SalaryMax !== originalData.value?.SalaryMax) {
+        payload.salaryMax = formData.value.SalaryMax;
+    }
+
+    if (formData.value.JobType !== originalData.value?.JobType) {
+        payload.jobType = formData.value.JobType;
+    }
+
+    if (formData.value.Quantity !== originalData.value?.Quantity) {
+        payload.quantity = formData.value.Quantity;
+    }
+
+    if (formData.value.Description !== originalData.value?.Description) {
+        payload.description = formData.value.Description;
+    }
+
+    if (formData.value.WorkingSchedule !== originalData.value?.WorkingSchedule) {
+        payload.workingSchedule = formData.value.WorkingSchedule;
+    }
+
+    if (formData.value.Requirements !== originalData.value?.Requirements) {
+        payload.requirements = formData.value.Requirements;
+    }
+
+    if (
+        JSON.stringify(formData.value.Benefits) !==
+        JSON.stringify(originalData.value?.Benefits)
+    ) {
+        payload.benefits = formData.value.Benefits;
+    }
+
+    if (
+        JSON.stringify(formData.value.Tags) !==
+        JSON.stringify(originalData.value?.Tags)
+    ) {
+        payload.tags = formData.value.Tags;
+    }
+
+    if (
+        JSON.stringify(formData.value.InterviewProcess) !==
+        JSON.stringify(originalData.value?.InterviewProcess)
+    ) {
+        payload.interviewProcess = formData.value.InterviewProcess;
+    }
+
+    return payload;
+};
+const handleSave = async () => {
+    isSaving.value = true;
+
+    const payload = buildUpdatePayload();
+
+    if (Object.keys(payload).length === 0) {
+        return;
+    }
+    await useJob.updateJobStore(formData.value.JobID, payload);
+    if(useJob.error) {
+        emit('failed');
+    }
+    else {
+        emit('success');
+    }
+    isSaving.value = false;
+};
 
 const closeModal = () => emit('close');
-
-const handleSave = () => {
-    emit('save', {
-        jobData: JSON.parse(JSON.stringify(formData.value)),
-        logoFile: fileToUpload.value 
-    });
-};
+// 
 </script>
 <template>
     <Teleport to="body">
@@ -172,7 +234,6 @@ const handleSave = () => {
                                                 <i class="fas fa-cloud-upload-alt text-xl"></i>
                                                 <span class="text-[9px] font-bold uppercase tracking-wider text-center">Logo</span>
                                             </div>
-                                            <input type="file" ref="fileInputRef" accept="image/*" class="hidden" @change="handleFileUpload" />
                                         </div>
                                     </div>
 

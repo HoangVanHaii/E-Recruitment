@@ -60,7 +60,7 @@ export const createManualResume = async (req: Request, res: Response, next: Next
 
         const resumeDetail = await resumeService.getResumeDetail(result.resumeId, candidateId);
         if (resumeDetail) {
-            RecommendJobsByAI(resumeDetail)
+            RecommendJobsByAI(resumeDetail, candidateId)
                 .then(() => console.log("Đã gợi ý job xong cho CV mới của candidate:", candidateId))
                 .catch(err => console.error("Lỗi khi đề xuất việc làm lúc tạo mới:", err));
         }
@@ -134,6 +134,13 @@ export const updateManualResume = async (req: Request, res: Response, next: Next
 
         const result = await resumeService.updateManualResume(candidateId, resumeId, resumeData);
         
+        const resumeDetail = await resumeService.getResumeDetail(resumeId, candidateId);
+        if (resumeDetail) {
+            RecommendJobsByAI(resumeDetail, candidateId)
+                .then(() => console.log("Đã gợi ý job xong cho CV mới của candidate:", candidateId))
+                .catch(err => console.error("Lỗi khi đề xuất việc làm lúc tạo mới:", err));
+        }
+
         if (!result) {
             throw new AppError("Không tìm thấy CV này hoặc sếp không có quyền chỉnh sửa!", 404);
         }

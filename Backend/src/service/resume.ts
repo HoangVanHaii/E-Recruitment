@@ -203,10 +203,6 @@ export const updateManualResume = async (candidateId: number, resumeId: number, 
             await updateCandidateSkills(connection, candidateId, resumeData.skills);
         }
 
-        const richText = buildResumeRichText(resumeData);
-        const newVectorId = await generateAndStoreVector(richText, 'resume', resumeId);
-        await connection.query('UPDATE Resumes SET VectorID = ? WHERE ResumeID = ?', [newVectorId, resumeId]);
-
         await connection.commit();
         return updatedMongo;
     } catch (error) {
