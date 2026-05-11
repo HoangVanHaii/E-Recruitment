@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import e, { Request, Response, NextFunction } from "express";
 import *as jobService from "../service/job";
 import *as employerService from "../service/employer";
 import redisClient from "../config/redisClient";
@@ -68,6 +68,7 @@ export const getJobDetail = async (req: Request, res: Response, next: NextFuncti
         const cachedJobDetail = await redisClient.get(cacheKey);
         if (cachedJobDetail) {
             console.log("Lấy dữ liệu chi tiết công việc từ Redis cache");
+            await jobService.incrementJobViews(jobId, req.user?.id, req.ip);
             return res.status(200).json({
                 success: true,
                 message: "Lấy chi tiết công việc thành công",
@@ -79,6 +80,8 @@ export const getJobDetail = async (req: Request, res: Response, next: NextFuncti
             throw new AppError("Không tìm thấy công việc", 404);
         }
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobDetail));
+        await jobService.incrementJobViews(jobId, req.user?.id, req.ip);
+        
         res.status(200).json({
             success: true,
             message: "Lấy công việc chi tiết thành công",
@@ -88,17 +91,7 @@ export const getJobDetail = async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 }
-const clearJobsListCache = async () => {
-    try {
-        const keys = await redisClient.keys("*jobs_list*");
-        if (keys.length > 0) {
-            await redisClient.unlink(keys);
-            console.log(`Đã xóa ${keys.length} cache lists`);
-        }
-    } catch (err) {
-        console.error("Lỗi khi xóa cache list:", err);
-    }
-};
+
 export const createJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { categoryId, title, quantity, salaryMin, salaryMax, location, jobType, experienceRequired, expiredDate,
@@ -153,6 +146,8 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
         };
 
         const jobId = await jobService.createJob(jobPayload, jobDetailPayload);
+
+        await clearJobCaches(employerID);
         jobService.processJobVector(jobId, jobPayload, jobDetailPayload, jobDetailPayload.RawTextForAi).catch(err => {
             console.error(`[AI-BACKGROUND] Lỗi khi nạp Vector cho Job ID: ${jobId}`, err);
         });
@@ -177,9 +172,11 @@ export const closeJob = async (req: Request, res: Response, next: NextFunction) 
             throw new AppError('Bạn không phải người tạo là công việc này', 403)
         }
         await jobService.closeJob(jobId);
+        
         const cacheKey = `job_detail:${jobId}`;
         await redisClient.del(cacheKey);
-        await clearJobsListCache();
+
+        await clearJobCaches(employerId);
         res.status(200).json({
             success: true,
             message: "Ẩn khỏi danh sách thành công"
@@ -221,7 +218,8 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
         await jobService.updateJob(updatePayload);
         const cacheKey = `job_detail:${jobId}`;
         await redisClient.del(cacheKey);
-        await clearJobsListCache();
+        await clearJobCaches(employerId);
+
         res.status(200).json({
             success: true,
             message: "Cập nhật công việc thành công",
@@ -238,8 +236,8 @@ export const getJobOfMe = async (req: Request, res: Response, next: NextFunction
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const status = req.query.status as string || "All";
-        
         const employerID = req.user!.id;
+        await clearJobCaches(employerID);
         const cacheKey = `employer_jobs_list:u${employerID}:p${page}:l${limit}:s${status}`;
 
         const cachedJobs = await redisClient.get(cacheKey);
@@ -251,6 +249,7 @@ export const getJobOfMe = async (req: Request, res: Response, next: NextFunction
                 data: JSON.parse(cachedJobs)
             });
         }
+        
         const jobs = await jobService.getJobOfMe(req.user!.id, page, limit, status);
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(jobs));
         res.status(200).json({
@@ -262,6 +261,25 @@ export const getJobOfMe = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 }
+export const clearJobCaches = async (employerId: number) => {
+    try {
+        const jobsListKeys = await redisClient.keys("jobs_list:*");
+        if (jobsListKeys.length > 0) {
+            await redisClient.unlink(jobsListKeys);
+        }
+
+        const employerJobKeys = await redisClient.keys(
+            `employer_jobs_list:u${employerId}:*`
+        );
+        if (employerJobKeys.length > 0) {
+            await redisClient.unlink(employerJobKeys);
+        }
+        console.log("Đã xóa cache jobs list");
+
+    } catch (error) {
+        console.error("Lỗi khi xóa cache jobs:", error);
+    }
+};
 
 export const changeStatusJob = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -269,7 +287,11 @@ export const changeStatusJob = async (req: Request, res: Response, next: NextFun
         // const adminId = parseInt(req.user!.id.toString());
         const { status } = req.body;
         await jobService.changeStatusJob(jobId, status);
-        await clearJobsListCache();
+        
+        const cacheKey = `job_detail:${jobId}`;
+        await redisClient.del(cacheKey);
+        await clearJobCaches(req.user!.id);
+
         res.status(200).json({
             success: true,
             message: "Thay đổi trạng thái công việc thành công"
