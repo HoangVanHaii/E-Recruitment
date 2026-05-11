@@ -16,8 +16,15 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
             MinSalary: req.query.minSalary ? parseInt(req.query.minSalary as string) : undefined,
             MaxSalary: req.query.maxSalary ? parseInt(req.query.maxSalary as string) : undefined,
         };
-        // console.log("Received filters:", filters);
-        const cacheKey = `jobs_list:p${filters.Page}:l${filters.Limit}:c${filters.CategoryId || 'all'}:loc_${filters.Location || 'all'}:min${filters.MinSalary || 'all'}:max${filters.MaxSalary || 'all'}`;
+
+        const userId = req.user?.id;
+        let cacheKey;
+        if (userId) {
+            cacheKey = `jobs_list:u${userId}:p${filters.Page}:l${filters.Limit}:c${filters.CategoryId || 'all'}:loc_${filters.Location || 'all'}:min${filters.MinSalary || 'all'}:max${filters.MaxSalary || 'all'}`;
+        } else {
+            cacheKey = `jobs_list:guest:p${filters.Page}:l${filters.Limit}:c${filters.CategoryId || 'all'}:loc_${filters.Location || 'all'}:min${filters.MinSalary || 'all'}:max${filters.MaxSalary || 'all'}`;
+        }
+        // `jobs_list:u${userId}:p${filters.Page}:l${filters.Limit}:c${filters.CategoryId || 'all'}:loc_${filters.Location || 'all'}:min${filters.MinSalary || 'all'}:max${filters.MaxSalary || 'all'}`;
         const cachedJobs = await redisClient.get(cacheKey);
         if (cachedJobs) {
             console.log("Lấy dữ liệu từ Redis cache   ");
