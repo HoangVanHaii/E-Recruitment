@@ -57,7 +57,10 @@ export const createManualResume = async (req: Request, res: Response, next: Next
             await redisClient.del(`resumes:list:${candidateId}`);
             await redisClient.del('all_skills');
         }
-
+        const keys = await redisClient.keys(`jobs_list:u${candidateId}:*`);
+        if (keys.length > 0) {
+            await redisClient.del(keys);
+        }
         const resumeDetail = await resumeService.getResumeDetail(result.resumeId, candidateId);
         if (resumeDetail) {
             RecommendJobsByAI(resumeDetail, candidateId)
