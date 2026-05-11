@@ -22,10 +22,6 @@ const showNotify = ref(false);
 const messageNotify = ref('');
 const isSuccessNotify = ref(true);
 
-const totalPages = computed(() => {
-    return Math.ceil(totalItems.value / limit.value) || 1;
-});
-
 const fetchEmployers = async () => {
     await employerStore.fetchAllEmployers(currentPage.value, limit.value);
     let filtered = employerStore.allEmployers.filter(e => {
@@ -52,7 +48,7 @@ watch([currentPage, limit], () => {
 });
 
 onMounted(async () => {
-    fetchEmployers();
+    await fetchEmployers();
 });
 
 const isViewModalOpen = ref(false);
@@ -310,12 +306,12 @@ const approvalStatusMap: Record<string, { label: string; class: string; icon: st
                             </button>
                             
                             <span class="text-xs text-slate-600 font-medium px-2">
-                                <span class="hidden sm:inline">Trang</span> {{ currentPage }} / {{ totalPages }}
+                                <span class="hidden sm:inline">Trang</span> {{ currentPage }} / {{ employerStore.totalpages || 1 }}
                             </span>
                             
                             <button 
                                 @click="currentPage++" 
-                                :disabled="currentPage >= totalPages"
+                                :disabled="currentPage >= employerStore.totalpages"
                                 class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 <i class="fas fa-chevron-right text-[10px]"></i>

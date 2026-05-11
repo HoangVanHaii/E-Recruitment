@@ -1,6 +1,5 @@
 import api from "./api";
 
-
 export const GetAllEmployer = async (status: string) => {
     const response = await api.get(`/employers/status?status=${status || 'all'}`);
     return response.data;
@@ -17,7 +16,6 @@ export const getAllEmployers = async (page: number, limit: number) => {
     const response = await api.get('/employers/all-employers', {
         params: { page, limit }
     });
-    console.log("Response from getAllEmployers:", response.data);
     return response.data;
 }
 export const getTopEmployers = async () => {

@@ -14,7 +14,7 @@ import { fetchProvinces } from '../services/province';
 import { 
     MapPin, Calendar, CircleDollarSign, Filter, ChevronDown, 
     Briefcase, ChevronLeft, ChevronRight, 
-    LayoutGrid, Megaphone, Headset, Monitor, Home, Calculator, Building2 
+    LayoutGrid, Megaphone, Headset, Monitor, Home, Calculator, Building2, X 
 } from 'lucide-vue-next';
 import type { IJob } from '../types/job';
 const router = useRouter();
@@ -64,9 +64,9 @@ const quickOptions = computed(() => {
     } else {
         return [
         { label: 'Tất cả', value: { min: undefined, max: undefined } },
-        { label: 'Dưới 10tr', value: { min: 0, max: 10 } },
-        { label: '10 - 20tr', value: { min: 10, max: 20 } },
-        { label: 'Trên 20tr', value: { min: 20, max: 999 } },
+        { label: 'Dưới 10tr', value: { min: 0, max: 10000000 } },
+        { label: '10 - 20tr', value: { min: 10000000, max: 20000000 } },
+        { label: 'Trên 20tr', value: { min: 20000000, max: 999999999 } },
         ];
     }
 });
@@ -86,24 +86,29 @@ const goToPage = (page: number) => {
         window.scrollTo({ top: 500, behavior: 'smooth' });
     }
 };
-
-watch(() => filterState, (newState, oldState) => {
-    if (
-    newState.location !== oldState.location ||
-    newState.categoryId !== oldState.categoryId ||
-    newState.minSalary !== oldState.minSalary ||
-    newState.maxSalary !== oldState.maxSalary
-    ) {
+watch(
+    [
+        () => filterState.location,
+        () => filterState.categoryId,
+        () => filterState.minSalary,
+        () => filterState.maxSalary
+    ], 
+    () => {
         filterState.page = 1;
+        jobStore.fetchJobs({ ...filterState }); 
     }
-    
-    jobStore.fetchJobs(filterState);
-},
-{ deep: true }
+);
+
+watch(
+    () => filterState.page,
+    (newPage, oldPage) => {
+        if (newPage !== oldPage) {
+            jobStore.fetchJobs({ ...filterState });
+        }
+    }
 );
 
 onMounted(async () => {
-
     const state = window.history.state;
     if(state && state.loginSuccess) {
         showNotify.value = true;
@@ -112,8 +117,8 @@ onMounted(async () => {
         window.history.replaceState({}, '');
     }
     
-     fetchProvinces(provinces.value);
     await jobStore.fetchJobs(filterState);
+    provinces.value = await fetchProvinces();
     jobStore.fetchCategories();
     topEmployersLogos.value = await employerStore.fetchLogoTopEmployers();
 });
@@ -153,6 +158,30 @@ const handleSearch = async (keywordToSearch?: string) => {
     await jobStore.fetchJobSearch(query);
     searchResults.value = jobStore.listJobSearch;
     isSearching.value = false;
+};
+const hasActiveFilters = computed(() => {
+    return (
+        filterState.location !== '' ||
+        filterState.categoryId !== undefined ||
+        filterState.minSalary !== undefined ||
+        filterState.maxSalary !== undefined
+    );
+});
+
+const clearAllFilters = () => {
+    filterState.location = '';
+    filterState.categoryId = undefined;
+    filterState.minSalary = undefined;
+    filterState.maxSalary = undefined;
+    filterState.page = 1;
+};
+
+const handleLocationChange = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    
+    if (target) {
+        filterState.location = target.value;
+    }
 };
 </script>
 
@@ -207,24 +236,26 @@ const handleSearch = async (keywordToSearch?: string) => {
                 </button>
                 
                 <div v-if="filterType === 'location'" class="relative flex-shrink-0 ml-2">
-                    <select 
-                        v-model="filterState.location"
+                   <select 
+                        :value="['', 'Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng'].includes(filterState.location) ? '' : filterState.location"
+                        @change="handleLocationChange"
                         class="pl-4 pr-8 py-1.5 rounded-full text-sm transition-all outline-none cursor-pointer appearance-none border whitespace-nowrap font-medium"
                         :class="[
                         !['', 'Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng'].includes(filterState.location)
                         ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                         : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
                         ]"
-                        >
+                    >
                         <option value="" disabled hidden>Tỉnh thành khác...</option>
                         <option 
                             v-for="prov in provinces.filter(p => !['Hà Nội', 'Hồ Chí Minh', 'Đà Nẵng'].includes(p.name))" 
                             :key="prov.code" 
                             :value="prov.name"
                             class="text-gray-800 bg-white"
-                            >
+                        >
                             {{ prov.name }}
                         </option>
+                        <option value="">{{ provinces.length }}</option>
                     </select>
                 
                     <ChevronDown 
@@ -234,6 +265,8 @@ const handleSearch = async (keywordToSearch?: string) => {
                 </div>
             </div>
         </div>
+
+        
     </div>
 
     <div class="max-w-6xl mx-auto mt-8 px-4 pb-20">
@@ -243,7 +276,18 @@ const handleSearch = async (keywordToSearch?: string) => {
                 <div class="bg-blue-100 p-1.5 rounded-full">
                     <Briefcase class="w-5 h-5 text-blue-600" />
                 </div>
-                <h2 class="font-bold text-gray-800 uppercase">Việc làm thương hiệu</h2>
+                <div class="flex justify-between items-center w-full">
+                    <h2 class="font-bold text-gray-800 uppercase">Việc làm thương hiệu</h2>
+                    <div v-if="hasActiveFilters" class="flex justify-end mt-2 px-1">
+                        <button
+                            @click="clearAllFilters"
+                            class="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 bg-white hover:bg-red-50 px-3 py-1 rounded-full transition-all"
+                        >
+                            <X class="w-3.5 h-3.5" />
+                            Xóa bộ lọc
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <div v-if="loading" class="flex justify-center items-center py-12">

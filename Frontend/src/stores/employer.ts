@@ -8,8 +8,8 @@ export const useEmployerStore = defineStore('employer', () => {
     const loading = ref<boolean>(false);
     const message = ref<string>('');
     const error = ref<boolean>(false);
-      const allEmployers = ref<IEmployerForAdmin[]>([]);
-const totalpages = ref<number>(0);
+    const allEmployers = ref<IEmployerForAdmin[]>([]);
+    const totalpages = ref<number>(0);
     const total = ref<number>(0);
     const errors = ref<Record<string, string>>({});
     
@@ -90,8 +90,8 @@ const totalpages = ref<number>(0);
             error.value = false;
             const response = await getAllEmployers(page, limit);
             allEmployers.value = response.data.items;
-            if(response.data.totalPages != undefined) {
-                totalpages.value = response.data.totalPages;
+            if (response.data.totalpage != undefined) {
+                totalpages.value = response.data.totalpage;
                 total.value = response.data.total;
             }
         } catch (e) {
