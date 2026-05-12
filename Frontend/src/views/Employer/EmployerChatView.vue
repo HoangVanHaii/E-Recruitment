@@ -62,6 +62,15 @@ onMounted(async () => {
     await authStore.fetchProfile();
     await messageStore.fetchConversations();
 });
+const isMobile = ref(window.innerWidth < 1024);
+
+window.addEventListener('resize', () => {
+    isMobile.value = window.innerWidth < 1024;
+});
+
+const backToList = () => {
+    activeChat.value = null;
+};
 </script>
 
 <template>
@@ -69,8 +78,12 @@ onMounted(async () => {
 
         <SidebarEmployer />
 
-        <div class="w-[280px] shrink-0 bg-white border-r border-slate-100 flex flex-col h-full shadow-sm">
-
+        <div
+            v-if="!isMobile || !activeChat"
+            class="w-full max-w-full sm:w-[320px] lg:w-[280px]
+            shrink-0 bg-white border-r border-slate-100
+            flex flex-col h-full shadow-sm overflow-hidden"
+        >
             <div class="px-5 pt-6 pb-4 border-b border-slate-100">
                 <h2 class="text-lg font-extrabold text-slate-800 tracking-tight mb-3">Tin nhắn</h2>
                 <div class="relative">
@@ -127,7 +140,10 @@ onMounted(async () => {
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col h-full min-w-0">
+        <div
+            v-if="!isMobile || activeChat"
+            class="flex-1 flex flex-col h-full min-w-0"
+        >
 
             <transition name="fade-panel">
                 <div
@@ -154,6 +170,13 @@ onMounted(async () => {
                 <div v-if="activeChat" class="flex-1 flex flex-col h-full min-h-0">
                     <div class="flex items-center justify-between px-6 py-3.5 bg-white border-b border-slate-100 shadow-sm shrink-0">
                         <div class="flex items-center gap-3">
+                            <button
+                                v-if="isMobile"
+                                @click="backToList"
+                                class="p-2 hover:bg-slate-100 rounded-xl transition"
+                            >
+                                <i class="fa-solid fa-arrow-left text-slate-700 text-base"></i>
+                            </button>
                             <div class="relative">
                                 <img :src="activeChat.avatar" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow" />
                                 <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full"></div>
@@ -175,7 +198,7 @@ onMounted(async () => {
                     </div>
                     <div
                         ref="messagesContainer"
-                        class="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar"
+                        class="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-6 py-5 space-y-4 custom-scrollbar"
                         style="background: radial-gradient(ellipse at top left, #eef2ff 0%, #f0f2f8 60%);"
                     >
                         <div
@@ -190,7 +213,7 @@ onMounted(async () => {
                                 class="w-7 h-7 rounded-full object-cover shrink-0 shadow"
                             />
 
-                            <div class="flex flex-col max-w-[65%]"
+                            <div class="flex flex-col max-w-[85%] sm:max-w-[75%] lg:max-w-[65%]"
                                 :class="msg.sender_id === authStore.user?.ProfileID ? 'items-end' : 'items-start'"
                             >
                                 <div
