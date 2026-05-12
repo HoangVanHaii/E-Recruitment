@@ -123,7 +123,7 @@ const statusConfig: Record<string, { label: string; class: string }> = {
                         </div>
                         <div class="hidden sm:block">
                             <p class="text-xs font-bold text-slate-700 leading-tight">Super Admin</p>
-                            <p class="text-[10px] text-slate-400">admin@365timviec.vn</p>
+                            <p class="text-[10px] text-slate-400">admin@timviecfinder.vn</p>
                         </div>
                         <i class="fas fa-chevron-down text-[9px] text-slate-400 ml-1 hidden sm:block"></i>
                     </div>

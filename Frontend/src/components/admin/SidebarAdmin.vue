@@ -135,7 +135,7 @@ watch(() => route.name, () => {
             <transition name="fade-text">
                 <div v-if="!isCollapsed" class="overflow-hidden">
                     <p class="font-extrabold text-white text-sm leading-tight tracking-wide">Admin Panel</p>
-                    <p class="text-[10px] text-blue-200/60 font-medium">365 Tìm việc</p>
+                    <p class="text-[10px] text-blue-200/60 font-medium">Tìm việc Finder</p>
                 </div>
             </transition>
         </div>
@@ -225,7 +225,7 @@ watch(() => route.name, () => {
                 <transition name="fade-text">
                     <div v-if="!isCollapsed" class="flex-1 min-w-0">
                         <p class="text-white text-xs font-bold truncate">Super Admin</p>
-                        <p class="text-white/40 text-[10px] truncate">admin@365timviec.vn</p>
+                        <p class="text-white/40 text-[10px] truncate">admin@timviecfinder.vn</p>
                     </div>
                 </transition>
                 <button v-if="!isCollapsed"
