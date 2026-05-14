@@ -19,7 +19,6 @@ onMounted(async () => {
     console.log('conversations', messageStore.conversations);
 });
 
-// 4. Logic lọc danh sách theo tên hoặc nội dung tin nhắn
 const filteredChats = computed(() => {
     if (!searchQuery.value) return messageStore.conversations;
     const query = searchQuery.value.toLowerCase();
