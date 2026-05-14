@@ -162,41 +162,70 @@ export const deleteJobRecommentCandidate = async (candidateId: number) => {
         [candidateId]
     );
 };
+// export const buildResumeText = (resume: iResumeDetail): string => {
+//     const skillsText = resume.skills?.map(s =>
+//         `${s.skillName}${s.level ? ` (${s.level})` : ""}`
+//     ).join(", ");
+//     const experienceText = resume.experience?.map(exp => `
+//         - ${exp.position} at ${exp.companyName}
+//         (${exp.startDate?.toISOString().slice(0,7)} - ${exp.isCurrent ? "Present" : exp.endDate?.toISOString().slice(0,7)})
+//         ${exp.description || ""}
+//     `).join("\n");
+//     const educationText = resume.education?.map(edu => `
+//         - ${edu.degree} in ${edu.major} at ${edu.institution}
+//         (${edu.startDate?.toISOString().slice(0,7)} - ${edu.endDate?.toISOString().slice(0,7)})
+//         ${edu.gpa ? `GPA: ${edu.gpa}` : ""}
+//     `).join("\n");
+//     const projectText = resume.projects?.map(p => `
+//         - ${p.projectName} (${p.role})
+//         Technologies: ${p.technologies.join(", ")}
+//         ${p.description || ""}
+//     `).join("\n");
+//     return `
+//     Candidate Profile
+
+//     Title: ${resume.title || ""}
+//     Summary: ${resume.summary || ""}
+
+//     Skills:
+//     ${skillsText || ""}
+
+//     Work Experience:
+//     ${experienceText || ""}
+
+//     Education:
+//     ${educationText || ""}
+
+//     Projects:
+//     ${projectText || ""}
+//     `;
+// };
 export const buildResumeText = (resume: iResumeDetail): string => {
-    const skillsText = resume.skills?.map(s => 
-        `${s.skillName}${s.level ? ` (${s.level})` : ""}`
-    ).join(", ");
-    const experienceText = resume.experience?.map(exp => `
-        - ${exp.position} at ${exp.companyName}
-        (${exp.startDate?.toISOString().slice(0,7)} - ${exp.isCurrent ? "Present" : exp.endDate?.toISOString().slice(0,7)})
-        ${exp.description || ""}
-    `).join("\n");
-    const educationText = resume.education?.map(edu => `
-        - ${edu.degree} in ${edu.major} at ${edu.institution}
-        (${edu.startDate?.toISOString().slice(0,7)} - ${edu.endDate?.toISOString().slice(0,7)})
-        ${edu.gpa ? `GPA: ${edu.gpa}` : ""}
-    `).join("\n");
-    const projectText = resume.projects?.map(p => `
-        - ${p.projectName} (${p.role})
-        Technologies: ${p.technologies.join(", ")}
-        ${p.description || ""}
-    `).join("\n");
+    const skills = resume.skills?.map(s => s.skillName.toLowerCase()) || [];
+
+    const technologies = resume.projects?.flatMap(p => 
+        p.technologies.map(t => t.toLowerCase())
+    ) || [];
+
+    const experienceDesc = resume.experience?.map(exp => 
+        `${exp.position} ${exp.description || ""}`
+    ).join(" ") || "";
+
+    const totalExp = resume.experience?.length || 0;
+
     return `
-    Candidate Profile
+    ${resume.title || ""}
 
-    Title: ${resume.title || ""}
-    Summary: ${resume.summary || ""}
+    Type: full-time
 
-    Skills:
-    ${skillsText || ""}
+    Experience: ${totalExp} years
 
-    Work Experience:
-    ${experienceText || ""}
+    Skills: ${[...skills, ...technologies].join(", ")}
 
-    Education:
-    ${educationText || ""}
+    Description:
+    ${resume.summary || ""} ${experienceDesc}
 
-    Projects:
-    ${projectText || ""}
-    `;
+    Requirements:
+    ${skills.join(", ")}
+    `.replace(/\s+/g, ' ').trim();
 };
