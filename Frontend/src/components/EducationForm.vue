@@ -56,6 +56,15 @@ const openEditForm = (index: number) => {
 };
 
 const saveFormToLocal = () => {
+    if (currentEdu.value.startDate && currentEdu.value.endDate) {
+        if (new Date(currentEdu.value.startDate) > new Date(currentEdu.value.endDate)) {
+            isSuccessNotify.value = false;
+            messageNotify.value = 'Thời gian kết thúc không thể diễn ra trước thời gian bắt đầu!';
+            showNotify.value = true;
+            return; 
+        }
+    }
+
     if (editingIndex.value === -1) {
         educationList.value.unshift({ ...currentEdu.value }); 
     } else {
@@ -173,13 +182,19 @@ const handleSaveAPI = async () => {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div class="space-y-2">
                         <label class="block text-[14.5px] font-bold text-gray-700">Thời gian bắt đầu <span class="text-red-500">*</span></label>
-                        <input v-model="currentEdu.startDate" type="date" required 
-                               class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600">
+                        <input v-model="currentEdu.startDate" 
+                            type="date" 
+                            required 
+                            :max="currentEdu.endDate || undefined"
+                            class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600">
                     </div>
                     <div class="space-y-2">
                         <label class="block text-[14.5px] font-bold text-gray-700">Đến <span class="text-red-500">*</span></label>
-                        <input v-model="currentEdu.endDate" type="date" required 
-                               class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600">
+                        <input v-model="currentEdu.endDate" 
+                            type="date" 
+                            required 
+                            :min="currentEdu.startDate || undefined"
+                            class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600">
                     </div>
                 </div>
 

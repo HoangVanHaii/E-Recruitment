@@ -265,8 +265,41 @@ const handleGenerateAI = async () => {
         showToast('Hệ thống AI đang bận', false); 
     } finally { isGeneratingAI.value = false; }
 };
+const calculateMaxDate = () => {
+    const today = new Date();
+    const maxYear = today.getFullYear() - 18;
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${maxYear}-${month}-${day}`;
+};
+const maxDate = ref(calculateMaxDate());
 
 const handleSubmit = async () => {
+    if (candidateForm.value.DateOfBirth && candidateForm.value.DateOfBirth > maxDate.value) {
+        showToast('Bạn phải đủ 18 tuổi để tạo hồ sơ!', false);
+        return; 
+    }
+
+    const title = resumeForm.value.title?.trim() || '';
+    if (title.length < 10 || title.length > 255) {
+        showToast('Tiêu đề CV phải từ 10 đến 255 ký tự!', false);
+        return; 
+    }
+
+    for (const edu of newEducation.value) {
+        if (edu.startDate && edu.endDate && new Date(edu.startDate) > new Date(edu.endDate)) {
+            showToast(`Lỗi học vấn: Ngày kết thúc không thể trước ngày bắt đầu tại "${edu.institution || 'trường đang nhập'}"!`, false);
+            return;
+        }
+    }
+
+    for (const exp of newExperiences.value) {
+        if (exp.startDate && exp.endDate && new Date(exp.startDate) > new Date(exp.endDate)) {
+            showToast(`Lỗi kinh nghiệm: Ngày kết thúc không thể trước ngày bắt đầu tại "${exp.companyName || 'công ty đang nhập'}"!`, false);
+            return;
+        }
+    }
+
     if (!isEditMode.value) {
         await syncNewDataToMasterProfile();
     }
@@ -382,7 +415,10 @@ const handleSubmit = async () => {
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-500 mb-2">Ngày sinh</label>
-                                        <input v-model="candidateForm.DateOfBirth" type="date" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none text-sm font-medium text-slate-600">
+                                        <input v-model="candidateForm.DateOfBirth" 
+                                            type="date" 
+                                            :max="maxDate"
+                                            class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none text-sm font-medium text-slate-600">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-500 mb-2">Địa chỉ</label>
@@ -464,8 +500,8 @@ const handleSubmit = async () => {
                                     <button type="button" @click="newEducation.splice(index, 1)" class="absolute top-3 right-3 text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                                         <input v-model="edu.institution" type="text" placeholder="Trường / Đơn vị giảng dạy *" required class="w-full px-3 py-2 border rounded-lg text-sm md:col-span-2 bg-white">
-                                        <input v-model="edu.startDate" type="date" required class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
-                                        <input v-model="edu.endDate" type="date" required class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
+                                        <input v-model="edu.startDate" type="date" required :max="edu.endDate || ''" class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
+                                        <input v-model="edu.endDate" type="date" required :min="edu.startDate || ''" class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
                                         <input v-model="edu.major" type="text" placeholder="Chuyên ngành *" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                         <select v-model="edu.degree" required class="w-full px-3 py-2 border rounded-lg text-sm appearance-none bg-white text-gray-600">
                                             <option value="" disabled selected>Chọn bằng cấp *</option>
@@ -504,8 +540,8 @@ const handleSubmit = async () => {
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                                         <input v-model="exp.companyName" type="text" placeholder="Công ty *" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                                         <input v-model="exp.position" type="text" placeholder="Chức danh *" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                                        <input v-model="exp.startDate" type="date" required class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
-                                        <input v-model="exp.endDate" type="date" class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
+                                        <input v-model="exp.startDate" type="date" required :max="exp.endDate || ''" class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
+                                        <input v-model="exp.endDate" type="date" :min="exp.startDate || ''" class="w-full px-3 py-2 border rounded-lg text-sm text-gray-500 bg-white">
                                         <textarea v-model="exp.description" placeholder="Mô tả công việc" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm md:col-span-2 resize-none bg-white"></textarea>
                                     </div>
                                 </div>

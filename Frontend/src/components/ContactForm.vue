@@ -25,6 +25,15 @@ const form = reactive({
     Address: '',
     AvatarUrl: ''
 });
+const calculateMaxDate = () => {
+    const today = new Date();
+    const maxYear = today.getFullYear() - 18;
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${maxYear}-${month}-${day}`;
+};
+
+const maxDate = ref(calculateMaxDate());
 
 onMounted(async () => {
     await candidateStore.getProfileStore();
@@ -60,6 +69,13 @@ const onFileChange = (e: Event) => {
 };
 
 const handleSave = async () => {
+    if (form.DateOfBirth > maxDate.value) {
+        isSuccessNotify.value = false;
+        messageNotify.value = 'Bạn phải đủ 18 tuổi để thực hiện thao tác này!';
+        showNotify.value = true;
+        return; 
+    }
+
     const formData = new FormData();
     formData.append('FullName', form.FullName);
     formData.append('DateOfBirth', form.DateOfBirth);
@@ -132,8 +148,11 @@ const handleSave = async () => {
 
                     <div class="space-y-2">
                         <label class="block text-sm font-bold text-gray-700">Ngày sinh <span class="text-red-500">*</span></label>
-                        <input v-model="form.DateOfBirth" type="date" required 
-                               class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-gray-600 font-sans">
+                        <input v-model="form.DateOfBirth" 
+                            type="date" 
+                            required 
+                            :max="maxDate"
+                            class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-gray-600 font-sans">
                     </div>
 
                     <div class="space-y-2">

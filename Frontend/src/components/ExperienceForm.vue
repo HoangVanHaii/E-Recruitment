@@ -81,6 +81,18 @@ const formatDate = (dateStr: string | Date) => {
 };
 
 const handleSave = async () => {
+    for (const exp of form.experiences) {
+        if (!exp._markedForDeletion && !exp.isCurrent && exp.startDate && exp.endDate) {
+            if (new Date(exp.startDate) > new Date(exp.endDate)) {
+                isSuccessNotify.value = false;
+                messageNotify.value = `Thời gian kết thúc không thể trước thời gian bắt đầu tại công ty "${exp.companyName || 'đang cập nhật'}"!`;
+                showNotify.value = true;
+                exp._isExpanded = true; 
+                return; 
+            }
+        }
+    }
+
     const cleanExperiences: IExperience[] = form.experiences
         .filter(exp => !exp._markedForDeletion)
         .map(exp => {
@@ -222,21 +234,27 @@ const handleSave = async () => {
                                            class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all">
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div class="space-y-2">
-                                        <label class="block text-[14.5px] font-bold text-gray-700">Thời gian bắt đầu <span class="text-red-500">*</span></label>
-                                        <input v-model="exp.startDate" type="date" required 
-                                               class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="block text-[14.5px] font-bold text-gray-700">Đến</label>
-                                        <input v-model="exp.endDate" type="date" :disabled="exp.isCurrent"
-                                               class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600 disabled:opacity-50">
-                                        
-                                        <div class="flex items-center gap-2 mt-2">
-                                            <input type="checkbox" v-model="exp.isCurrent" :id="'current-' + index" class="w-4 h-4 text-[#1a237e] rounded cursor-pointer">
-                                            <label :for="'current-' + index" class="text-sm text-gray-600 cursor-pointer font-medium">Tôi vẫn đang làm việc ở đây</label>
-                                        </div>
+                                <div class="space-y-2">
+                                    <label class="block text-[14.5px] font-bold text-gray-700">Thời gian bắt đầu <span class="text-red-500">*</span></label>
+                                    <input v-model="exp.startDate" 
+                                        type="date" 
+                                        required 
+                                        :max="(!exp.isCurrent && exp.endDate) ? (exp.endDate as string) : ''"
+                                        class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600">
+                                </div>
+
+                                <div class="space-y-2">
+                                    <label class="block text-[14.5px] font-bold text-gray-700">Đến <span v-if="!exp.isCurrent" class="text-red-500">*</span></label>
+                                    <input v-model="exp.endDate" 
+                                        type="date" 
+                                        :disabled="exp.isCurrent"
+                                        :min="(exp.startDate as string) || ''"
+                                        :required="!exp.isCurrent"
+                                        class="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#1a237e] outline-none transition-all text-gray-600 disabled:opacity-50 disabled:bg-gray-100">
+                                    
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <input type="checkbox" v-model="exp.isCurrent" :id="'current-' + index" class="w-4 h-4 text-[#1a237e] rounded cursor-pointer">
+                                        <label :for="'current-' + index" class="text-sm text-gray-600 cursor-pointer font-medium">Tôi vẫn đang làm việc ở đây</label>
                                     </div>
                                 </div>
 
