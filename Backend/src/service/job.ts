@@ -112,10 +112,11 @@ export const getAllJobs = async (filters: IJobFilters, userId: any) => {
             FROM Jobs j
             JOIN Employers e ON j.EmployerID = e.EmployerID
             JOIN Companies c ON e.CompanyID = c.CompanyID
-            lEFT JOIN JobRecommendations r ON j.JobID = r.JobID
+            lEFT JOIN JobRecommendations r ON j.JobID = r.JobID AND r.CandidateID = ?
             ${whereClause}
         `;
-        const [countResult]: any = await pool.query(countQuery, baseParams);
+        const safeUserId = userId ?? null;
+        const [countResult]: any = await pool.query(countQuery, [safeUserId, ...baseParams]);
         total = countResult[0].totalItems;
         totalPages = Math.ceil((total || 0 ) / Limit);
     }

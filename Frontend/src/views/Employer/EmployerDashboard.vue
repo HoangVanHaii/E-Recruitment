@@ -76,6 +76,7 @@ const chartSeries = ref([
         data: []
     }
 ]);
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 const formatTimeLeft = (expiredDate: string | Date | null) => {
     if (!expiredDate) return 'Không rõ';
@@ -92,7 +93,6 @@ const formatTimeLeft = (expiredDate: string | Date | null) => {
     return 'Đã hết hạn';
 };
 const loadChart = async () => {
-    loading.value = true;
     if (selectedYear.value !== 2026) {
         chartSeries.value = [{
             name: "Lượt ứng tuyển",
@@ -106,12 +106,15 @@ const loadChart = async () => {
                 categories: []
             }
         };
-        setTimeout(() => {
-            loading.value = false;
-        }, 300);
+        stats.value = [
+            { label: 'Tin tuyển dụng', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-briefcase', bgColor: 'bg-blue-100', textColor: 'text-blue-600' },
+            { label: 'Tổng hồ sơ', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-user-group', bgColor: 'bg-indigo-100', textColor: 'text-indigo-600' },
+            { label: 'Đã tuyển', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-check-double', bgColor: 'bg-emerald-100', textColor: 'text-emerald-600' },
+            { label: 'Tỷ lệ từ chối', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-user-slash', bgColor: 'bg-rose-100', textColor: 'text-rose-600' }
+        ];
+        await delay(300);
         return;
     }
-
     const res = await useApplication.getChartStatsStore(filterType.value);
 
     if (!res || useApplication.error) {
@@ -131,7 +134,6 @@ const loadChart = async () => {
             categories: res.categories
         }
     };
-    loading.value = false;
 };
 
 const selectYear = (year: number) => {
@@ -144,11 +146,6 @@ const updateFilter = (type: FilterType) => {
 };
 
 
-watch([filterType, selectedYear], async () => {
-    await loadChart();
-}, { immediate: true });
-
-
 const isOpenJobDetail = ref(false);
 const selectedJobId = ref<number | null>(null);
 
@@ -157,14 +154,38 @@ const handleOpenJob = (jobId: number) => {
     isOpenJobDetail.value = true;
 };
 
-onMounted(async () => {
+watch(filterType, async () => {
+    loading.value = true;
+
+    await loadChart();
+
+    loading.value = false;
+});
+watch(selectedYear, async () => {
+    loading.value = true;
+
+    if (selectedYear.value !== 2026) {
+        await loadChart();
+
+        stats.value = [
+            { label: 'Tin tuyển dụng', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-briefcase', bgColor: 'bg-blue-100', textColor: 'text-blue-600' },
+            { label: 'Tổng hồ sơ', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-user-group', bgColor: 'bg-indigo-100', textColor: 'text-indigo-600' },
+            { label: 'Đã tuyển', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-check-double', bgColor: 'bg-emerald-100', textColor: 'text-emerald-600' },
+            { label: 'Tỷ lệ từ chối', value: 0, percentage: '0', trendUp: false, icon: 'fa-solid fa-user-slash', bgColor: 'bg-rose-100', textColor: 'text-rose-600' }
+        ];
+
+        activeJobs.value = [];
+
+        loading.value = false;
+        return;
+    }
+
     const [d] = await Promise.all([
         useEmployer.getDashboardStatsStore(),
         useJob.getJobOfMeStore(),
         loadChart()
     ]);
 
-    // stats
     stats.value = [
         { label: 'Tin tuyển dụng', value: d.jobs.value, percentage: d.jobs.percentage, trendUp: d.jobs.trendUp, icon: 'fa-solid fa-briefcase', bgColor: 'bg-blue-100', textColor: 'text-blue-600' },
         { label: 'Tổng hồ sơ', value: d.applications.value, percentage: d.applications.percentage, trendUp: d.applications.trendUp, icon: 'fa-solid fa-user-group', bgColor: 'bg-indigo-100', textColor: 'text-indigo-600' },
@@ -172,7 +193,6 @@ onMounted(async () => {
         { label: 'Tỷ lệ từ chối', value: d.rejected.value, percentage: d.rejected.percentage, trendUp: d.rejected.trendUp, icon: 'fa-solid fa-user-slash', bgColor: 'bg-rose-100', textColor: 'text-rose-600' }
     ];
 
-    // jobs
     activeJobs.value = useJob.listJobMe
         .filter(j => j.ExpiredDate && new Date(j.ExpiredDate) >= new Date())
         .slice(0, 5)
@@ -182,6 +202,34 @@ onMounted(async () => {
             applicants: j.ApplicationCount,
             timeLeft: formatTimeLeft(j.ExpiredDate ?? null)
         }));
+
+    loading.value = false;
+});
+onMounted(async () => {
+    loading.value = true;
+    const [d] = await Promise.all([
+        useEmployer.getDashboardStatsStore(),
+        useJob.getJobOfMeStore(),
+        loadChart()
+    ]);
+
+    stats.value = [
+        { label: 'Tin tuyển dụng', value: d.jobs.value, percentage: d.jobs.percentage, trendUp: d.jobs.trendUp, icon: 'fa-solid fa-briefcase', bgColor: 'bg-blue-100', textColor: 'text-blue-600' },
+        { label: 'Tổng hồ sơ', value: d.applications.value, percentage: d.applications.percentage, trendUp: d.applications.trendUp, icon: 'fa-solid fa-user-group', bgColor: 'bg-indigo-100', textColor: 'text-indigo-600' },
+        { label: 'Đã tuyển', value: d.hired.value, percentage: d.hired.percentage, trendUp: d.hired.trendUp, icon: 'fa-solid fa-check-double', bgColor: 'bg-emerald-100', textColor: 'text-emerald-600' },
+        { label: 'Tỷ lệ từ chối', value: d.rejected.value, percentage: d.rejected.percentage, trendUp: d.rejected.trendUp, icon: 'fa-solid fa-user-slash', bgColor: 'bg-rose-100', textColor: 'text-rose-600' }
+    ];
+
+    activeJobs.value = useJob.listJobMe
+        .filter(j => j.ExpiredDate && new Date(j.ExpiredDate) >= new Date())
+        .slice(0, 5)
+        .map(j => ({
+            id: j.JobID ?? 0,
+            title: j.Title,
+            applicants: j.ApplicationCount,
+            timeLeft: formatTimeLeft(j.ExpiredDate ?? null)
+        }));    
+    loading.value = false;  
 });
 </script>
 
