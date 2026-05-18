@@ -32,6 +32,43 @@ Dự án **Website Tuyển Dụng Trực Tuyến (Job Portal)** được phát t
 
 ---
 
+## 🗄️ Thiết Kế Cơ Sở Dữ Liệu & Lưu Trữ (Database & Storage)
+
+Để đáp ứng các bài toán phức tạp về hiệu năng, tìm kiếm thông minh bằng AI và xử lý dữ liệu lớn, hệ thống áp dụng giải pháp kiến trúc **Cơ sở dữ liệu lai (Hybrid Database)** phân tách nhiệm vụ rõ rệt:
+
+### 1. MySQL (Relational Database)
+* **Vai trò:** Cơ sở dữ liệu quan hệ chính, đảm bảo tính toàn vẹn dữ liệu (ACID) cho các luồng nghiệp vụ cốt lõi.
+* **Dữ liệu lưu trữ:** * Thông tin tài khoản người dùng (`Users`, `Accounts`), phân quyền (`Roles`).
+  * Thông tin tuyển dụng công khai (`Jobs`), danh mục ngành nghề (`Categories`).
+  * Dữ liệu hồ sơ doanh nghiệp (`Companies`) và lịch sử, trạng thái đơn ứng tuyển (`Applications`).
+
+### 2. Redis Cache (In-Memory Database)
+* **Vai trò:** Bộ nhớ đệm lưu trữ trên RAM với tốc độ đọc/ghi cực cao, giúp giảm tải trực tiếp cho cơ sở dữ liệu chính và tối ưu tốc độ phản hồi phản hồi hệ thống.
+* **Dữ liệu lưu trữ:**
+  * Mã xác thực OTP tạm thời phục vụ cho quá trình đăng ký hoặc thiết lập lại mật khẩu qua Email.
+  * Lưu bộ nhớ đệm (Caching) danh sách việc làm HOT, bài đăng tuyển dụng phổ biến có tần suất truy cập cao.
+  * Quản lý danh sách đen các token đã hết hạn (JWT Blacklist) để tăng cường bảo mật đăng xuất.
+
+### 3. MongoDB (NoSQL Document-Oriented Database)
+* **Vai trò:** Cơ sở dữ liệu phi cấu trúc dạng Document (JSON/BSON style), cho phép mở rộng linh hoạt theo chiều ngang và lưu trữ dữ liệu động.
+* **Dữ liệu lưu trữ:**
+  * Cấu trúc chi tiết của hồ sơ ứng viên trực tuyến (CVs/Resumes) với các trường thông tin học vấn, dự án và kinh nghiệm thay đổi linh hoạt tùy theo từng cá nhân.
+  * Lưu trữ lịch sử tin nhắn và hội thoại thời gian thực (Chat logs) giữa Nhà tuyển dụng và Ứng viên.
+  * Hệ thống log giám sát hành vi người dùng và nhật ký hoạt động hệ thống.
+
+### 4. Cloudinary (Cloud Media Storage)
+* **Vai trò:** Nền tảng đám mây chuyên dụng quản lý, lưu trữ và tối ưu hóa tài nguyên đa phương tiện tĩnh thông qua CDN tốc độ cao.
+* **Dữ liệu lưu trữ:**
+  * Hình ảnh tải lên hệ thống bao gồm: Avatar cá nhân, Logo công ty, hình ảnh văn phòng làm việc và ảnh chụp Giấy phép kinh doanh phục vụ kiểm duyệt.
+  * Lưu trữ các tệp đính kèm hồ sơ CV gốc định dạng `.pdf` hoặc `.docx` do ứng viên tải lên trực tiếp.
+
+### 5. Pinecone (Vector Database)
+* **Vai trò:** Cơ sở dữ liệu Vector hiệu năng cao phục vụ cho các bài toán xử lý chuyên sâu về Trí tuệ nhân tạo (AI Search & Matching).
+* **Dữ liệu lưu trữ:**
+  * Lưu trữ các chuỗi vector cao chiều (Vector Embeddings) được trích xuất từ nội dung kỹ năng của CV ứng viên và nội dung yêu cầu của tin tuyển dụng (JD) thông qua Gemini Embedding API.
+  * Hỗ trợ tìm kiếm theo ngữ nghĩa (Semantic Search) và tính toán khoảng cách vector (Cosine Similarity) để thực hiện tính năng tự động gợi ý việc làm phù hợp (AI Matching) với độ chính xác cao.
+
+---
 ## 🗂️ Phân Hệ Tính Năng Theo Tác Nhân
 
 ### 1. Ứng viên (Candidate)
