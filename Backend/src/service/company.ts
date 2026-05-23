@@ -139,11 +139,10 @@ export const GetAllCompany = async (Role: string) => {
 
     const values = [];    
     if (Role !== "Admin") {
-        query += ' WHERE Status = true';
-        values.push(1);
+        query += ' WHERE Status = ?';
+        values.push('Approved');
     }
     const [result]: any = await pool.query(query, values);
-    
     return Role === "Admin" ? result as ICompanyDetailResponse[] : result as ICompanyResponse[];
 }
 export const getAllCompanyForAdmin = async (page: number, limit: number) => {

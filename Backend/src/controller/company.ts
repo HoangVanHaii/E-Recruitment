@@ -203,9 +203,6 @@ export const GetCompanyDetailOfMe = async (req: Request, res: Response, next: Ne
 export const GetAllCompany = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const role = req.user?.role || "Candidate";
-        // if (role === "Employer") {
-        //     await CompanyService.checkEmployer(req.user!.id);
-        // }
         const cacheKey = `company:role:${role}:all`;
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
